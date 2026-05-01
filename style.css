@@ -1,0 +1,80 @@
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  font-family: 'Roboto', sans-serif;
+}
+.titulo {
+  font-family: "Roboto", sans-serif;
+  margin-bottom: 30px;
+}
+body{
+    display: flex;
+    justify-content: center;
+}
+
+.tela1 {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    margin: 50px;
+    width: 80vw;
+    box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+    padding: 30px;
+}
+
+.form{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+}
+
+input{
+    padding: 10px;
+    width: 300px;
+    background-color: rgb(188, 192, 192);
+    border: none;
+    outline: none;
+}
+#cadastrar{
+    width: 100px;
+    padding: 10px;
+    border: none;
+    cursor: pointer;
+}
+
+#lista{
+    font-family: 'Roboto', sans-serif;
+    list-style: none;
+    margin-top: 30px;
+    background-color: rgb(224, 221, 221);
+    text-transform: capitalize;
+}
+
+/* From Uiverse.io by suda-code */ 
+button {
+  padding: 10px 30px;
+  margin: 10px;
+  border: 0;
+  border-radius: 100px;
+  background-color: #2ba8fb;
+  color: #ffffff;
+  font-weight: Bold;
+  transition: all 0.5s;
+  -webkit-transition: all 0.5s;
+}
+
+button:hover {
+  background-color: #6fc5ff;
+  box-shadow: 0 0 20px #6fc5ff50;
+  transform: scale(1.1);
+}
+
+button:active {
+  background-color: #3d94cf;
+  transition: all 0.25s;
+  -webkit-transition: all 0.25s;
+  box-shadow: none;
+  transform: scale(0.98);
+}

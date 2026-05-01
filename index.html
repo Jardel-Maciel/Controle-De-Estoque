@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Estoque</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <section class="tela1">
+      <h1 class="titulo">Estoque</h1>
+      <form  class="form">
+        <input type="text" placeholder="Produto" id="inputProduto" />
+        <input type="number" placeholder="Quantidade" id="quantidade" />
+        <button type="button" id="cadastrar">Cadastrar</button>
+      </form>
+      <table border="1">
+        <thead>
+          <tr>
+            <th>Produto</th>
+            <th>Quantidade</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="lista"></tbody>
+      </table>
+    </section>
+
+    <script src="script.js"></script>
+  </body>
+</html>
