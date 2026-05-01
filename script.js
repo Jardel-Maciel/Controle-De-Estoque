@@ -2,31 +2,30 @@ const produto = document.getElementById("inputProduto");
 const quantidade = document.getElementById("quantidade");
 const cadastrar = document.getElementById("cadastrar");
 const lista = document.getElementById("lista");
+const botaoTema = document.getElementById("toggleTema");
 
- let estoque = JSON.parse(localStorage.getItem("estoque")) || [];
+let estoque = JSON.parse(localStorage.getItem("estoque")) || [];
+
+/* ----------- CRUD ----------- */
 
 cadastrar.addEventListener("click", () => {
   const texto = produto.value.trim();
-  if (texto === "") {
-    alert("Preencha os campos porfavor!");
-    return;
-  }
-
   const quant = quantidade.value.trim();
-  if (quant === "") {
-    alert("Preencha os campos porfavor!");
+
+  if (texto === "" || quant === "") {
+    alert("Preencha todos os campos!");
     return;
   }
 
   estoque.push({
     produto: texto,
-    quantidade: quant,
+    quantidade: quant
   });
 
   produto.value = "";
   quantidade.value = "";
 
-  salvarDados();
+  salvar();
   render();
 });
 
@@ -37,46 +36,66 @@ function render() {
     const tr = document.createElement("tr");
 
     tr.innerHTML = `
-        <td>${item.produto}</td>
-        <td>${item.quantidade}</td>
-        <td>
+      <td>${item.produto}</td>
+      <td>${item.quantidade}</td>
+      <td>
         <button onclick="editar(${index})">Editar</button>
-        <button onclick="remover(${index})">Remover</button>
-        </td>
-        `;
+        <button class="btn-danger" onclick="remover(${index})">Excluir</button>
+      </td>
+    `;
 
     lista.appendChild(tr);
   });
 }
 
 function editar(index) {
-  const novoProduto = prompt("Novo Produto: ", estoque[index].produto);
-  const novaQuantidade = prompt("Novo Quantidade: ", estoque[index].quantidade);
+  const novoProduto = prompt("Novo produto:", estoque[index].produto);
+  const novaQuantidade = prompt("Nova quantidade:", estoque[index].quantidade);
 
   if (
-    novoProduto !== null &&
-    novoProduto.trim() !== "" &&
-    novaQuantidade !== null &&
-    novaQuantidade.trim() !== ""
+    novoProduto !== null && novoProduto.trim() !== "" &&
+    novaQuantidade !== null && novaQuantidade.trim() !== ""
   ) {
     estoque[index].produto = novoProduto.trim();
     estoque[index].quantidade = novaQuantidade.trim();
-    salvarDados();
+
+    salvar();
     render();
   }
 }
 
 function remover(index) {
   estoque.splice(index, 1);
-
-  salvarDados();
+  salvar();
   render();
 }
 
-//salvamento de informações
-
-function salvarDados() {
+function salvar() {
   localStorage.setItem("estoque", JSON.stringify(estoque));
 }
 
+/* ----------- TEMA ----------- */
+
+// carregar tema
+if (localStorage.getItem("tema") === "dark") {
+  document.body.classList.add("dark");
+}
+
+// atualizar ícone
+function atualizarIcone() {
+  botaoTema.textContent = document.body.classList.contains("dark") ? "☀️" : "🌙";
+}
+
+atualizarIcone();
+
+botaoTema.addEventListener("click", () => {
+  document.body.classList.toggle("dark");
+
+  const dark = document.body.classList.contains("dark");
+  localStorage.setItem("tema", dark ? "dark" : "light");
+
+  atualizarIcone();
+});
+
+/* iniciar */
 render();
