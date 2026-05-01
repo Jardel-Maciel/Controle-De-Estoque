@@ -1,0 +1,2 @@
+# Controle-De-Estoque
+Sistema de controle de estoque desenvolvido com HTML, CSS e JavaScript, permitindo cadastrar, editar e remover produtos com suas respectivas quantidades. Os dados são armazenados localmente no navegador (localStorage), garantindo persistência básica. O projeto representa um MVP funcional, com foco em organização de estoque e evolução futura para backend, autenticação e relatórios.
