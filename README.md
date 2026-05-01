@@ -40,7 +40,7 @@ Este sistema foi pensado para:
 
 ---
 
-## 🎥 Demonstração
+## 🎥 Demonstração  https://jardel-maciel.github.io/Controle-De-Estoque/
 
 <p align="center">
   <img src="./assets/img/preview.gif" width="600"/>
