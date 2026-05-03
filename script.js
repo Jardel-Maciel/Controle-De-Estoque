@@ -125,3 +125,28 @@ async function remover(index) {
 
 /* ----------- INICIAR ----------- */
 carregar();
+
+const botaoTema = document.getElementById("toggleTema");
+
+// carregar tema salvo
+if (localStorage.getItem("tema") === "dark") {
+  document.body.classList.add("dark");
+}
+
+// atualizar ícone
+function atualizarIcone() {
+  botaoTema.textContent =
+    document.body.classList.contains("dark") ? "☀️" : "🌙";
+}
+
+atualizarIcone();
+
+// evento do botão
+botaoTema.addEventListener("click", () => {
+  document.body.classList.toggle("dark");
+
+  const dark = document.body.classList.contains("dark");
+  localStorage.setItem("tema", dark ? "dark" : "light");
+
+  atualizarIcone();
+});
