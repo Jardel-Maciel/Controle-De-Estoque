@@ -55,10 +55,14 @@ def salvar_dados(dados):
 
 @app.route("/produtos", methods=["GET"])
 def listar():
+    if not autenticar():
+        return jsonify({"erro": "Não autorizado"}), 401
     return jsonify(ler_dados())
 
 @app.route("/produtos", methods=["POST"])
 def criar():
+    if not autenticar():
+        return jsonify({"erro": "Não autorizado"}), 401
     dados = ler_dados()
     novo = request.json
 
@@ -76,6 +80,8 @@ def criar():
 
 @app.route("/produtos/<int:index>", methods=["PUT"])
 def atualizar(index):
+    if not autenticar():
+        return jsonify({"erro": "Não autorizado"}), 401
     dados = ler_dados()
     dados[index] = request.json
     salvar_dados(dados)
@@ -83,6 +89,8 @@ def atualizar(index):
 
 @app.route("/produtos/<int:index>", methods=["DELETE"])
 def deletar(index):
+    if not autenticar():
+        return jsonify({"erro": "Não autorizado"}), 401
     dados = ler_dados()
     removido = dados.pop(index)
     salvar_dados(dados)
