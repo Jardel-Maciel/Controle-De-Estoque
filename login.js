@@ -1,97 +1,88 @@
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("LOGIN JS OK");
+  console.log("JS OK");
 
   const API = "https://backend-estoque-fnfc.onrender.com";
+  const token = localStorage.getItem("token");
 
-  const btn = document.getElementById("btnLogin");
+  const lista = document.getElementById("lista");
 
-  if (!btn) {
-    console.log("Botão de login não encontrado");
+  if (!token) {
+    alert("Você não está logado");
+    window.location.href = "login.html";
     return;
   }
 
-  btn.addEventListener("click", async (event) => {
-    event.preventDefault(); // evita recarregar a página
+  carregar();
 
-    console.log("clicou no login");
-
-    const email = document.getElementById("email").value;
-    const senha = document.getElementById("senha").value;
-
-    if (!email || !senha) {
-      alert("Preencha email e senha");
-      return;
-    }
-
+  async function carregar() {
     try {
-      const res = await fetch(`${API}/login`, {
+      const res = await fetch(`${API}/produtos`, {
+        headers: {
+          "Authorization": token
+        }
+      });
+
+      const dados = await res.json();
+
+      // 🔥 TRATAMENTO DO ERRO 401
+      if (!res.ok) {
+        console.log("Erro backend:", dados);
+        alert(dados.erro || "Não autorizado");
+        return;
+      }
+
+      // 🔥 GARANTE QUE É ARRAY
+      if (!Array.isArray(dados)) {
+        console.error("Resposta inválida:", dados);
+        return;
+      }
+
+      lista.innerHTML = "";
+
+      dados.forEach((item, index) => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td>${item.produto}</td>
+          <td>${item.quantidade}</td>
+          <td>
+            <button onclick="editar(${index})">Editar</button>
+            <button onclick="remover(${index})">Excluir</button>
+          </td>
+        `;
+
+        lista.appendChild(tr);
+      });
+
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao carregar dados");
+    }
+  }
+
+  // EXEMPLO DE CREATE (POST)
+  window.adicionar = async function (produto, quantidade) {
+    try {
+      const res = await fetch(`${API}/produtos`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Authorization": token
         },
-        body: JSON.stringify({ email, senha })
+        body: JSON.stringify({ produto, quantidade })
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.erro || "Erro ao fazer login");
+        alert(data.erro || "Erro ao adicionar");
         return;
       }
 
-      // 🔐 salva token corretamente
-      localStorage.setItem("token", data.token);
-
-      console.log("Login realizado com sucesso");
-      console.log("Token salvo:", data.token);
-
-      // redireciona para sistema
-      window.location.href = "index.html";
+      carregar();
 
     } catch (err) {
-      console.error("Erro:", err);
-      alert("Erro ao conectar com o servidor");
+      console.error(err);
     }
-  });
+  };
 });
-async function carregar() {
-  try {
-    const res = await fetch(`${API}/produtos`, {
-  headers: {
-    "Authorization": token
-  }
-});
-
-    const dados = await res.json();
-
-    if (!res.ok) {
-      console.log(dados);
-      alert(dados.erro || "Erro ao carregar dados");
-      return;
-    }
-
-    lista.innerHTML = "";
-
-    dados.forEach((item, index) => {
-      const tr = document.createElement("tr");
-
-      tr.innerHTML = `
-        <td>${item.produto}</td>
-        <td>${item.quantidade}</td>
-        <td>
-          <button onclick="editar(${index})">Editar</button>
-          <button class="btn-danger" onclick="remover(${index})">Excluir</button>
-        </td>
-      `;
-
-      lista.appendChild(tr);
-    });
-
-  } catch (erro) {
-    console.error(erro);
-    alert("Erro ao carregar dados");
-  }
-}
-
-const API = "https://backend-estoque-fnfc.onrender.com";
-const token = localStorage.getItem("token");

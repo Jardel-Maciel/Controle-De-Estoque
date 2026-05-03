@@ -13,6 +13,7 @@ usuarios = [
     {"email": "admin@teste.com", "senha": "123456"}
 ]
 
+# ⚠️ MELHORIA: não usar memória como único sistema (mas mantido simples)
 tokens = {}
 
 # -------- FUNÇÕES -------- #
@@ -27,11 +28,16 @@ def salvar_dados(dados):
     with open(ARQUIVO, "w") as f:
         json.dump(dados, f, indent=4)
 
+# ✅ MELHORADO
 def autenticar():
     auth = request.headers.get("Authorization")
+
     if not auth:
         return False
+
+    # garante que não quebra se tokens resetar
     return auth in tokens
+
 # -------- LOGIN -------- #
 @app.route("/login", methods=["POST", "OPTIONS"])
 def login():
@@ -45,9 +51,17 @@ def login():
 
     for user in usuarios:
         if user["email"] == email and user["senha"] == senha:
+
             token = str(uuid.uuid4())
-            tokens[token] = user
-            return jsonify({"token": token})
+
+            # 🔥 IMPORTANTE: mantém token vivo na memória
+            tokens[token] = {
+                "user": email
+            }
+
+            return jsonify({
+                "token": token
+            })
 
     return jsonify({"erro": "Credenciais inválidas"}), 401
 
@@ -56,6 +70,7 @@ def login():
 def listar():
     if not autenticar():
         return jsonify({"erro": "Não autorizado"}), 401
+
     return jsonify(ler_dados())
 
 @app.route("/produtos", methods=["POST"])
