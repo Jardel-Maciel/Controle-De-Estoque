@@ -197,3 +197,31 @@ async function editar(index) {
 if (estoque.some(item => item.produto.toLowerCase() === produto.toLowerCase())) {
   erros.push("Produto já existe");
 }
+
+cadastrar.addEventListener("click", async (e) => {
+  e.preventDefault(); // 👈 evita envio duplicado
+
+  const texto = produto.value.trim();
+  const quant = quantidade.value.trim();
+
+  if (texto === "" || quant === "") {
+    alert("Preencha todos os campos!");
+    return;
+  }
+
+  await fetch(API, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      produto: texto,
+      quantidade: quant
+    })
+  });
+
+  produto.value = "";
+  quantidade.value = "";
+
+  carregar();
+});
