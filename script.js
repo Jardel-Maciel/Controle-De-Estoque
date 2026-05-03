@@ -18,17 +18,16 @@ async function carregar() {
       const tr = document.createElement("tr");
 
       tr.innerHTML = `
-        <td>${item.produto}</td>
-        <td>${item.quantidade}</td>
-        <td>
-          <button onclick="editar(${index})">Editar</button>
-          <button onclick="remover(${index})">Excluir</button>
-        </td>
-      `;
+  <td>${item.produto}</td>
+  <td>${item.quantidade}</td>
+  <td>
+    <button onclick="editar(${index})">Editar</button>
+    <button class="btn-danger" onclick="remover(${index})">Excluir</button>
+  </td>
+`;
 
       lista.appendChild(tr);
     });
-
   } catch (erro) {
     console.error(erro);
     alert("Erro ao carregar dados");
@@ -53,12 +52,12 @@ cadastrar.addEventListener("click", async (e) => {
     const res = await fetch(API, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         produto: texto,
-        quantidade: quant
-      })
+        quantidade: quant,
+      }),
     });
 
     if (!res.ok) {
@@ -71,11 +70,9 @@ cadastrar.addEventListener("click", async (e) => {
     quantidade.value = "";
 
     carregar();
-
   } catch (erro) {
     console.error(erro);
     alert("Erro ao conectar com o servidor");
-
   } finally {
     cadastrar.disabled = false;
   }
@@ -92,16 +89,15 @@ async function editar(index) {
     await fetch(`${API}/${index}`, {
       method: "PUT",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         produto: novoProduto,
-        quantidade: novaQuantidade
-      })
+        quantidade: novaQuantidade,
+      }),
     });
 
     carregar();
-
   } catch (erro) {
     console.error(erro);
     alert("Erro ao editar");
@@ -112,11 +108,10 @@ async function editar(index) {
 async function remover(index) {
   try {
     await fetch(`${API}/${index}`, {
-      method: "DELETE"
+      method: "DELETE",
     });
 
     carregar();
-
   } catch (erro) {
     console.error(erro);
     alert("Erro ao remover");
@@ -126,12 +121,10 @@ async function remover(index) {
 /* ----------- INICIAR ----------- */
 carregar();
 
-
 // ----------- TEMA -----------
 
 // garante que o DOM carregou
 document.addEventListener("DOMContentLoaded", () => {
-
   const botaoTema = document.getElementById("toggleTema");
 
   if (!botaoTema) {
@@ -146,8 +139,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // atualizar ícone
   function atualizarIcone() {
-    botaoTema.textContent =
-      document.body.classList.contains("dark") ? "☀️" : "🌙";
+    botaoTema.textContent = document.body.classList.contains("dark")
+      ? "☀️"
+      : "🌙";
   }
 
   atualizarIcone();
@@ -161,5 +155,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
     atualizarIcone();
   });
-
 });
