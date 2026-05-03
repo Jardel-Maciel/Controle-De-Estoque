@@ -126,27 +126,40 @@ async function remover(index) {
 /* ----------- INICIAR ----------- */
 carregar();
 
-const botaoTema = document.getElementById("toggleTema");
 
-// carregar tema salvo
-if (localStorage.getItem("tema") === "dark") {
-  document.body.classList.add("dark");
-}
+// ----------- TEMA -----------
 
-// atualizar ícone
-function atualizarIcone() {
-  botaoTema.textContent =
-    document.body.classList.contains("dark") ? "☀️" : "🌙";
-}
+// garante que o DOM carregou
+document.addEventListener("DOMContentLoaded", () => {
 
-atualizarIcone();
+  const botaoTema = document.getElementById("toggleTema");
 
-// evento do botão
-botaoTema.addEventListener("click", () => {
-  document.body.classList.toggle("dark");
+  if (!botaoTema) {
+    console.log("Botão de tema não encontrado");
+    return;
+  }
 
-  const dark = document.body.classList.contains("dark");
-  localStorage.setItem("tema", dark ? "dark" : "light");
+  // carregar tema salvo
+  if (localStorage.getItem("tema") === "dark") {
+    document.body.classList.add("dark");
+  }
+
+  // atualizar ícone
+  function atualizarIcone() {
+    botaoTema.textContent =
+      document.body.classList.contains("dark") ? "☀️" : "🌙";
+  }
 
   atualizarIcone();
+
+  // clique no botão
+  botaoTema.addEventListener("click", () => {
+    document.body.classList.toggle("dark");
+
+    const dark = document.body.classList.contains("dark");
+    localStorage.setItem("tema", dark ? "dark" : "light");
+
+    atualizarIcone();
+  });
+
 });
