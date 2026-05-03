@@ -18,13 +18,13 @@ async function carregar() {
       const tr = document.createElement("tr");
 
       tr.innerHTML = `
-  <td>${item.produto}</td>
-  <td>${item.quantidade}</td>
-  <td>
-    <button onclick="editar(${index})">Editar</button>
-    <button class="btn-danger" onclick="remover(${index})">Excluir</button>
-  </td>
-`;
+        <td>${item.produto}</td>
+        <td>${item.quantidade}</td>
+        <td>
+          <button onclick="editar(${index})">Editar</button>
+          <button class="btn-danger" onclick="remover(${index})">Excluir</button>
+        </td>
+      `;
 
       lista.appendChild(tr);
     });

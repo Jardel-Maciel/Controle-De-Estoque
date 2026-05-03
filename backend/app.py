@@ -1,6 +1,29 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import json
+import uuid
+
+tokens = {}
+
+@app.route("/login", methods=["POST"])
+def login():
+    dados = request.json
+
+    email = dados.get("email")
+    senha = dados.get("senha")
+
+    for user in usuarios:
+        if user["email"] == email and user["senha"] == senha:
+            token = str(uuid.uuid4())
+            tokens[token] = user
+
+            return jsonify({"token": token})
+
+    return jsonify({"erro": "Credenciais inválidas"}), 401
+
+usuarios = [
+    {"email": "admin@teste.com", "senha": "123456"}
+]
 
 app = Flask(__name__)
 CORS(app)
