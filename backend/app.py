@@ -28,8 +28,12 @@ def salvar_dados(dados):
         json.dump(dados, f, indent=4)
 
 def autenticar():
-    token = request.headers.get("Authorization")
-    return token in tokens
+    auth = request.headers.get("Authorization")
+
+    if not auth:
+        return False
+
+    return auth in tokens
 
 # -------- LOGIN -------- #
 @app.route("/login", methods=["POST", "OPTIONS"])
