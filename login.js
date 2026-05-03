@@ -1,4 +1,3 @@
-
 document.addEventListener("DOMContentLoaded", () => {
   console.log("LOGIN JS OK");
 
@@ -7,15 +6,22 @@ document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById("btnLogin");
 
   if (!btn) {
-    console.log("Botão não encontrado");
+    console.log("Botão de login não encontrado");
     return;
   }
 
-  btn.addEventListener("click", async () => {
-    console.log("clicou");
+  btn.addEventListener("click", async (event) => {
+    event.preventDefault(); // evita recarregar a página
+
+    console.log("clicou no login");
 
     const email = document.getElementById("email").value;
     const senha = document.getElementById("senha").value;
+
+    if (!email || !senha) {
+      alert("Preencha email e senha");
+      return;
+    }
 
     try {
       const res = await fetch(`${API}/login`, {
@@ -29,15 +35,21 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.erro);
+        alert(data.erro || "Erro ao fazer login");
         return;
       }
 
+      // 🔐 salva token corretamente
       localStorage.setItem("token", data.token);
+
+      console.log("Login realizado com sucesso");
+      console.log("Token salvo:", data.token);
+
+      // redireciona para sistema
       window.location.href = "index.html";
 
     } catch (err) {
-      console.error(err);
+      console.error("Erro:", err);
       alert("Erro ao conectar com o servidor");
     }
   });

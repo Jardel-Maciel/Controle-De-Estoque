@@ -3,7 +3,6 @@ const quantidade = document.getElementById("quantidade");
 const cadastrar = document.getElementById("cadastrar");
 const lista = document.getElementById("lista");
 
-
 const token = localStorage.getItem("token");
 
 if (!token) {
@@ -16,7 +15,12 @@ const API = "https://backend-estoque-fnfc.onrender.com/produtos";
 /* ----------- CARREGAR ----------- */
 async function carregar() {
   try {
-    const res = await fetch(API);
+    const res = await fetch(API, {
+      headers: {
+        "Authorization": token
+      }
+    });
+
     const dados = await res.json();
 
     lista.innerHTML = "";
@@ -60,6 +64,7 @@ cadastrar.addEventListener("click", async (e) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": token
       },
       body: JSON.stringify({
         produto: texto,
@@ -97,10 +102,7 @@ async function editar(index) {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-      },
-      headers: {
-        "Content-Type": "application/json",
-          "Authorization": token
+        "Authorization": token
       },
       body: JSON.stringify({
         produto: novoProduto,
@@ -123,7 +125,7 @@ async function remover(index) {
       headers: {
         "Content-Type": "application/json",
         "Authorization": token
-    }
+      }
     });
 
     carregar();
@@ -136,9 +138,8 @@ async function remover(index) {
 /* ----------- INICIAR ----------- */
 carregar();
 
-// ----------- TEMA -----------
+/* ----------- TEMA ----------- */
 
-// garante que o DOM carregou
 document.addEventListener("DOMContentLoaded", () => {
   const botaoTema = document.getElementById("toggleTema");
 
@@ -147,12 +148,10 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  // carregar tema salvo
   if (localStorage.getItem("tema") === "dark") {
     document.body.classList.add("dark");
   }
 
-  // atualizar ícone
   function atualizarIcone() {
     botaoTema.textContent = document.body.classList.contains("dark")
       ? "☀️"
@@ -161,7 +160,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   atualizarIcone();
 
-  // clique no botão
   botaoTema.addEventListener("click", () => {
     document.body.classList.toggle("dark");
 
