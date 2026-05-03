@@ -4,7 +4,7 @@ const cadastrar = document.getElementById("cadastrar");
 const lista = document.getElementById("lista");
 const botaoTema = document.getElementById("toggleTema");
 
-const API = "http://127.0.0.1:5000/produtos";
+const API = "https://backend-estoque-fnfc.onrender.com/produtos";
 
 let estoque = [];
 
