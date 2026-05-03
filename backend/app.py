@@ -29,12 +29,9 @@ def salvar_dados(dados):
 
 def autenticar():
     auth = request.headers.get("Authorization")
-
     if not auth:
         return False
-
     return auth in tokens
-
 # -------- LOGIN -------- #
 @app.route("/login", methods=["POST", "OPTIONS"])
 def login():

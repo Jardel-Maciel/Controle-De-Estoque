@@ -56,11 +56,11 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 async function carregar() {
   try {
-    const res = await fetch(API, {
-      headers: {
-        "Authorization": token
-      }
-    });
+    const res = await fetch(`${API}/produtos`, {
+  headers: {
+    "Authorization": token
+  }
+});
 
     const dados = await res.json();
 
@@ -92,3 +92,6 @@ async function carregar() {
     alert("Erro ao carregar dados");
   }
 }
+
+const API = "https://backend-estoque-fnfc.onrender.com";
+const token = localStorage.getItem("token");
