@@ -225,3 +225,9 @@ cadastrar.addEventListener("click", async (e) => {
 
   carregar();
 });
+
+cadastrar.disabled = true;
+
+await fetch(...);
+
+cadastrar.disabled = false;
