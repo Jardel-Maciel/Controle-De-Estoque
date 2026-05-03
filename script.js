@@ -1,15 +1,12 @@
 const produto = document.getElementById("inputProduto");
 const quantidade = document.getElementById("quantidade");
+const cadastrar = document.getElementById("cadastrar");
 const lista = document.getElementById("lista");
-const botaoTema = document.getElementById("toggleTema");
 
-// 🔗 SUA API ONLINE
+// 🔗 API
 const API = "https://backend-estoque-fnfc.onrender.com/produtos";
 
-// 🛑 controle anti clique duplo
-let carregando = false;
-
-/* ----------- CARREGAR DADOS ----------- */
+/* ----------- CARREGAR ----------- */
 async function carregar() {
   try {
     const res = await fetch(API);
@@ -25,30 +22,22 @@ async function carregar() {
         <td>${item.quantidade}</td>
         <td>
           <button onclick="editar(${index})">Editar</button>
-          <button class="btn-danger" onclick="remover(${index})">Excluir</button>
+          <button onclick="remover(${index})">Excluir</button>
         </td>
       `;
 
       lista.appendChild(tr);
     });
 
-  } catch (err) {
-    console.error(err);
+  } catch (erro) {
+    console.error(erro);
     alert("Erro ao carregar dados");
   }
 }
 
 /* ----------- CADASTRAR ----------- */
-
-// 🔥 remove eventos antigos (evita duplicação)
-const btnOriginal = document.getElementById("cadastrar");
-const novoBotao = btnOriginal.cloneNode(true);
-btnOriginal.parentNode.replaceChild(novoBotao, btnOriginal);
-
-novoBotao.addEventListener("click", async (e) => {
+cadastrar.addEventListener("click", async (e) => {
   e.preventDefault();
-
-  if (carregando) return; // 🛑 evita múltiplos cliques
 
   const texto = produto.value.trim();
   const quant = quantidade.value.trim();
@@ -59,8 +48,7 @@ novoBotao.addEventListener("click", async (e) => {
   }
 
   try {
-    carregando = true;
-    novoBotao.disabled = true;
+    cadastrar.disabled = true;
 
     const res = await fetch(API, {
       method: "POST",
@@ -73,25 +61,23 @@ novoBotao.addEventListener("click", async (e) => {
       })
     });
 
-    const data = await res.json();
-
     if (!res.ok) {
-      alert(data.erro || "Erro ao cadastrar");
+      const erro = await res.json();
+      alert(erro.erro || "Erro ao cadastrar");
       return;
     }
 
     produto.value = "";
     quantidade.value = "";
 
-    await carregar();
+    carregar();
 
-  } catch (err) {
-    console.error(err);
-    alert("Erro de conexão com o servidor");
+  } catch (erro) {
+    console.error(erro);
+    alert("Erro ao conectar com o servidor");
 
   } finally {
-    carregando = false;
-    novoBotao.disabled = false;
+    cadastrar.disabled = false;
   }
 });
 
@@ -116,8 +102,8 @@ async function editar(index) {
 
     carregar();
 
-  } catch (err) {
-    console.error(err);
+  } catch (erro) {
+    console.error(erro);
     alert("Erro ao editar");
   }
 }
@@ -131,35 +117,11 @@ async function remover(index) {
 
     carregar();
 
-  } catch (err) {
-    console.error(err);
+  } catch (erro) {
+    console.error(erro);
     alert("Erro ao remover");
   }
 }
-
-/* ----------- TEMA ----------- */
-
-// carregar tema salvo
-if (localStorage.getItem("tema") === "dark") {
-  document.body.classList.add("dark");
-}
-
-// atualizar botão
-function atualizarIcone() {
-  botaoTema.textContent =
-    document.body.classList.contains("dark") ? "☀️" : "🌙";
-}
-
-atualizarIcone();
-
-botaoTema.addEventListener("click", () => {
-  document.body.classList.toggle("dark");
-
-  const dark = document.body.classList.contains("dark");
-  localStorage.setItem("tema", dark ? "dark" : "light");
-
-  atualizarIcone();
-});
 
 /* ----------- INICIAR ----------- */
 carregar();
