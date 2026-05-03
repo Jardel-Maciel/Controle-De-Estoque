@@ -3,6 +3,13 @@ const quantidade = document.getElementById("quantidade");
 const cadastrar = document.getElementById("cadastrar");
 const lista = document.getElementById("lista");
 
+
+const token = localStorage.getItem("token");
+
+if (!token) {
+  window.location.href = "login.html";
+}
+
 // 🔗 API
 const API = "https://backend-estoque-fnfc.onrender.com/produtos";
 
@@ -91,6 +98,10 @@ async function editar(index) {
       headers: {
         "Content-Type": "application/json",
       },
+      headers: {
+        "Content-Type": "application/json",
+          "Authorization": token
+      },
       body: JSON.stringify({
         produto: novoProduto,
         quantidade: novaQuantidade,
@@ -109,6 +120,10 @@ async function remover(index) {
   try {
     await fetch(`${API}/${index}`, {
       method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": token
+    }
     });
 
     carregar();

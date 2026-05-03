@@ -3,43 +3,19 @@ from flask_cors import CORS
 import json
 import uuid
 
-tokens = {}
+app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
-@app.route("/login", methods=["POST"])
-def login():
-    dados = request.json
-
-    email = dados.get("email")
-    senha = dados.get("senha")
-
-    for user in usuarios:
-        if user["email"] == email and user["senha"] == senha:
-            token = str(uuid.uuid4())
-            tokens[token] = user
-
-            return jsonify({"token": token})
-
-    return jsonify({"erro": "Credenciais inválidas"}), 401
+# -------- DADOS -------- #
+ARQUIVO = "dados.json"
 
 usuarios = [
     {"email": "admin@teste.com", "senha": "123456"}
 ]
 
-from flask import request
+tokens = {}
 
-def autenticar():
-    token = request.headers.get("Authorization")
-
-    if not token or token not in tokens:
-        return False
-
-    return True
-
-app = Flask(__name__)
-CORS(app)
-
-ARQUIVO = "dados.json"
-
+# -------- FUNÇÕES -------- #
 def ler_dados():
     try:
         with open(ARQUIVO, "r") as f:
@@ -51,8 +27,30 @@ def salvar_dados(dados):
     with open(ARQUIVO, "w") as f:
         json.dump(dados, f, indent=4)
 
-# -------- ROTAS -------- #
+def autenticar():
+    token = request.headers.get("Authorization")
+    return token in tokens
 
+# -------- LOGIN -------- #
+@app.route("/login", methods=["POST", "OPTIONS"])
+def login():
+    if request.method == "OPTIONS":
+        return '', 200
+
+    dados = request.json
+
+    email = dados.get("email")
+    senha = dados.get("senha")
+
+    for user in usuarios:
+        if user["email"] == email and user["senha"] == senha:
+            token = str(uuid.uuid4())
+            tokens[token] = user
+            return jsonify({"token": token})
+
+    return jsonify({"erro": "Credenciais inválidas"}), 401
+
+# -------- ROTAS -------- #
 @app.route("/produtos", methods=["GET"])
 def listar():
     if not autenticar():
@@ -63,10 +61,10 @@ def listar():
 def criar():
     if not autenticar():
         return jsonify({"erro": "Não autorizado"}), 401
+
     dados = ler_dados()
     novo = request.json
 
-    # validação
     if not novo.get("produto") or len(novo["produto"]) < 3:
         return jsonify({"erro": "Produto inválido"}), 400
 
@@ -82,22 +80,24 @@ def criar():
 def atualizar(index):
     if not autenticar():
         return jsonify({"erro": "Não autorizado"}), 401
+
     dados = ler_dados()
     dados[index] = request.json
     salvar_dados(dados)
+
     return jsonify(dados[index])
 
 @app.route("/produtos/<int:index>", methods=["DELETE"])
 def deletar(index):
     if not autenticar():
         return jsonify({"erro": "Não autorizado"}), 401
+
     dados = ler_dados()
     removido = dados.pop(index)
     salvar_dados(dados)
+
     return jsonify(removido)
 
 # -------- START -------- #
-
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
-
