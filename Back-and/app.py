@@ -47,3 +47,19 @@ def deletar(index):
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+@app.route("/produtos", methods=["POST"])
+def criar():
+    dados = ler_dados()
+    novo = request.json
+
+    if not novo.get("produto") or len(novo["produto"]) < 3:
+        return jsonify({"erro": "Produto inválido"}), 400
+
+    if not str(novo.get("quantidade")).isdigit() or int(novo["quantidade"]) <= 0:
+        return jsonify({"erro": "Quantidade inválida"}), 400
+
+    dados.append(novo)
+    salvar_dados(dados)
+
+    return jsonify(novo)
