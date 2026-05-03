@@ -5,7 +5,7 @@ import json
 app = Flask(__name__)
 CORS(app)
 
-ARQUIVO ="dados.json"
+ARQUIVO = "dados.json"
 
 def ler_dados():
     try:
@@ -18,6 +18,7 @@ def salvar_dados(dados):
     with open(ARQUIVO, "w") as f:
         json.dump(dados, f, indent=4)
 
+# -------- ROTAS -------- #
 
 @app.route("/produtos", methods=["GET"])
 def listar():
@@ -27,8 +28,17 @@ def listar():
 def criar():
     dados = ler_dados()
     novo = request.json
+
+    # validação
+    if not novo.get("produto") or len(novo["produto"]) < 3:
+        return jsonify({"erro": "Produto inválido"}), 400
+
+    if not str(novo.get("quantidade")).isdigit() or int(novo["quantidade"]) <= 0:
+        return jsonify({"erro": "Quantidade inválida"}), 400
+
     dados.append(novo)
     salvar_dados(dados)
+
     return jsonify(novo)
 
 @app.route("/produtos/<int:index>", methods=["PUT"])
@@ -45,21 +55,7 @@ def deletar(index):
     salvar_dados(dados)
     return jsonify(removido)
 
+# -------- START -------- #
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
-
-@app.route("/produtos", methods=["POST"])
-def criar():
-    dados = ler_dados()
-    novo = request.json
-
-    if not novo.get("produto") or len(novo["produto"]) < 3:
-        return jsonify({"erro": "Produto inválido"}), 400
-
-    if not str(novo.get("quantidade")).isdigit() or int(novo["quantidade"]) <= 0:
-        return jsonify({"erro": "Quantidade inválida"}), 400
-
-    dados.append(novo)
-    salvar_dados(dados)
-
-    return jsonify(novo)
