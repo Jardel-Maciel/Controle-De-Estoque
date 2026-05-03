@@ -25,6 +25,16 @@ usuarios = [
     {"email": "admin@teste.com", "senha": "123456"}
 ]
 
+from flask import request
+
+def autenticar():
+    token = request.headers.get("Authorization")
+
+    if not token or token not in tokens:
+        return False
+
+    return True
+
 app = Flask(__name__)
 CORS(app)
 
