@@ -159,7 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
   carregar();
 });
 
-function logout() {
+document.getElementById("btnLogout").addEventListener("click", () => {
   localStorage.removeItem("token");
   window.location.href = "login.html";
-}
+});
