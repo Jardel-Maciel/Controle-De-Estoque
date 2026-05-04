@@ -1,22 +1,55 @@
 <!doctype html>
 <html lang="pt-br">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Painel</title>
-  </head>
-  <body>
-    <h1>📊 Dashboard</h1>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel | Dashboard</title>
 
-    <div class="cards">
-      <div>Total Produtos: <span id="totalProdutos"></span></div>
-      <div>Total Itens: <span id="totalItens"></span></div>
-      <div>Baixo Estoque: <span id="baixoEstoque"></span></div>
+  <link rel="stylesheet" href="dashboard.css" />
+
+  <!-- Fonte moderna -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <h1>📊 Dashboard</h1>
+    <p>Visão geral do seu sistema de estoque</p>
+  </header>
+
+  <!-- CARDS -->
+  <section class="cards">
+
+    <div class="card">
+      <h3>Total Produtos</h3>
+      <p id="totalProdutos">0</p>
     </div>
 
-    <canvas id="grafico"></canvas>
+    <div class="card">
+      <h3>Total Itens</h3>
+      <p id="totalItens">0</p>
+    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="dashboard.js"></script>
-  </body>
+    <div class="card warning">
+      <h3>Baixo Estoque</h3>
+      <p id="baixoEstoque">0</p>
+    </div>
+
+  </section>
+
+  <!-- GRÁFICO -->
+  <section class="chart-container">
+    <h2>Estoque por Produto</h2>
+    <canvas id="grafico"></canvas>
+  </section>
+
+  <!-- SCRIPTS -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="dashboard.js"></script>
+
+</body>
 </html>
