@@ -1,40 +1,49 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import json
+import sqlite3
 import uuid
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
-# -------- DADOS -------- #
-ARQUIVO = "dados.json"
+# -------- BANCO DE DADOS -------- #
+def conectar():
+    return sqlite3.connect("banco.db")
 
+def criar_tabela():
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS produtos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            produto TEXT NOT NULL,
+            quantidade INTEGER NOT NULL
+        )
+    """)
+
+    conn.commit()
+    conn.close()
+
+criar_tabela()
+
+# -------- USUÁRIOS -------- #
 usuarios = [
     {"email": "admin@teste.com", "senha": "123456"}
 ]
 
 tokens = {}
 
-# -------- FUNÇÕES -------- #
-def ler_dados():
-    try:
-        with open(ARQUIVO, "r") as f:
-            return json.load(f)
-    except:
-        return []
-
-def salvar_dados(dados):
-    with open(ARQUIVO, "w") as f:
-        json.dump(dados, f, indent=4)
-
+# -------- AUTENTICAÇÃO -------- #
 def autenticar():
     token = request.headers.get("Authorization")
 
     if not token:
         return False
 
-    # aceita qualquer token válido (modo portfólio)
+    # modo portfólio (aceita qualquer token existente)
     return True
+
 # -------- LOGIN -------- #
 @app.route("/login", methods=["POST"])
 def login():
@@ -51,19 +60,33 @@ def login():
 
     return jsonify({"erro": "Credenciais inválidas"}), 401
 
-# -------- ROTAS -------- #
+# -------- LISTAR PRODUTOS -------- #
 @app.route("/produtos", methods=["GET"])
 def listar():
     if not autenticar():
         return jsonify({"erro": "Não autorizado"}), 401
-    return jsonify(ler_dados())
 
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM produtos")
+    dados = cursor.fetchall()
+
+    conn.close()
+
+    produtos = [
+        {"id": row[0], "produto": row[1], "quantidade": row[2]}
+        for row in dados
+    ]
+
+    return jsonify(produtos)
+
+# -------- CRIAR PRODUTO -------- #
 @app.route("/produtos", methods=["POST"])
 def criar():
     if not autenticar():
         return jsonify({"erro": "Não autorizado"}), 401
 
-    dados = ler_dados()
     novo = request.json
 
     if not novo.get("produto") or len(novo["produto"]) < 3:
@@ -72,50 +95,58 @@ def criar():
     if not str(novo.get("quantidade")).isdigit() or int(novo["quantidade"]) <= 0:
         return jsonify({"erro": "Quantidade inválida"}), 400
 
-    dados.append(novo)
-    salvar_dados(dados)
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "INSERT INTO produtos (produto, quantidade) VALUES (?, ?)",
+        (novo["produto"], int(novo["quantidade"]))
+    )
+
+    conn.commit()
+    conn.close()
 
     return jsonify(novo)
 
-@app.route("/produtos/<int:index>", methods=["PUT"])
-def atualizar(index):
+# -------- ATUALIZAR PRODUTO (APENAS QUANTIDADE) -------- #
+@app.route("/produtos/<int:id>", methods=["PUT"])
+def atualizar(id):
     if not autenticar():
         return jsonify({"erro": "Não autorizado"}), 401
 
-    dados = ler_dados()
-    atualizacao = request.json
+    dados = request.json
 
-    if index >= len(dados):
-        return jsonify({"erro": "Produto não encontrado"}), 404
+    if not str(dados.get("quantidade")).isdigit() or int(dados["quantidade"]) <= 0:
+        return jsonify({"erro": "Quantidade inválida"}), 400
 
-    # 🔥 mantém o produto original
-    produto = dados[index]
+    conn = conectar()
+    cursor = conn.cursor()
 
-    # 🔥 atualiza apenas o que veio
-    if "quantidade" in atualizacao:
-        if not str(atualizacao["quantidade"]).isdigit() or int(atualizacao["quantidade"]) <= 0:
-            return jsonify({"erro": "Quantidade inválida"}), 400
+    cursor.execute(
+        "UPDATE produtos SET quantidade = ? WHERE id = ?",
+        (int(dados["quantidade"]), id)
+    )
 
-        produto["quantidade"] = atualizacao["quantidade"]
+    conn.commit()
+    conn.close()
 
-    salvar_dados(dados)
+    return jsonify({"msg": "Quantidade atualizada com sucesso"})
 
-    return jsonify(produto)
-
-@app.route("/produtos/<int:index>", methods=["DELETE"])
-def deletar(index):
+# -------- DELETAR PRODUTO -------- #
+@app.route("/produtos/<int:id>", methods=["DELETE"])
+def deletar(id):
     if not autenticar():
         return jsonify({"erro": "Não autorizado"}), 401
 
-    dados = ler_dados()
+    conn = conectar()
+    cursor = conn.cursor()
 
-    if index >= len(dados):
-        return jsonify({"erro": "Produto não encontrado"}), 404
+    cursor.execute("DELETE FROM produtos WHERE id = ?", (id,))
 
-    removido = dados.pop(index)
-    salvar_dados(dados)
+    conn.commit()
+    conn.close()
 
-    return jsonify(removido)
+    return jsonify({"msg": "Produto removido com sucesso"})
 
 # -------- START -------- #
 if __name__ == "__main__":

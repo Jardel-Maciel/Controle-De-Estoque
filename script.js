@@ -29,84 +29,90 @@ document.addEventListener("DOMContentLoaded", () => {
 
       lista.innerHTML = "";
 
-      dados.forEach((item, index) => {
+      dados.forEach((item) => {
         const tr = document.createElement("tr");
 
         tr.innerHTML = `
-    <td>${item.produto}</td>
-    <td>
-      <span class="editavel" data-index="${index}">
-        ${item.quantidade}
-      </span>
-    </td>
-    <td>
-      <button class="btn-danger" onclick="remover(${index})">Excluir</button>
-    </td>
-  `;
+          <td>${item.produto}</td>
+          <td>
+            <span class="editavel" data-id="${item.id}">
+              ${item.quantidade}
+            </span>
+          </td>
+          <td>
+            <button class="btn-danger" onclick="remover(${item.id})">Excluir</button>
+          </td>
+        `;
 
         lista.appendChild(tr);
       });
+
     } catch (err) {
       console.error(err);
       alert("Erro ao carregar dados");
     }
-    console.log("TOKEN ENVIADO:", token);
   }
 
+  // -------- EDIÇÃO INLINE --------
   lista.addEventListener("click", (e) => {
-  if (!e.target.classList.contains("editavel")) return;
+    if (!e.target.classList.contains("editavel")) return;
 
-  const span = e.target;
-  const index = span.dataset.index;
-  const valorAtual = span.textContent;
+    const span = e.target;
+    const id = span.dataset.id;
+    const valorAtual = span.textContent;
 
-  const input = document.createElement("input");
-  input.type = "number";
-  input.value = valorAtual;
-  input.style.width = "60px";
+    const input = document.createElement("input");
+    input.type = "number";
+    input.value = valorAtual;
+    input.style.width = "60px";
 
-  span.replaceWith(input);
-  input.focus();
+    span.replaceWith(input);
+    input.focus();
 
-  // salvar ao sair do campo
-  input.addEventListener("blur", () => salvarEdicao(input, index));
+    input.addEventListener("blur", () => salvarEdicao(input, id));
 
-  // salvar com Enter
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      salvarEdicao(input, index);
-    }
-  });
-});
-
-async function salvarEdicao(input, index) {
-  const novaQuantidade = input.value;
-
-  if (!novaQuantidade || novaQuantidade <= 0) {
-    alert("Valor inválido");
-    carregar();
-    return;
-  }
-
-  try {
-    await fetch(`${API}/produtos/${index}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: token
-      },
-      body: JSON.stringify({
-        quantidade: novaQuantidade
-      })
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        salvarEdicao(input, id);
+      }
     });
+  });
 
-    carregar();
+  async function salvarEdicao(input, id) {
+    const novaQuantidade = input.value;
 
-  } catch (err) {
-    console.error(err);
-    alert("Erro ao salvar");
+    if (!novaQuantidade || novaQuantidade <= 0) {
+      alert("Valor inválido");
+      carregar();
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API}/produtos/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token,
+        },
+        body: JSON.stringify({
+          quantidade: novaQuantidade,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.erro || "Erro ao atualizar");
+        return;
+      }
+
+      carregar();
+
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao salvar");
+    }
   }
-}
 
   // -------- CADASTRAR --------
   cadastrar.addEventListener("click", async (e) => {
@@ -146,6 +152,7 @@ async function salvarEdicao(input, index) {
       quantidade.value = "";
 
       carregar();
+
     } catch (err) {
       console.error(err);
       alert("Erro ao cadastrar");
@@ -154,42 +161,20 @@ async function salvarEdicao(input, index) {
     }
   });
 
-  // -------- EDITAR --------
-  window.editar = async function (index) {
-    const novaQuantidade = prompt("Nova quantidade:");
-
-    if (!novaQuantidade || isNaN(novaQuantidade) || novaQuantidade <= 0) {
-      alert("Quantidade inválida");
-      return;
-    }
-
+  // -------- REMOVER --------
+  window.remover = async function (id) {
     try {
-      await fetch(`${API}/produtos/${index}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token,
-        },
-        body: JSON.stringify({
-          quantidade: novaQuantidade,
-        }),
+      await fetch(`${API}/produtos/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: token },
       });
 
       carregar();
-    } catch (erro) {
-      console.error(erro);
-      alert("Erro ao atualizar");
+
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao remover");
     }
-  };
-
-  // -------- REMOVER --------
-  window.remover = async function (index) {
-    await fetch(`${API}/produtos/${index}`, {
-      method: "DELETE",
-      headers: { Authorization: token },
-    });
-
-    carregar();
   };
 
   // -------- TEMA --------
@@ -198,9 +183,8 @@ async function salvarEdicao(input, index) {
   }
 
   function atualizarIcone() {
-    botaoTema.textContent = document.body.classList.contains("dark")
-      ? "☀️"
-      : "🌙";
+    botaoTema.textContent =
+      document.body.classList.contains("dark") ? "☀️" : "🌙";
   }
 
   atualizarIcone();
@@ -217,7 +201,8 @@ async function salvarEdicao(input, index) {
   carregar();
 });
 
-document.getElementById("btnLogout").addEventListener("click", () => {
+// -------- LOGOUT --------
+document.getElementById("btnLogout")?.addEventListener("click", () => {
   localStorage.removeItem("token");
   window.location.href = "login.html";
 });
