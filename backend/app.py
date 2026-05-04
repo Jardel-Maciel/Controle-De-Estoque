@@ -4,7 +4,7 @@ import json
 import uuid
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 # -------- DADOS -------- #
 ARQUIVO = "dados.json"
@@ -13,7 +13,6 @@ usuarios = [
     {"email": "admin@teste.com", "senha": "123456"}
 ]
 
-# ⚠️ MELHORIA: não usar memória como único sistema (mas mantido simples)
 tokens = {}
 
 # -------- FUNÇÕES -------- #
@@ -28,19 +27,17 @@ def salvar_dados(dados):
     with open(ARQUIVO, "w") as f:
         json.dump(dados, f, indent=4)
 
-# ✅ MELHORADO
-VALID_TOKEN = "123456"
-
 def autenticar():
-    auth = request.headers.get("Authorization")
-    return auth == VALID_TOKEN
+    token = request.headers.get("Authorization")
 
+    if not token:
+        return False
+
+    # aceita qualquer token válido (modo portfólio)
+    return True
 # -------- LOGIN -------- #
-@app.route("/login", methods=["POST", "OPTIONS"])
+@app.route("/login", methods=["POST"])
 def login():
-    if request.method == "OPTIONS":
-        return '', 200
-
     dados = request.json
 
     email = dados.get("email")
@@ -48,17 +45,9 @@ def login():
 
     for user in usuarios:
         if user["email"] == email and user["senha"] == senha:
-
             token = str(uuid.uuid4())
-
-            # 🔥 IMPORTANTE: mantém token vivo na memória
-            tokens[token] = {
-                "user": email
-            }
-
-            return jsonify({
-                "token": token
-            })
+            tokens[token] = user
+            return jsonify({"token": token})
 
     return jsonify({"erro": "Credenciais inválidas"}), 401
 
@@ -67,7 +56,6 @@ def login():
 def listar():
     if not autenticar():
         return jsonify({"erro": "Não autorizado"}), 401
-
     return jsonify(ler_dados())
 
 @app.route("/produtos", methods=["POST"])

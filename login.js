@@ -1,90 +1,56 @@
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("JS OK");
-
   const API = "https://backend-estoque-fnfc.onrender.com";
-  const token = localStorage.getItem("token");
 
-  const lista = document.getElementById("lista");
+  const emailInput = document.getElementById("email");
+  const senhaInput = document.getElementById("senha");
+  const btnLogin = document.getElementById("btnLogin");
 
-  if (!token) {
-    alert("Você não está logado");
-    window.location.href = "login.html";
+  if (!btnLogin) {
+    console.error("Botão de login não encontrado");
     return;
   }
 
-  carregar();
+  btnLogin.addEventListener("click", async () => {
+    const email = emailInput.value.trim();
+    const senha = senhaInput.value.trim();
 
-  async function carregar() {
-    try {
-      const res = await fetch(`${API}/produtos`, {
-        headers: {
-          "Authorization": token
-        }
-      });
-
-      const dados = await res.json();
-
-      // 🔥 TRATAMENTO DO ERRO 401
-      if (!res.ok) {
-        console.log("Erro backend:", dados);
-        alert(dados.erro || "Não autorizado");
-        return;
-      }
-
-      // 🔥 GARANTE QUE É ARRAY
-      if (!Array.isArray(dados)) {
-        console.error("Resposta inválida:", dados);
-        return;
-      }
-
-      lista.innerHTML = "";
-
-      dados.forEach((item, index) => {
-        const tr = document.createElement("tr");
-
-        tr.innerHTML = `
-          <td>${item.produto}</td>
-          <td>${item.quantidade}</td>
-          <td>
-            <button onclick="editar(${index})">Editar</button>
-            <button onclick="remover(${index})">Excluir</button>
-          </td>
-        `;
-
-        lista.appendChild(tr);
-      });
-
-    } catch (err) {
-      console.error(err);
-      alert("Erro ao carregar dados");
+    // 🔒 Validação básica
+    if (!email || !senha) {
+      alert("Preencha email e senha");
+      return;
     }
-  }
 
-  // EXEMPLO DE CREATE (POST)
-  window.adicionar = async function (produto, quantidade) {
     try {
-      const res = await fetch(`${API}/produtos`, {
+      btnLogin.disabled = true;
+      btnLogin.textContent = "Entrando...";
+
+      const res = await fetch(`${API}/login`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": token
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify({ produto, quantidade })
+        body: JSON.stringify({ email, senha })
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.erro || "Erro ao adicionar");
+        alert(data.erro || "Erro no login");
         return;
       }
 
-      carregar();
+      // ✅ salva token
+      localStorage.setItem("token", data.token);
+
+      // 🚀 redireciona
+      window.location.href = "index.html";
 
     } catch (err) {
-      console.error(err);
+      console.error("Erro:", err);
+      alert("Erro ao conectar com o servidor (pode estar iniciando no Render)");
+    } finally {
+      btnLogin.disabled = false;
+      btnLogin.textContent = "Entrar";
     }
-  };
+  });
 });
-
-return jsonify({"token": "123456"})

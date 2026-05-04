@@ -1,169 +1,142 @@
-const produto = document.getElementById("inputProduto");
-const quantidade = document.getElementById("quantidade");
-const cadastrar = document.getElementById("cadastrar");
-const lista = document.getElementById("lista");
+document.addEventListener("DOMContentLoaded", () => {
+  const API = "https://backend-estoque-fnfc.onrender.com";
+  const token = localStorage.getItem("token");
 
-const token = localStorage.getItem("token");
+  const produto = document.getElementById("inputProduto");
+  const quantidade = document.getElementById("quantidade");
+  const cadastrar = document.getElementById("cadastrar");
+  const lista = document.getElementById("lista");
+  const botaoTema = document.getElementById("toggleTema");
 
-if (!token) {
-  window.location.href = "login.html";
-}
-
-// 🔗 API
-const API = "https://backend-estoque-fnfc.onrender.com/produtos";
-
-/* ----------- CARREGAR ----------- */
-async function carregar() {
-  try {
-    const res = await fetch(`${API}/produtos`, {
-      headers: {
-        Authorization: token,
-      },
-    });
-
-    const dados = await res.json();
-
-    if (!res.ok) {
-      alert(dados.erro || "Erro ao carregar dados");
-      return;
-    }
-
-    if (!Array.isArray(dados)) {
-      console.error("Resposta inválida:", dados);
-      return;
-    }
-
-    lista.innerHTML = "";
-
-    dados.forEach((item, index) => {
-      const tr = document.createElement("tr");
-
-      tr.innerHTML = `
-        <td>${item.produto}</td>
-        <td>${item.quantidade}</td>
-        <td>
-          <button onclick="editar(${index})">Editar</button>
-          <button class="btn-danger" onclick="remover(${index})">Excluir</button>
-        </td>
-      `;
-
-      lista.appendChild(tr);
-    });
-  } catch (erro) {
-    console.error(erro);
-    alert("Erro ao carregar dados");
-  }
-}
-
-/* ----------- CADASTRAR ----------- */
-cadastrar.addEventListener("click", async (e) => {
-  e.preventDefault();
-
-  const texto = produto.value.trim();
-  const quant = quantidade.value.trim();
-
-  if (texto === "" || quant === "") {
-    alert("Preencha todos os campos!");
+  if (!token) {
+    window.location.href = "login.html";
     return;
   }
 
-  try {
-    cadastrar.disabled = true;
+  // -------- CARREGAR --------
+  async function carregar() {
+    try {
+      const res = await fetch(`${API}/produtos`, {
+        headers: { Authorization: token }
+      });
 
-    const res = await fetch(`${API}/produtos`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: token,
-      },
-      body: JSON.stringify({
-        produto: texto,
-        quantidade: quant,
-      }),
-    });
+      const dados = await res.json();
 
-    const data = await res.json();
+      if (!res.ok) {
+        alert(dados.erro || "Erro inesperado");
+        return;
+      }
 
-    if (!res.ok) {
-      alert(data.erro || "Erro ao cadastrar");
+      lista.innerHTML = "";
+
+      dados.forEach((item, index) => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td>${item.produto}</td>
+          <td>${item.quantidade}</td>
+          <td>
+            <button onclick="editar(${index})">Editar</button>
+            <button class="btn-danger" onclick="remover(${index})">Excluir</button>
+          </td>
+        `;
+
+        lista.appendChild(tr);
+      });
+
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao carregar dados");
+    }
+    console.log("TOKEN ENVIADO:", token);
+  }
+
+  // -------- CADASTRAR --------
+  cadastrar.addEventListener("click", async (e) => {
+    e.preventDefault();
+
+    const texto = produto.value.trim();
+    const quant = quantidade.value.trim();
+
+    if (!texto || !quant) {
+      alert("Preencha todos os campos!");
       return;
     }
 
-    console.log("Produto cadastrado:", data);
-  } catch (err) {
-    console.error(err);
-    alert("Erro de conexão");
-  } finally {
-    cadastrar.disabled = false;
-  }
-});
+    try {
+      cadastrar.disabled = true;
 
-/* ----------- EDITAR ----------- */
-async function editar(index) {
-  const novoProduto = prompt("Novo produto:");
-  const novaQuantidade = prompt("Nova quantidade:");
+      const res = await fetch(`${API}/produtos`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token
+        },
+        body: JSON.stringify({
+          produto: texto,
+          quantidade: quant
+        })
+      });
 
-  if (!novoProduto || !novaQuantidade) return;
+      const data = await res.json();
 
-  try {
-    await fetch(`${API}/${index}`, {
+      if (!res.ok) {
+        alert(data.erro);
+        return;
+      }
+
+      produto.value = "";
+      quantidade.value = "";
+
+      carregar();
+
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao cadastrar");
+    } finally {
+      cadastrar.disabled = false;
+    }
+  });
+
+  // -------- EDITAR --------
+  window.editar = async function (index) {
+    const novoProduto = prompt("Novo produto:");
+    const novaQuantidade = prompt("Nova quantidade:");
+
+    if (!novoProduto || !novaQuantidade) return;
+
+    await fetch(`${API}/produtos/${index}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        Authorization: token,
+        Authorization: token
       },
       body: JSON.stringify({
         produto: novoProduto,
-        quantidade: novaQuantidade,
-      }),
+        quantidade: novaQuantidade
+      })
     });
 
     carregar();
-  } catch (erro) {
-    console.error(erro);
-    alert("Erro ao editar");
-  }
-}
+  };
 
-/* ----------- REMOVER ----------- */
-async function remover(index) {
-  try {
-    await fetch(`${API}/${index}`, {
+  // -------- REMOVER --------
+  window.remover = async function (index) {
+    await fetch(`${API}/produtos/${index}`, {
       method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: token,
-      },
+      headers: { Authorization: token }
     });
 
     carregar();
-  } catch (erro) {
-    console.error(erro);
-    alert("Erro ao remover");
-  }
-}
+  };
 
-/* ----------- INICIAR ----------- */
-carregar();
-
-/* ----------- TEMA ----------- */
-
-document.addEventListener("DOMContentLoaded", () => {
-  const botaoTema = document.getElementById("toggleTema");
-
-  if (!botaoTema) {
-    console.log("Botão de tema não encontrado");
-    return;
-  }
-
+  // -------- TEMA --------
   if (localStorage.getItem("tema") === "dark") {
     document.body.classList.add("dark");
   }
 
   function atualizarIcone() {
-    botaoTema.textContent = document.body.classList.contains("dark")
-      ? "☀️"
-      : "🌙";
+    botaoTema.textContent = document.body.classList.contains("dark") ? "☀️" : "🌙";
   }
 
   atualizarIcone();
@@ -176,4 +149,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     atualizarIcone();
   });
+
+  carregar();
 });
