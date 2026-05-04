@@ -203,8 +203,10 @@ def dashboard():
         "total_produtos": total_produtos,
         "total_itens": total_itens,
         "baixo_estoque": baixo_estoque,
-        "produtos": produtos
+        "produtos": produtos        
     })
+    
+    
     
 @app.after_request
 def after_request(response):
