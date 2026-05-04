@@ -8,6 +8,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const lista = document.getElementById("lista");
   const botaoTema = document.getElementById("toggleTema");
 
+  
+
   if (!token) {
     window.location.href = "login.html";
     return;
@@ -152,3 +154,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   carregar();
 });
+
+function logout() {
+  localStorage.removeItem("token");
+  window.location.href = "login.html";
+}

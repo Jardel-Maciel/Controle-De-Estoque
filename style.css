@@ -133,3 +133,12 @@ td:last-child {
   display: flex;
   gap: 8px;
 }
+
+.btn-logout {
+  float: right;
+  background: #ef4444;
+}
+
+.btn-logout:hover {
+  opacity: 0.8;
+}

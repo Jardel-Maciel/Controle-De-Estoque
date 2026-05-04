@@ -1,0 +1,100 @@
+:root {
+  --bg: #ffffff;
+  --card: #f9fafb;
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --text: #111827;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+}
+
+/* DARK MODE (compatível com seu sistema) */
+body.dark {
+  --bg: #0f172a;
+  --card: #111827;
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+  --border: #1f2937;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* CENTRALIZA TUDO */
+body {
+  height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* CARD */
+body > h2,
+body > input,
+body > button {
+  width: 100%;
+  max-width: 350px;
+}
+
+/* CONTAINER VISUAL (fake card usando body) */
+body {
+  flex-direction: column;
+  gap: 15px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+}
+
+/* CAIXA */
+body > h2,
+body > input,
+body > button {
+  background: var(--card);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+/* TÍTULO */
+h2 {
+  text-align: center;
+  padding: 20px;
+  font-size: 22px;
+}
+
+/* INPUTS */
+input {
+  padding: 12px;
+  outline: none;
+  transition: 0.2s;
+}
+
+input:focus {
+  border-color: var(--primary);
+}
+
+/* BOTÃO */
+button {
+  padding: 12px;
+  border: none;
+  background: var(--primary);
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.2s;
+}
+
+button:hover {
+  background: var(--primary-hover);
+}
+
+/* SOMBRA PRA DAR PROFUNDIDADE */
+h2,
+input,
+button {
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
