@@ -4,7 +4,12 @@ import sqlite3
 import uuid
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+
+CORS(app,
+     resources={r"/*": {"origins": "*"}},
+     supports_credentials=True,
+     allow_headers=["Content-Type", "Authorization"],
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
 # -------- BANCO DE DADOS -------- #
 def conectar():
@@ -169,3 +174,35 @@ def criar_tabela():
     conn.close()
 
 criar_tabela()
+
+@app.route("/dashboard", methods=["GET"])
+def dashboard():
+    if not autenticar():
+        return jsonify({"erro": "Não autorizado"}), 401
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM produtos")
+    dados = cursor.fetchall()
+
+    conn.close()
+
+    total_produtos = len(dados)
+    total_itens = sum([row[2] for row in dados])
+    baixo_estoque = len([row for row in dados if row[2] <= 5])
+
+    produtos = [
+        {
+            "nome": row[1],
+            "quantidade": row[2]
+        }
+        for row in dados
+    ]
+
+    return jsonify({
+        "total_produtos": total_produtos,
+        "total_itens": total_itens,
+        "baixo_estoque": baixo_estoque,
+        "produtos": produtos
+    })
