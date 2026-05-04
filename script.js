@@ -17,8 +17,8 @@ async function carregar() {
   try {
     const res = await fetch(API, {
       headers: {
-        "Authorization": token
-      }
+        Authorization: token,
+      },
     });
 
     const dados = await res.json();
@@ -60,11 +60,11 @@ cadastrar.addEventListener("click", async (e) => {
   try {
     cadastrar.disabled = true;
 
-    const res = await fetch(API, {
+    const res = await fetch(`${API}/produtos`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": token
+        Authorization: token,
       },
       body: JSON.stringify({
         produto: texto,
@@ -72,19 +72,17 @@ cadastrar.addEventListener("click", async (e) => {
       }),
     });
 
+    const data = await res.json();
+
     if (!res.ok) {
-      const erro = await res.json();
-      alert(erro.erro || "Erro ao cadastrar");
+      alert(data.erro || "Erro ao cadastrar");
       return;
     }
 
-    produto.value = "";
-    quantidade.value = "";
-
-    carregar();
-  } catch (erro) {
-    console.error(erro);
-    alert("Erro ao conectar com o servidor");
+    console.log("Produto cadastrado:", data);
+  } catch (err) {
+    console.error(err);
+    alert("Erro de conexão");
   } finally {
     cadastrar.disabled = false;
   }
@@ -102,7 +100,7 @@ async function editar(index) {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": token
+        Authorization: token,
       },
       body: JSON.stringify({
         produto: novoProduto,
@@ -124,8 +122,8 @@ async function remover(index) {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": token
-      }
+        Authorization: token,
+      },
     });
 
     carregar();
