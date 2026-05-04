@@ -5,11 +5,7 @@ import uuid
 
 app = Flask(__name__)
 
-CORS(app,
-     resources={r"/*": {"origins": "*"}},
-     supports_credentials=True,
-     allow_headers=["Content-Type", "Authorization"],
-     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 # -------- BANCO DE DADOS -------- #
 def conectar():
@@ -175,8 +171,11 @@ def criar_tabela():
 
 criar_tabela()
 
-@app.route("/dashboard", methods=["GET"])
+@app.route("/dashboard", methods=["GET", "OPTIONS"])
 def dashboard():
+    if request.method == "OPTIONS":
+        return '', 200
+
     if not autenticar():
         return jsonify({"erro": "Não autorizado"}), 401
 
@@ -206,3 +205,10 @@ def dashboard():
         "baixo_estoque": baixo_estoque,
         "produtos": produtos
     })
+    
+@app.after_request
+def after_request(response):
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
+    response.headers.add("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
+    return response
