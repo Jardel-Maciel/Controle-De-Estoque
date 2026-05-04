@@ -29,14 +29,11 @@ def salvar_dados(dados):
         json.dump(dados, f, indent=4)
 
 # ✅ MELHORADO
+VALID_TOKEN = "123456"
+
 def autenticar():
     auth = request.headers.get("Authorization")
-
-    if not auth:
-        return False
-
-    # garante que não quebra se tokens resetar
-    return auth in tokens
+    return auth == VALID_TOKEN
 
 # -------- LOGIN -------- #
 @app.route("/login", methods=["POST", "OPTIONS"])

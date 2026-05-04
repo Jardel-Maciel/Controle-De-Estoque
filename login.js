@@ -86,3 +86,5 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 });
+
+return jsonify({"token": "123456"})
