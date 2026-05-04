@@ -151,3 +151,21 @@ def deletar(id):
 # -------- START -------- #
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
+    
+    
+def criar_tabela():
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS produtos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        produto TEXT,
+        quantidade INTEGER
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
+criar_tabela()
