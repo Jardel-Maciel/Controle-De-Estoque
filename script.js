@@ -33,13 +33,16 @@ document.addEventListener("DOMContentLoaded", () => {
         const tr = document.createElement("tr");
 
         tr.innerHTML = `
-          <td>${item.produto}</td>
-          <td>${item.quantidade}</td>
-          <td>
-            <button onclick="editar(${index})">Editar</button>
-            <button class="btn-danger" onclick="remover(${index})">Excluir</button>
-          </td>
-        `;
+    <td>${item.produto}</td>
+    <td>
+      <span class="editavel" data-index="${index}">
+        ${item.quantidade}
+      </span>
+    </td>
+    <td>
+      <button class="btn-danger" onclick="remover(${index})">Excluir</button>
+    </td>
+  `;
 
         lista.appendChild(tr);
       });
@@ -49,6 +52,61 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     console.log("TOKEN ENVIADO:", token);
   }
+
+  lista.addEventListener("click", (e) => {
+  if (!e.target.classList.contains("editavel")) return;
+
+  const span = e.target;
+  const index = span.dataset.index;
+  const valorAtual = span.textContent;
+
+  const input = document.createElement("input");
+  input.type = "number";
+  input.value = valorAtual;
+  input.style.width = "60px";
+
+  span.replaceWith(input);
+  input.focus();
+
+  // salvar ao sair do campo
+  input.addEventListener("blur", () => salvarEdicao(input, index));
+
+  // salvar com Enter
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      salvarEdicao(input, index);
+    }
+  });
+});
+
+async function salvarEdicao(input, index) {
+  const novaQuantidade = input.value;
+
+  if (!novaQuantidade || novaQuantidade <= 0) {
+    alert("Valor inválido");
+    carregar();
+    return;
+  }
+
+  try {
+    await fetch(`${API}/produtos/${index}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token
+      },
+      body: JSON.stringify({
+        quantidade: novaQuantidade
+      })
+    });
+
+    carregar();
+
+  } catch (err) {
+    console.error(err);
+    alert("Erro ao salvar");
+  }
+}
 
   // -------- CADASTRAR --------
   cadastrar.addEventListener("click", async (e) => {

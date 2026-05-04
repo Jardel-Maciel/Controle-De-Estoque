@@ -142,3 +142,26 @@ td:last-child {
 .btn-logout:hover {
   opacity: 0.8;
 }
+
+.editavel {
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: 0.2s;
+}
+
+.editavel:hover {
+  background: rgba(0,0,0,0.05);
+}
+
+body.dark .editavel:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+td input {
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+}
