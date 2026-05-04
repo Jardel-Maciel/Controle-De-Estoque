@@ -46,6 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         lista.appendChild(tr);
       });
+      console.log(dados);
 
     } catch (err) {
       console.error(err);
