@@ -15,10 +15,39 @@ const API = "https://backend-estoque-fnfc.onrender.com/produtos";
 /* ----------- CARREGAR ----------- */
 async function carregar() {
   try {
-    const res = await fetch(API, {
+    const res = await fetch(`${API}/produtos`, {
       headers: {
         Authorization: token,
       },
+    });
+
+    const dados = await res.json();
+
+    if (!res.ok) {
+      alert(dados.erro || "Erro ao carregar dados");
+      return;
+    }
+
+    if (!Array.isArray(dados)) {
+      console.error("Resposta inválida:", dados);
+      return;
+    }
+
+    lista.innerHTML = "";
+
+    dados.forEach((item, index) => {
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td>${item.produto}</td>
+        <td>${item.quantidade}</td>
+        <td>
+          <button onclick="editar(${index})">Editar</button>
+          <button onclick="remover(${index})">Excluir</button>
+        </td>
+      `;
+
+      lista.appendChild(tr);
     });
 
     const dados = await res.json();
