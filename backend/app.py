@@ -83,10 +83,24 @@ def atualizar(index):
         return jsonify({"erro": "Não autorizado"}), 401
 
     dados = ler_dados()
-    dados[index] = request.json
+    atualizacao = request.json
+
+    if index >= len(dados):
+        return jsonify({"erro": "Produto não encontrado"}), 404
+
+    # 🔥 mantém o produto original
+    produto = dados[index]
+
+    # 🔥 atualiza apenas o que veio
+    if "quantidade" in atualizacao:
+        if not str(atualizacao["quantidade"]).isdigit() or int(atualizacao["quantidade"]) <= 0:
+            return jsonify({"erro": "Quantidade inválida"}), 400
+
+        produto["quantidade"] = atualizacao["quantidade"]
+
     salvar_dados(dados)
 
-    return jsonify(dados[index])
+    return jsonify(produto)
 
 @app.route("/produtos/<int:index>", methods=["DELETE"])
 def deletar(index):
@@ -94,6 +108,10 @@ def deletar(index):
         return jsonify({"erro": "Não autorizado"}), 401
 
     dados = ler_dados()
+
+    if index >= len(dados):
+        return jsonify({"erro": "Produto não encontrado"}), 404
+
     removido = dados.pop(index)
     salvar_dados(dados)
 

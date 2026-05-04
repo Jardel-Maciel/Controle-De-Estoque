@@ -8,8 +8,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const lista = document.getElementById("lista");
   const botaoTema = document.getElementById("toggleTema");
 
-  
-
   if (!token) {
     window.location.href = "login.html";
     return;
@@ -19,7 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function carregar() {
     try {
       const res = await fetch(`${API}/produtos`, {
-        headers: { Authorization: token }
+        headers: { Authorization: token },
       });
 
       const dados = await res.json();
@@ -45,7 +43,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         lista.appendChild(tr);
       });
-
     } catch (err) {
       console.error(err);
       alert("Erro ao carregar dados");
@@ -72,12 +69,12 @@ document.addEventListener("DOMContentLoaded", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: token
+          Authorization: token,
         },
         body: JSON.stringify({
           produto: texto,
-          quantidade: quant
-        })
+          quantidade: quant,
+        }),
       });
 
       const data = await res.json();
@@ -91,7 +88,6 @@ document.addEventListener("DOMContentLoaded", () => {
       quantidade.value = "";
 
       carregar();
-
     } catch (err) {
       console.error(err);
       alert("Erro ao cadastrar");
@@ -102,31 +98,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // -------- EDITAR --------
   window.editar = async function (index) {
-    const novoProduto = prompt("Novo produto:");
     const novaQuantidade = prompt("Nova quantidade:");
 
-    if (!novoProduto || !novaQuantidade) return;
+    if (!novaQuantidade || isNaN(novaQuantidade) || novaQuantidade <= 0) {
+      alert("Quantidade inválida");
+      return;
+    }
 
-    await fetch(`${API}/produtos/${index}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: token
-      },
-      body: JSON.stringify({
-        produto: novoProduto,
-        quantidade: novaQuantidade
-      })
-    });
+    try {
+      await fetch(`${API}/produtos/${index}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token,
+        },
+        body: JSON.stringify({
+          quantidade: novaQuantidade,
+        }),
+      });
 
-    carregar();
+      carregar();
+    } catch (erro) {
+      console.error(erro);
+      alert("Erro ao atualizar");
+    }
   };
 
   // -------- REMOVER --------
   window.remover = async function (index) {
     await fetch(`${API}/produtos/${index}`, {
       method: "DELETE",
-      headers: { Authorization: token }
+      headers: { Authorization: token },
     });
 
     carregar();
@@ -138,7 +140,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function atualizarIcone() {
-    botaoTema.textContent = document.body.classList.contains("dark") ? "☀️" : "🌙";
+    botaoTema.textContent = document.body.classList.contains("dark")
+      ? "☀️"
+      : "🌙";
   }
 
   atualizarIcone();
