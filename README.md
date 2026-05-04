@@ -5,8 +5,6 @@ Sistema web completo de controle de estoque com autenticação, API REST e ediç
 ---
 
 ## 📸 Preview
-
-> 💡 (adicione um print ou GIF aqui depois)
 > ![preview](gifControle.gif)
 
 ---
