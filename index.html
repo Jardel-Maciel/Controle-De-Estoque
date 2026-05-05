@@ -1,42 +1,58 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-br">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Estoque</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Estoque</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <section class="tela1">
+      <button id="toggleTema">🌙</button>
 
-  <section class="tela1">
+      <button><a href="dashboard.html" target="_blank">Dashboard</a></button>
 
-    <button id="toggleTema">🌙</button>
+      <button id="btnLogout">Sair</button>
 
-    <button><a href="dashboard.html" target="_blank">Dashboard</a></button>
+      <h1 class="titulo">📦 Controle de Estoque</h1>
 
-    <button id="btnLogout">Sair</button>
+      <form class="form">
+        <input type="text" id="inputProduto" placeholder="Produto" />
+        <input type="number" id="quantidade" placeholder="Quantidade" />
+        <button type="button" id="cadastrar">Cadastrar</button>
+      </form>
 
-    <h1 class="titulo">📦 Controle de Estoque</h1>
+      <table>
+        <thead>
+          <tr>
+            <th>Produto</th>
+            <th>Quantidade</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="lista"></tbody>
+      </table>
+    </section>
 
-    <form class="form">
-      <input type="text" id="inputProduto" placeholder="Produto">
-      <input type="number" id="quantidade" placeholder="Quantidade">
-      <button type="button" id="cadastrar">Cadastrar</button>
-    </form>
+    <!-- MODAL -->
+    <div id="modal" class="modal hidden">
+      <div class="modal-content">
+        <h3 id="modalTitulo">Movimentação</h3>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Produto</th>
-          <th>Quantidade</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody id="lista"></tbody>
-    </table>
+        <input
+          type="number"
+          id="modalQuantidade"
+          placeholder="Quantidade"
+          min="1"
+        />
 
-  </section>
+        <div class="modal-actions">
+          <button id="confirmarModal">Confirmar</button>
+          <button id="cancelarModal" class="btn-cancel">Cancelar</button>
+        </div>
+      </div>
+    </div>
 
-  <script src="script.js"></script>
-</body>
+    <script src="script.js"></script>
+  </body>
 </html>

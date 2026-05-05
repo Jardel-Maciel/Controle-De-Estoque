@@ -170,3 +170,96 @@ a{
   text-decoration: none;
   color: #ffffff;
 }
+
+/* FUNDO ESCURO DO MODAL */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.hidden {
+  display: none;
+}
+
+/* CAIXA DO MODAL */
+.modal-content {
+  background: #ffffff;
+  color: #222;
+  padding: 20px;
+  border-radius: 12px;
+  width: 320px;
+  text-align: center;
+  animation: fadeIn 0.2s ease;
+}
+
+/* INPUT */
+.modal-content input {
+  width: 100%;
+  padding: 10px;
+  margin: 15px 0;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  outline: none;
+}
+
+/* BOTÕES */
+.modal-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.modal-actions button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+#confirmarModal {
+  background: #4CAF50;
+  color: white;
+}
+
+.btn-cancel {
+  background: #e0e0e0;
+  color: #333;
+}
+
+/* DARK MODE */
+body.dark .modal-content {
+  background: #1e1e1e;
+  color: #fff;
+}
+
+body.dark .modal-content input {
+  background: #2a2a2a;
+  color: #fff;
+  border: 1px solid #444;
+}
+
+body.dark .btn-cancel {
+  background: #444;
+  color: #fff;
+}
+
+/* ANIMAÇÃO */
+@keyframes fadeIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

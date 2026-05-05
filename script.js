@@ -1,6 +1,79 @@
 const API = "https://backend-estoque-fnfc.onrender.com";
 const token = localStorage.getItem("token");
 
+let tipoMovimentacao = null;
+let produtoIdAtual = null;
+
+// -------- MODAL --------
+const modal = document.getElementById("modal");
+const inputQtd = document.getElementById("modalQuantidade");
+const tituloModal = document.getElementById("modalTitulo");
+const btnConfirmar = document.getElementById("confirmarModal");
+const btnCancelar = document.getElementById("cancelarModal");
+
+function abrirModal(tipo, id) {
+  tipoMovimentacao = tipo;
+  produtoIdAtual = id;
+
+  tituloModal.textContent =
+    tipo === "entrada" ? "Entrada de Produto" : "Saída de Produto";
+
+  inputQtd.value = "";
+  modal.classList.remove("hidden");
+  inputQtd.focus();
+}
+
+function fecharModal() {
+  modal.classList.add("hidden");
+}
+
+// -------- CONFIRMAR MODAL --------
+btnConfirmar.addEventListener("click", async () => {
+  const quantidade = inputQtd.value;
+
+  if (!quantidade || quantidade <= 0) {
+    alert("Quantidade inválida");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/movimentacoes`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token,
+      },
+      body: JSON.stringify({
+        produto_id: produtoIdAtual,
+        tipo: tipoMovimentacao,
+        quantidade,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.erro);
+      return;
+    }
+
+    fecharModal();
+    carregar();
+
+  } catch (err) {
+    console.error(err);
+    alert("Erro na movimentação");
+  }
+});
+
+// -------- CANCELAR MODAL --------
+btnCancelar.addEventListener("click", fecharModal);
+
+// -------- FECHAR COM ESC --------
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") fecharModal();
+});
+
 // -------- CARREGAR (GLOBAL) --------
 async function carregar() {
   try {
@@ -187,64 +260,13 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // -------- ENTRADA --------
-window.entrada = async function (id) {
-  const quantidade = prompt("Quantidade de entrada:");
-
-  if (!quantidade || quantidade <= 0) return;
-
-  try {
-    await fetch(`${API}/movimentacoes`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: token,
-      },
-      body: JSON.stringify({
-        produto_id: id,
-        tipo: "entrada",
-        quantidade,
-      }),
-    });
-
-    carregar();
-  } catch (err) {
-    console.error(err);
-    alert("Erro na entrada");
-  }
+window.entrada = function (id) {
+  abrirModal("entrada", id);
 };
 
 // -------- SAÍDA --------
-window.saida = async function (id) {
-  const quantidade = prompt("Quantidade de saída:");
-
-  if (!quantidade || quantidade <= 0) return;
-
-  try {
-    const res = await fetch(`${API}/movimentacoes`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: token,
-      },
-      body: JSON.stringify({
-        produto_id: id,
-        tipo: "saida",
-        quantidade,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      alert(data.erro);
-      return;
-    }
-
-    carregar();
-  } catch (err) {
-    console.error(err);
-    alert("Erro na saída");
-  }
+window.saida = function (id) {
+  abrirModal("saida", id);
 };
 
 // -------- REMOVER --------
