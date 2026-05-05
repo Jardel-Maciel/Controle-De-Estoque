@@ -249,7 +249,8 @@ def dashboard():
     conn = conectar()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT produto, quantidade FROM produtos")
+    # 🔥 AGORA TRAZ O VALOR TAMBÉM
+    cursor.execute("SELECT produto, quantidade, valor FROM produtos")
     dados = cursor.fetchall()
 
     conn.close()
@@ -259,7 +260,11 @@ def dashboard():
     baixo_estoque = len([row for row in dados if row[1] <= 5])
 
     produtos = [
-        {"nome": row[0], "quantidade": row[1]}
+        {
+            "nome": row[0],
+            "quantidade": row[1],
+            "valorUnitario": row[2]  # 🔥 ESSENCIAL PRO CÁLCULO
+        }
         for row in dados
     ]
 

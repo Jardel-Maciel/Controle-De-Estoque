@@ -1,75 +1,81 @@
 <!doctype html>
 <html lang="pt-br">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Painel | Dashboard</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Painel | Dashboard</title>
 
-  <link rel="stylesheet" href="dashboard.css" />
+    <link rel="stylesheet" href="dashboard.css" />
 
-  <!-- Fonte moderna -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-</head>
+    <!-- Fonte moderna -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
 
-<body>
+  <body>
+    <div class="layout">
 
-  <div class="layout">
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <h2>📦 Estoque</h2>
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-      <h2>📦 Estoque</h2>
+        <nav>
+          <a href="#">Dashboard</a>
+          <a href="index.html">Produtos</a>
+          <a href="movimentcoes.html">Movimentações</a>
+        </nav>
+      </aside>
 
-      <nav>
-        <a href="#">Dashboard</a>
-        <a href="#">Produtos</a>
-        <a href="#">Movimentações</a>
-      </nav>
-    </aside>
+      <!-- CONTEÚDO -->
+      <main class="main">
 
-    <!-- CONTEÚDO -->
-    <main class="main">
-
-      <!-- TOPBAR -->
-      <div class="topbar">
-        <h1>Dashboard</h1>
-        <button onclick="window.location.href='index.html'">Voltar</button>
-      </div>
-
-      <!-- CARDS -->
-      <section class="cards">
-
-        <div class="card">
-          <h3>Total Produtos</h3>
-          <p id="totalProdutos">0</p>
+        <!-- TOPBAR -->
+        <div class="topbar">
+          <h1>Dashboard</h1>
+          <button onclick="window.location.href = 'index.html'">Voltar</button>
         </div>
 
-        <div class="card">
-          <h3>Total Itens</h3>
-          <p id="totalItens">0</p>
-        </div>
+        <!-- CARDS -->
+        <section class="cards">
 
-        <div class="card warning">
-          <h3>Baixo Estoque</h3>
-          <p id="baixoEstoque">0</p>
-        </div>
+          <div class="card">
+            <h3>Total Produtos</h3>
+            <p id="totalProdutos">0</p>
+          </div>
 
-      </section>
+          <div class="card">
+            <h3>Total Itens</h3>
+            <p id="totalItens">0</p>
+          </div>
 
-      <!-- GRÁFICO -->
-      <section class="chart-container">
-        <h2>Estoque por Produto</h2>
-        <canvas id="grafico"></canvas>
-      </section>
+          <div class="card warning">
+            <h3>Baixo Estoque</h3>
+            <p id="baixoEstoque">0</p>
+          </div>
 
-    </main>
+          <!-- 💰 NOVO CARD ORGANIZADO -->
+          <div class="card">
+            <h3>Custo total do estoque</h3>
+            <p id="totalEstoque">R$ 0,00</p>
+          </div>
 
-  </div>
+        </section>
 
-  <!-- SCRIPTS -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="dashboard.js"></script>
+        <!-- GRÁFICO -->
+        <section class="chart-container">
+          <h2>Estoque por Produto</h2>
+          <canvas id="grafico"></canvas>
+        </section>
 
-</body>
+      </main>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="dashboard.js"></script>
+  </body>
 </html>

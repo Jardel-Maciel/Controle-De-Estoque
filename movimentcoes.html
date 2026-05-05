@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Movimentações | Estoque</title>
+
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+
+<body>
+
+<div class="layout">
+
+  <aside class="sidebar">
+    <h2>📦 Estoque</h2>
+
+    <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="index.html">Produtos</a>
+      <a href="movimentacoes.html">Movimentações</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+
+    <div class="topbar">
+      <h1>Movimentações</h1>
+    </div>
+
+    <section class="chart-container">
+      <h2>Histórico</h2>
+      <div id="lista"></div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+const API = "https://backend-estoque-fnfc.onrender.com";
+const token = localStorage.getItem("token");
+
+async function carregar() {
+  const res = await fetch(`${API}/movimentacoes`, {
+    headers: { Authorization: token }
+  });
+
+  const data = await res.json();
+
+  const lista = document.getElementById("lista");
+  lista.innerHTML = "";
+
+  data.forEach(m => {
+    lista.innerHTML += `
+      <div class="card">
+        <h3>${m.produto}</h3>
+        <p>Tipo: ${m.tipo}</p>
+        <p>Quantidade: ${m.quantidade}</p>
+        <p>Data: ${m.data}</p>
+      </div>
+    `;
+  });
+}
+
+carregar();
+</script>
+
+</body>
+</html>
