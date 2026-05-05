@@ -59,7 +59,6 @@ btnConfirmar.addEventListener("click", async () => {
 
     fecharModal();
     carregar();
-
   } catch (err) {
     console.error(err);
     alert("Erro na movimentação");
@@ -110,7 +109,6 @@ async function carregar() {
 
       lista.appendChild(tr);
     });
-
   } catch (err) {
     console.error(err);
     alert("Erro ao carregar dados");
@@ -181,7 +179,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       carregar();
-
     } catch (err) {
       console.error(err);
       alert("Erro ao salvar");
@@ -226,7 +223,6 @@ document.addEventListener("DOMContentLoaded", () => {
       quantidade.value = "";
 
       carregar();
-
     } catch (err) {
       console.error(err);
       alert("Erro ao cadastrar");
@@ -241,8 +237,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function atualizarIcone() {
-    botaoTema.textContent =
-      document.body.classList.contains("dark") ? "☀️" : "🌙";
+    botaoTema.textContent = document.body.classList.contains("dark")
+      ? "☀️"
+      : "🌙";
   }
 
   atualizarIcone();
@@ -296,7 +293,7 @@ const listaHistorico = document.getElementById("listaHistorico");
 async function carregarHistorico() {
   try {
     const res = await fetch(`${API}/movimentacoes`, {
-      headers: { Authorization: token }
+      headers: { Authorization: token },
     });
 
     const dados = await res.json();
@@ -312,15 +309,20 @@ async function carregarHistorico() {
       const tr = document.createElement("tr");
 
       tr.innerHTML = `
-        <td>${item.produto}</td>
-        <td>${item.tipo}</td>
-        <td>${item.quantidade}</td>
-        <td>${new Date(item.data).toLocaleString()}</td>
-      `;
+  <td>${item.produto}</td>
+  <td>${item.quantidade}</td>
+  <td>R$ ${item.valor || 0}</td>
+  <td>${item.fornecedor || "-"}</td>
+  <td>${item.contato || "-"}</td>
+  <td>
+    <button onclick="entrada(${item.id})">➕</button>
+    <button onclick="saida(${item.id})">➖</button>
+    <button class="btn-danger" onclick="remover(${item.id})">Excluir</button>
+  </td>
+`;
 
       listaHistorico.appendChild(tr);
     });
-
   } catch (err) {
     console.error(err);
     alert("Erro ao carregar histórico");

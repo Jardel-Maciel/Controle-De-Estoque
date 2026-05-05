@@ -4,9 +4,9 @@ import sqlite3
 import uuid
 
 app = Flask(__name__)
-CORS(app)  # ✅ apenas UMA vez (corrige CORS)
+CORS(app)
 
-# -------- BANCO DE DADOS -------- #
+# -------- BANCO -------- #
 def conectar():
     return sqlite3.connect("banco.db")
 
@@ -14,16 +14,17 @@ def criar_tabelas():
     conn = conectar()
     cursor = conn.cursor()
 
-    # Produtos
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS produtos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             produto TEXT NOT NULL,
-            quantidade INTEGER NOT NULL
+            quantidade INTEGER NOT NULL,
+            valor REAL DEFAULT 0,
+            fornecedor TEXT,
+            contato TEXT
         )
     """)
 
-    # Movimentações
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS movimentacoes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,14 +40,13 @@ def criar_tabelas():
 
 criar_tabelas()
 
-# -------- USUÁRIOS -------- #
+# -------- AUTH -------- #
 usuarios = [
     {"email": "admin@teste.com", "senha": "123456"}
 ]
 
 tokens = {}
 
-# -------- AUTENTICAÇÃO -------- #
 def autenticar():
     token = request.headers.get("Authorization")
     return bool(token)
@@ -56,11 +56,8 @@ def autenticar():
 def login():
     dados = request.json
 
-    email = dados.get("email")
-    senha = dados.get("senha")
-
     for user in usuarios:
-        if user["email"] == email and user["senha"] == senha:
+        if user["email"] == dados.get("email") and user["senha"] == dados.get("senha"):
             token = str(uuid.uuid4())
             tokens[token] = user
             return jsonify({"token": token})
@@ -82,7 +79,14 @@ def listar():
     conn.close()
 
     produtos = [
-        {"id": row[0], "produto": row[1], "quantidade": row[2]}
+        {
+            "id": row[0],
+            "produto": row[1],
+            "quantidade": row[2],
+            "valor": row[3],
+            "fornecedor": row[4],
+            "contato": row[5]
+        }
         for row in dados
     ]
 
@@ -99,21 +103,27 @@ def criar():
     if not novo.get("produto") or len(novo["produto"]) < 3:
         return jsonify({"erro": "Produto inválido"}), 400
 
-    if not str(novo.get("quantidade")).isdigit() or int(novo["quantidade"]) <= 0:
+    if not str(novo.get("quantidade")).isdigit():
         return jsonify({"erro": "Quantidade inválida"}), 400
 
     conn = conectar()
     cursor = conn.cursor()
 
-    cursor.execute(
-        "INSERT INTO produtos (produto, quantidade) VALUES (?, ?)",
-        (novo["produto"], int(novo["quantidade"]))
-    )
+    cursor.execute("""
+        INSERT INTO produtos (produto, quantidade, valor, fornecedor, contato)
+        VALUES (?, ?, ?, ?, ?)
+    """, (
+        novo["produto"],
+        int(novo["quantidade"]),
+        float(novo.get("valor", 0)),
+        novo.get("fornecedor", ""),
+        novo.get("contato", "")
+    ))
 
     conn.commit()
     conn.close()
 
-    return jsonify(novo)
+    return jsonify({"msg": "Produto criado com sucesso"})
 
 # -------- ATUALIZAR QUANTIDADE -------- #
 @app.route("/produtos/<int:id>", methods=["PUT"])
@@ -123,7 +133,7 @@ def atualizar(id):
 
     dados = request.json
 
-    if not str(dados.get("quantidade")).isdigit() or int(dados["quantidade"]) <= 0:
+    if not str(dados.get("quantidade")).isdigit():
         return jsonify({"erro": "Quantidade inválida"}), 400
 
     conn = conectar()
@@ -137,9 +147,9 @@ def atualizar(id):
     conn.commit()
     conn.close()
 
-    return jsonify({"msg": "Quantidade atualizada"})
+    return jsonify({"msg": "Atualizado"})
 
-# -------- DELETAR PRODUTO -------- #
+# -------- DELETAR -------- #
 @app.route("/produtos/<int:id>", methods=["DELETE"])
 def deletar(id):
     if not autenticar():
@@ -153,7 +163,7 @@ def deletar(id):
     conn.commit()
     conn.close()
 
-    return jsonify({"msg": "Produto removido"})
+    return jsonify({"msg": "Removido"})
 
 # -------- MOVIMENTAÇÃO -------- #
 @app.route("/movimentacoes", methods=["POST"])
@@ -162,16 +172,9 @@ def movimentar():
         return jsonify({"erro": "Não autorizado"}), 401
 
     dados = request.json
-
     produto_id = dados.get("produto_id")
     tipo = dados.get("tipo")
     quantidade = int(dados.get("quantidade", 0))
-
-    if tipo not in ["entrada", "saida"]:
-        return jsonify({"erro": "Tipo inválido"}), 400
-
-    if quantidade <= 0:
-        return jsonify({"erro": "Quantidade inválida"}), 400
 
     conn = conectar()
     cursor = conn.cursor()
@@ -182,24 +185,18 @@ def movimentar():
     if not produto:
         return jsonify({"erro": "Produto não encontrado"}), 404
 
-    estoque_atual = produto[0]
+    estoque = produto[0]
 
-    if tipo == "saida" and quantidade > estoque_atual:
+    if tipo == "saida" and quantidade > estoque:
         return jsonify({"erro": "Estoque insuficiente"}), 400
 
-    novo_estoque = (
-        estoque_atual + quantidade
-        if tipo == "entrada"
-        else estoque_atual - quantidade
-    )
+    novo = estoque + quantidade if tipo == "entrada" else estoque - quantidade
 
-    # Atualiza estoque
     cursor.execute(
         "UPDATE produtos SET quantidade = ? WHERE id = ?",
-        (novo_estoque, produto_id)
+        (novo, produto_id)
     )
 
-    # Salva histórico
     cursor.execute("""
         INSERT INTO movimentacoes (produto_id, tipo, quantidade)
         VALUES (?, ?, ?)
@@ -208,11 +205,11 @@ def movimentar():
     conn.commit()
     conn.close()
 
-    return jsonify({"msg": "Movimentação realizada"})
+    return jsonify({"msg": "Movimentado"})
 
-# -------- LISTAR HISTÓRICO -------- #
+# -------- HISTÓRICO -------- #
 @app.route("/movimentacoes", methods=["GET"])
-def listar_movimentacoes():
+def historico():
     if not autenticar():
         return jsonify({"erro": "Não autorizado"}), 401
 
@@ -222,14 +219,14 @@ def listar_movimentacoes():
     cursor.execute("""
         SELECT m.id, p.produto, m.tipo, m.quantidade, m.data
         FROM movimentacoes m
-        JOIN produtos p ON m.produto_id = p.id
+        JOIN produtos p ON p.id = m.produto_id
         ORDER BY m.data DESC
     """)
 
     dados = cursor.fetchall()
     conn.close()
 
-    movimentacoes = [
+    return jsonify([
         {
             "id": row[0],
             "produto": row[1],
@@ -238,11 +235,9 @@ def listar_movimentacoes():
             "data": row[4]
         }
         for row in dados
-    ]
+    ])
 
-    return jsonify(movimentacoes)
-
-# -------- DASHBOARD -------- #
+# -------- DASHBOARD + FINANCEIRO -------- #
 @app.route("/dashboard", methods=["GET"])
 def dashboard():
     if not autenticar():
@@ -251,29 +246,19 @@ def dashboard():
     conn = conectar()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM produtos")
+    cursor.execute("SELECT quantidade, valor FROM produtos")
     dados = cursor.fetchall()
 
     conn.close()
 
-    total_produtos = len(dados)
-    total_itens = sum([row[2] for row in dados])
-    baixo_estoque = len([row for row in dados if row[2] <= 5])
-
-    produtos = [
-        {
-            "nome": row[1],
-            "quantidade": row[2]
-        }
-        for row in dados
-    ]
+    total_itens = sum([row[0] for row in dados])
+    total_gasto = sum([row[0] * (row[1] or 0) for row in dados])
 
     return jsonify({
-        "total_produtos": total_produtos,
         "total_itens": total_itens,
-        "baixo_estoque": baixo_estoque,
-        "produtos": produtos
+        "total_gasto": total_gasto
     })
+    
 
 # -------- START -------- #
 if __name__ == "__main__":
