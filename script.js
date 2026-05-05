@@ -1,8 +1,51 @@
 const API = "https://backend-estoque-fnfc.onrender.com";
 const token = localStorage.getItem("token");
+
+// -------- CARREGAR (GLOBAL) --------
+async function carregar() {
+  try {
+    const res = await fetch(`${API}/produtos`, {
+      headers: { Authorization: token },
+    });
+
+    const dados = await res.json();
+
+    if (!res.ok) {
+      alert(dados.erro || "Erro inesperado");
+      return;
+    }
+
+    const lista = document.getElementById("lista");
+    lista.innerHTML = "";
+
+    dados.forEach((item) => {
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td>${item.produto}</td>
+        <td>
+          <span class="editavel" data-id="${item.id}">
+            ${item.quantidade}
+          </span>
+        </td>
+        <td>
+          <button onclick="entrada(${item.id})">➕</button>
+          <button onclick="saida(${item.id})">➖</button>
+          <button class="btn-danger" onclick="remover(${item.id})">Excluir</button>
+        </td>
+      `;
+
+      lista.appendChild(tr);
+    });
+
+  } catch (err) {
+    console.error(err);
+    alert("Erro ao carregar dados");
+  }
+}
+
+// -------- INICIO --------
 document.addEventListener("DOMContentLoaded", () => {
-
-
   const produto = document.getElementById("inputProduto");
   const quantidade = document.getElementById("quantidade");
   const cadastrar = document.getElementById("cadastrar");
@@ -12,49 +55,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!token) {
     window.location.href = "login.html";
     return;
-  }
-
-  // -------- CARREGAR --------
-  async function carregar() {
-    try {
-      const res = await fetch(`${API}/produtos`, {
-        headers: { Authorization: token },
-      });
-
-      const dados = await res.json();
-
-      if (!res.ok) {
-        alert(dados.erro || "Erro inesperado");
-        return;
-      }
-
-      lista.innerHTML = "";
-
-      dados.forEach((item) => {
-        const tr = document.createElement("tr");
-
-        tr.innerHTML = `
-          <td>${item.produto}</td>
-          <td>
-            <span class="editavel" data-id="${item.id}">
-              ${item.quantidade}
-            </span>
-          </td>
-          <td>
-            <button onclick="entrada(${item.id})">➕</button>
-            <button onclick="saida(${item.id})">➖</button>
-            <button class="btn-danger" onclick="remover(${item.id})">Excluir</button>
-          </td>
-        `;
-
-        lista.appendChild(tr);
-      });
-      console.log(dados);
-
-    } catch (err) {
-      console.error(err);
-      alert("Erro ao carregar dados");
-    }
   }
 
   // -------- EDIÇÃO INLINE --------
@@ -74,11 +74,8 @@ document.addEventListener("DOMContentLoaded", () => {
     input.focus();
 
     input.addEventListener("blur", () => salvarEdicao(input, id));
-
     input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        salvarEdicao(input, id);
-      }
+      if (e.key === "Enter") salvarEdicao(input, id);
     });
   });
 
@@ -165,22 +162,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // -------- REMOVER --------
-  window.remover = async function (id) {
-    try {
-      await fetch(`${API}/produtos/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: token },
-      });
-
-      carregar();
-
-    } catch (err) {
-      console.error(err);
-      alert("Erro ao remover");
-    }
-  };
-
   // -------- TEMA --------
   if (localStorage.getItem("tema") === "dark") {
     document.body.classList.add("dark");
@@ -263,6 +244,21 @@ window.saida = async function (id) {
   } catch (err) {
     console.error(err);
     alert("Erro na saída");
+  }
+};
+
+// -------- REMOVER --------
+window.remover = async function (id) {
+  try {
+    await fetch(`${API}/produtos/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: token },
+    });
+
+    carregar();
+  } catch (err) {
+    console.error(err);
+    alert("Erro ao remover");
   }
 };
 
