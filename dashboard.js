@@ -9,8 +9,8 @@ async function carregarDashboard() {
   try {
     const res = await fetch(`${API}/dashboard`, {
       headers: {
-        Authorization: token
-      }
+        Authorization: token,
+      },
     });
 
     const data = await res.json();
@@ -37,19 +37,47 @@ async function carregarDashboard() {
     // =====================
     let totalEstoque = 0;
 
-    produtos.forEach(p => {
+    produtos.forEach((p) => {
       const quantidade = Number(p.quantidade) || 0;
 
       const valorUnitario = Number(
-        p.valorUnitario ??
-        p.preco ??
-        p.valor ??
-        p.custo ??
-        0
+        p.valorUnitario ?? p.preco ?? p.valor ?? p.custo ?? 0,
       );
 
       totalEstoque += quantidade * valorUnitario;
     });
+
+    const canvasValor = document.getElementById("graficoValor");
+
+    if (canvasValor) {
+      const ctx2 = canvasValor.getContext("2d");
+
+      new Chart(ctx2, {
+        type: "bar",
+        data: {
+          labels: produtos.map((p) => p.nome),
+          datasets: [
+            {
+              label: "Valor em Estoque",
+              data: produtos.map((p) => p.valorTotal),
+              backgroundColor: "rgba(34, 197, 94, 0.7)",
+              borderRadius: 6,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+          },
+          scales: {
+            x: { ticks: { color: "#94a3b8" }, grid: { display: false } },
+            y: { ticks: { color: "#94a3b8" } },
+          },
+        },
+      });
+    }
 
     const elEstoque = document.getElementById("totalEstoque");
 
@@ -73,33 +101,34 @@ async function carregarDashboard() {
     chartInstance = new Chart(ctx, {
       type: "bar",
       data: {
-        labels: produtos.map(p => p.nome),
-        datasets: [{
-          label: "Quantidade",
-          data: produtos.map(p => p.quantidade),
-          borderRadius: 6,
-          backgroundColor: "rgba(56, 189, 248, 0.7)"
-        }]
+        labels: produtos.map((p) => p.nome),
+        datasets: [
+          {
+            label: "Quantidade",
+            data: produtos.map((p) => p.quantidade),
+            borderRadius: 6,
+            backgroundColor: "rgba(56, 189, 248, 0.7)",
+          },
+        ],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { display: false }
+          legend: { display: false },
         },
         scales: {
           x: {
             ticks: { color: "#94a3b8" },
-            grid: { display: false }
+            grid: { display: false },
           },
           y: {
             ticks: { color: "#94a3b8" },
-            grid: { color: "rgba(148,163,184,0.1)" }
-          }
-        }
-      }
+            grid: { color: "rgba(148,163,184,0.1)" },
+          },
+        },
+      },
     });
-
   } catch (err) {
     console.error("Erro dashboard:", err);
   }

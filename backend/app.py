@@ -260,13 +260,14 @@ def dashboard():
     baixo_estoque = len([row for row in dados if row[1] <= 5])
 
     produtos = [
-        {
-            "nome": row[0],
-            "quantidade": row[1],
-            "valorUnitario": row[2]  # 🔥 ESSENCIAL PRO CÁLCULO
-        }
-        for row in dados
-    ]
+    {
+        "nome": row[0],
+        "quantidade": row[1],
+        "valorUnitario": row[2],
+        "valorTotal": row[1] * row[2]
+    }
+    for row in dados
+]
 
     return jsonify({
         "total_produtos": total_produtos,
