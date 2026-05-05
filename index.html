@@ -5,38 +5,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Estoque</title>
     <link rel="stylesheet" href="style.css" />
+    <link rel="icon" href="favicon.ico" />
   </head>
+
   <body>
     <section class="tela1">
-      <button id="toggleTema">🌙</button>
 
-      <button id="verHistorico">📊 Histórico</button>
-
-      <button><a href="dashboard.html" target="_blank">Dashboard</a></button>
-
-      <button id="btnLogout">Sair</button>
+      <!-- AÇÕES SUPERIORES -->
+      <div class="topo">
+        <button id="toggleTema">🌙</button>
+        <button id="verHistorico">📊 Histórico</button>
+        <button onclick="window.open('dashboard.html')">Dashboard</button>
+        <button id="btnLogout">Sair</button>
+      </div>
 
       <h1 class="titulo">📦 Controle de Estoque</h1>
 
-      <form class="form">
+      <!-- FORM -->
+      <form class="form" onsubmit="return false;">
         <input type="text" id="inputProduto" placeholder="Produto" />
         <input type="number" id="quantidade" placeholder="Quantidade" />
+
+        <input type="number" id="valor" placeholder="Valor (R$)" />
+        <input type="text" id="fornecedor" placeholder="Fornecedor" />
+        <input type="text" id="contato" placeholder="Contato" />
+
         <button type="button" id="cadastrar">Cadastrar</button>
       </form>
 
+      <!-- TABELA -->
       <table>
         <thead>
           <tr>
             <th>Produto</th>
             <th>Quantidade</th>
+            <th>Valor</th>
+            <th>Fornecedor</th>
+            <th>Contato</th>
             <th>Ações</th>
           </tr>
         </thead>
         <tbody id="lista"></tbody>
       </table>
+
     </section>
 
-    <!-- MODAL -->
+    <!-- MODAL MOVIMENTAÇÃO -->
     <div id="modal" class="modal hidden">
       <div class="modal-content">
         <h3 id="modalTitulo">Movimentação</h3>
@@ -55,25 +69,26 @@
       </div>
     </div>
 
+    <!-- MODAL HISTÓRICO -->
     <div id="modalHistorico" class="modal hidden">
-  <div class="modal-content">
-    <h3>Histórico de Movimentações</h3>
+      <div class="modal-content">
+        <h3>Histórico de Movimentações</h3>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Produto</th>
-          <th>Tipo</th>
-          <th>Qtd</th>
-          <th>Data</th>
-        </tr>
-      </thead>
-      <tbody id="listaHistorico"></tbody>
-    </table>
+        <table>
+          <thead>
+            <tr>
+              <th>Produto</th>
+              <th>Tipo</th>
+              <th>Qtd</th>
+              <th>Data</th>
+            </tr>
+          </thead>
+          <tbody id="listaHistorico"></tbody>
+        </table>
 
-    <button onclick="fecharHistorico()">Fechar</button>
-  </div>
-</div>
+        <button onclick="fecharHistorico()">Fechar</button>
+      </div>
+    </div>
 
     <script src="script.js"></script>
   </body>

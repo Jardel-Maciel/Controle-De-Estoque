@@ -41,10 +41,7 @@ def criar_tabelas():
 criar_tabelas()
 
 # -------- AUTH -------- #
-usuarios = [
-    {"email": "admin@teste.com", "senha": "123456"}
-]
-
+usuarios = [{"email": "admin@teste.com", "senha": "123456"}]
 tokens = {}
 
 def autenticar():
@@ -73,9 +70,15 @@ def listar():
     conn = conectar()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM produtos")
-    dados = cursor.fetchall()
+    cursor.execute("""
+        SELECT id, produto, quantidade,
+               COALESCE(valor, 0),
+               COALESCE(fornecedor, ''),
+               COALESCE(contato, '')
+        FROM produtos
+    """)
 
+    dados = cursor.fetchall()
     conn.close()
 
     produtos = [
@@ -258,7 +261,6 @@ def dashboard():
         "total_itens": total_itens,
         "total_gasto": total_gasto
     })
-    
 
 # -------- START -------- #
 if __name__ == "__main__":
