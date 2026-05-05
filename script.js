@@ -289,3 +289,48 @@ document.getElementById("btnLogout")?.addEventListener("click", () => {
   localStorage.removeItem("token");
   window.location.href = "login.html";
 });
+
+const modalHistorico = document.getElementById("modalHistorico");
+const listaHistorico = document.getElementById("listaHistorico");
+
+async function carregarHistorico() {
+  try {
+    const res = await fetch(`${API}/movimentacoes`, {
+      headers: { Authorization: token }
+    });
+
+    const dados = await res.json();
+
+    if (!res.ok) {
+      alert(dados.erro);
+      return;
+    }
+
+    listaHistorico.innerHTML = "";
+
+    dados.forEach((item) => {
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td>${item.produto}</td>
+        <td>${item.tipo}</td>
+        <td>${item.quantidade}</td>
+        <td>${new Date(item.data).toLocaleString()}</td>
+      `;
+
+      listaHistorico.appendChild(tr);
+    });
+
+  } catch (err) {
+    console.error(err);
+    alert("Erro ao carregar histórico");
+  }
+}
+
+document.getElementById("verHistorico").addEventListener("click", () => {
+  modalHistorico.classList.remove("hidden");
+  carregarHistorico();
+});
+function fecharHistorico() {
+  modalHistorico.classList.add("hidden");
+}

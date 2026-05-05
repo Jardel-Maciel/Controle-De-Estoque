@@ -10,6 +10,8 @@
     <section class="tela1">
       <button id="toggleTema">🌙</button>
 
+      <button id="verHistorico">📊 Histórico</button>
+
       <button><a href="dashboard.html" target="_blank">Dashboard</a></button>
 
       <button id="btnLogout">Sair</button>
@@ -52,6 +54,26 @@
         </div>
       </div>
     </div>
+
+    <div id="modalHistorico" class="modal hidden">
+  <div class="modal-content">
+    <h3>Histórico de Movimentações</h3>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th>Tipo</th>
+          <th>Qtd</th>
+          <th>Data</th>
+        </tr>
+      </thead>
+      <tbody id="listaHistorico"></tbody>
+    </table>
+
+    <button onclick="fecharHistorico()">Fechar</button>
+  </div>
+</div>
 
     <script src="script.js"></script>
   </body>

@@ -263,3 +263,21 @@ body.dark .btn-cancel {
     opacity: 1;
   }
 }
+
+#modalHistorico table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+#modalHistorico th,
+#modalHistorico td {
+  padding: 8px;
+  border-bottom: 1px solid #ccc;
+  text-align: left;
+}
+
+body.dark #modalHistorico th,
+body.dark #modalHistorico td {
+  border-color: #444;
+}
