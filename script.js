@@ -8,8 +8,6 @@ let produtoIdAtual = null;
 const modal = document.getElementById("modal");
 const inputQtd = document.getElementById("modalQuantidade");
 const tituloModal = document.getElementById("modalTitulo");
-const btnConfirmar = document.getElementById("confirmarModal");
-const btnCancelar = document.getElementById("cancelarModal");
 
 function abrirModal(tipo, id) {
   tipoMovimentacao = tipo;
@@ -27,8 +25,8 @@ function fecharModal() {
   modal.classList.add("hidden");
 }
 
-// -------- CONFIRMAR MODAL --------
-btnConfirmar.addEventListener("click", async () => {
+// -------- CONFIRMAR --------
+document.getElementById("confirmarModal").onclick = async () => {
   const quantidade = inputQtd.value;
 
   if (!quantidade || quantidade <= 0) {
@@ -63,9 +61,9 @@ btnConfirmar.addEventListener("click", async () => {
     console.error(err);
     alert("Erro na movimentação");
   }
-});
+};
 
-btnCancelar.addEventListener("click", fecharModal);
+document.getElementById("cancelarModal").onclick = fecharModal;
 
 // -------- CARREGAR PRODUTOS --------
 async function carregar() {
@@ -103,60 +101,48 @@ async function carregar() {
   }
 }
 
-// -------- INICIO --------
-document.addEventListener("DOMContentLoaded", () => {
-  const produto = document.getElementById("inputProduto");
-  const quantidade = document.getElementById("quantidade");
-  const valor = document.getElementById("valor");
-  const fornecedor = document.getElementById("fornecedor");
-  const contato = document.getElementById("contato");
-  const cadastrar = document.getElementById("cadastrar");
+// -------- CADASTRAR --------
+document.getElementById("cadastrar").onclick = async () => {
+  const produto = document.getElementById("inputProduto").value;
+  const quantidade = document.getElementById("quantidade").value;
+  const valor = document.getElementById("valor").value;
+  const fornecedor = document.getElementById("fornecedor").value;
+  const contato = document.getElementById("contato").value;
 
-  if (!token) {
-    window.location.href = "login.html";
+  if (!produto || !quantidade) {
+    alert("Preencha produto e quantidade");
     return;
   }
 
-  cadastrar.addEventListener("click", async (e) => {
-    e.preventDefault();
+  try {
+    const res = await fetch(`${API}/produtos`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token,
+      },
+      body: JSON.stringify({
+        produto,
+        quantidade,
+        valor,
+        fornecedor,
+        contato,
+      }),
+    });
 
-    try {
-      const res = await fetch(`${API}/produtos`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token,
-        },
-        body: JSON.stringify({
-          produto: produto.value,
-          quantidade: quantidade.value,
-          valor: valor.value,
-          fornecedor: fornecedor.value,
-          contato: contato.value,
-        }),
-      });
+    const data = await res.json();
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        alert(data.erro);
-        return;
-      }
-
-      produto.value = "";
-      quantidade.value = "";
-      valor.value = "";
-      fornecedor.value = "";
-      contato.value = "";
-
-      carregar();
-    } catch (err) {
-      console.error(err);
+    if (!res.ok) {
+      alert(data.erro);
+      return;
     }
-  });
 
-  carregar();
-});
+    carregar();
+  } catch (err) {
+    console.error(err);
+    alert("Erro ao cadastrar");
+  }
+};
 
 // -------- AÇÕES --------
 window.entrada = (id) => abrirModal("entrada", id);
@@ -172,17 +158,15 @@ window.remover = async (id) => {
 };
 
 // -------- HISTÓRICO --------
-const modalHistorico = document.getElementById("modalHistorico");
-const listaHistorico = document.getElementById("listaHistorico");
-
 async function carregarHistorico() {
   const res = await fetch(`${API}/movimentacoes`, {
     headers: { Authorization: token },
   });
 
   const dados = await res.json();
+  const lista = document.getElementById("listaHistorico");
 
-  listaHistorico.innerHTML = "";
+  lista.innerHTML = "";
 
   dados.forEach((item) => {
     const tr = document.createElement("tr");
@@ -194,15 +178,48 @@ async function carregarHistorico() {
       <td>${new Date(item.data).toLocaleString()}</td>
     `;
 
-    listaHistorico.appendChild(tr);
+    lista.appendChild(tr);
   });
 }
 
 document.getElementById("verHistorico").onclick = () => {
-  modalHistorico.classList.remove("hidden");
+  document.getElementById("modalHistorico").classList.remove("hidden");
   carregarHistorico();
 };
 
 function fecharHistorico() {
-  modalHistorico.classList.add("hidden");
+  document.getElementById("modalHistorico").classList.add("hidden");
 }
+
+// -------- DARK MODE (AQUI ESTAVA O ERRO) --------
+const botaoTema = document.getElementById("toggleTema");
+
+// aplicar tema salvo
+if (localStorage.getItem("tema") === "dark") {
+  document.body.classList.add("dark");
+}
+
+// atualizar ícone
+function atualizarIcone() {
+  botaoTema.textContent =
+    document.body.classList.contains("dark") ? "☀️" : "🌙";
+}
+
+atualizarIcone();
+
+// trocar tema
+botaoTema.onclick = () => {
+  document.body.classList.toggle("dark");
+
+  const dark = document.body.classList.contains("dark");
+  localStorage.setItem("tema", dark ? "dark" : "light");
+
+  atualizarIcone();
+};
+
+// -------- INIT --------
+if (!token) {
+  window.location.href = "login.html";
+}
+
+carregar();

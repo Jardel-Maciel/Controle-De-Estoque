@@ -1,4 +1,5 @@
 <!doctype html>
+
 <html lang="pt-br">
   <head>
     <meta charset="UTF-8" />
@@ -11,85 +12,78 @@
   <body>
     <section class="tela1">
 
-      <!-- AÇÕES SUPERIORES -->
-      <div class="topo">
-        <button id="toggleTema">🌙</button>
-        <button id="verHistorico">📊 Histórico</button>
-        <button onclick="window.open('dashboard.html')">Dashboard</button>
-        <button id="btnLogout">Sair</button>
-      </div>
 
-      <h1 class="titulo">📦 Controle de Estoque</h1>
+  <div class="topo">
+    <button id="toggleTema">🌙</button>
+    <button id="verHistorico">📊 Histórico</button>
+    <button onclick="window.open('dashboard.html')">Dashboard</button>
+    <button id="btnLogout">Sair</button>
+  </div>
 
-      <!-- FORM -->
-      <form class="form" onsubmit="return false;">
-        <input type="text" id="inputProduto" placeholder="Produto" />
-        <input type="number" id="quantidade" placeholder="Quantidade" />
+  <h1 class="titulo">📦 Controle de Estoque</h1>
 
-        <input type="number" id="valor" placeholder="Valor (R$)" />
-        <input type="text" id="fornecedor" placeholder="Fornecedor" />
-        <input type="text" id="contato" placeholder="Contato" />
+  <form class="form" onsubmit="return false;">
+    <input type="text" id="inputProduto" placeholder="Produto" />
+    <input type="number" id="quantidade" placeholder="Quantidade" />
 
-        <button type="button" id="cadastrar">Cadastrar</button>
-      </form>
+    <input type="number" id="valor" placeholder="Valor (R$)" />
+    <input type="text" id="fornecedor" placeholder="Fornecedor" />
+    <input type="text" id="contato" placeholder="Contato" />
 
-      <!-- TABELA -->
-      <table>
-        <thead>
-          <tr>
-            <th>Produto</th>
-            <th>Quantidade</th>
-            <th>Valor</th>
-            <th>Fornecedor</th>
-            <th>Contato</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody id="lista"></tbody>
-      </table>
+    <button type="button" id="cadastrar">Cadastrar</button>
+  </form>
 
-    </section>
+  <table>
+    <thead>
+      <tr>
+        <th>Produto</th>
+        <th>Quantidade</th>
+        <th>Valor</th>
+        <th>Fornecedor</th>
+        <th>Contato</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody id="lista"></tbody>
+  </table>
 
-    <!-- MODAL MOVIMENTAÇÃO -->
-    <div id="modal" class="modal hidden">
-      <div class="modal-content">
-        <h3 id="modalTitulo">Movimentação</h3>
+</section>
 
-        <input
-          type="number"
-          id="modalQuantidade"
-          placeholder="Quantidade"
-          min="1"
-        />
-
-        <div class="modal-actions">
-          <button id="confirmarModal">Confirmar</button>
-          <button id="cancelarModal" class="btn-cancel">Cancelar</button>
-        </div>
-      </div>
+<!-- MODAL -->
+<div id="modal" class="modal hidden">
+  <div class="modal-content">
+    <h3 id="modalTitulo">Movimentação</h3>
+    <input type="number" id="modalQuantidade" placeholder="Quantidade" />
+    <div class="modal-actions">
+      <button id="confirmarModal">Confirmar</button>
+      <button id="cancelarModal" class="btn-cancel">Cancelar</button>
     </div>
+  </div>
+</div>
 
-    <!-- MODAL HISTÓRICO -->
-    <div id="modalHistorico" class="modal hidden">
-      <div class="modal-content">
-        <h3>Histórico de Movimentações</h3>
+<!-- HISTÓRICO -->
+<div id="modalHistorico" class="modal hidden">
+  <div class="modal-content">
+    <h3>Histórico de Movimentações</h3>
 
-        <table>
-          <thead>
-            <tr>
-              <th>Produto</th>
-              <th>Tipo</th>
-              <th>Qtd</th>
-              <th>Data</th>
-            </tr>
-          </thead>
-          <tbody id="listaHistorico"></tbody>
-        </table>
+    <table>
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th>Tipo</th>
+          <th>Qtd</th>
+          <th>Data</th>
+        </tr>
+      </thead>
+      <tbody id="listaHistorico"></tbody>
+    </table>
 
-        <button onclick="fecharHistorico()">Fechar</button>
-      </div>
-    </div>
+    <button onclick="fecharHistorico()">Fechar</button>
+  </div>
+</div>
 
-    <script src="script.js"></script>
+<script src="script.js"></script>
+
+
   </body>
 </html>
