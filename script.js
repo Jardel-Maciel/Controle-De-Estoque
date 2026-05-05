@@ -65,15 +65,9 @@ btnConfirmar.addEventListener("click", async () => {
   }
 });
 
-// -------- CANCELAR MODAL --------
 btnCancelar.addEventListener("click", fecharModal);
 
-// -------- FECHAR COM ESC --------
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") fecharModal();
-});
-
-// -------- CARREGAR (GLOBAL) --------
+// -------- CARREGAR PRODUTOS --------
 async function carregar() {
   try {
     const res = await fetch(`${API}/produtos`, {
@@ -81,11 +75,6 @@ async function carregar() {
     });
 
     const dados = await res.json();
-
-    if (!res.ok) {
-      alert(dados.erro || "Erro inesperado");
-      return;
-    }
 
     const lista = document.getElementById("lista");
     lista.innerHTML = "";
@@ -95,11 +84,10 @@ async function carregar() {
 
       tr.innerHTML = `
         <td>${item.produto}</td>
-        <td>
-          <span class="editavel" data-id="${item.id}">
-            ${item.quantidade}
-          </span>
-        </td>
+        <td>${item.quantidade}</td>
+        <td>R$ ${item.valor || 0}</td>
+        <td>${item.fornecedor || "-"}</td>
+        <td>${item.contato || "-"}</td>
         <td>
           <button onclick="entrada(${item.id})">➕</button>
           <button onclick="saida(${item.id})">➖</button>
@@ -111,7 +99,7 @@ async function carregar() {
     });
   } catch (err) {
     console.error(err);
-    alert("Erro ao carregar dados");
+    alert("Erro ao carregar");
   }
 }
 
@@ -119,87 +107,20 @@ async function carregar() {
 document.addEventListener("DOMContentLoaded", () => {
   const produto = document.getElementById("inputProduto");
   const quantidade = document.getElementById("quantidade");
+  const valor = document.getElementById("valor");
+  const fornecedor = document.getElementById("fornecedor");
+  const contato = document.getElementById("contato");
   const cadastrar = document.getElementById("cadastrar");
-  const lista = document.getElementById("lista");
-  const botaoTema = document.getElementById("toggleTema");
 
   if (!token) {
     window.location.href = "login.html";
     return;
   }
 
-  // -------- EDIÇÃO INLINE --------
-  lista.addEventListener("click", (e) => {
-    if (!e.target.classList.contains("editavel")) return;
-
-    const span = e.target;
-    const id = span.dataset.id;
-    const valorAtual = span.textContent;
-
-    const input = document.createElement("input");
-    input.type = "number";
-    input.value = valorAtual;
-    input.style.width = "60px";
-
-    span.replaceWith(input);
-    input.focus();
-
-    input.addEventListener("blur", () => salvarEdicao(input, id));
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") salvarEdicao(input, id);
-    });
-  });
-
-  async function salvarEdicao(input, id) {
-    const novaQuantidade = input.value;
-
-    if (!novaQuantidade || novaQuantidade <= 0) {
-      alert("Valor inválido");
-      carregar();
-      return;
-    }
-
-    try {
-      const res = await fetch(`${API}/produtos/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token,
-        },
-        body: JSON.stringify({
-          quantidade: novaQuantidade,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        alert(data.erro || "Erro ao atualizar");
-        return;
-      }
-
-      carregar();
-    } catch (err) {
-      console.error(err);
-      alert("Erro ao salvar");
-    }
-  }
-
-  // -------- CADASTRAR --------
   cadastrar.addEventListener("click", async (e) => {
     e.preventDefault();
 
-    const texto = produto.value.trim();
-    const quant = quantidade.value.trim();
-
-    if (!texto || !quant) {
-      alert("Preencha todos os campos!");
-      return;
-    }
-
     try {
-      cadastrar.disabled = true;
-
       const res = await fetch(`${API}/produtos`, {
         method: "POST",
         headers: {
@@ -207,8 +128,11 @@ document.addEventListener("DOMContentLoaded", () => {
           Authorization: token,
         },
         body: JSON.stringify({
-          produto: texto,
-          quantidade: quant,
+          produto: produto.value,
+          quantidade: quantidade.value,
+          valor: valor.value,
+          fornecedor: fornecedor.value,
+          contato: contato.value,
         }),
       });
 
@@ -221,113 +145,64 @@ document.addEventListener("DOMContentLoaded", () => {
 
       produto.value = "";
       quantidade.value = "";
+      valor.value = "";
+      fornecedor.value = "";
+      contato.value = "";
 
       carregar();
     } catch (err) {
       console.error(err);
-      alert("Erro ao cadastrar");
-    } finally {
-      cadastrar.disabled = false;
     }
-  });
-
-  // -------- TEMA --------
-  if (localStorage.getItem("tema") === "dark") {
-    document.body.classList.add("dark");
-  }
-
-  function atualizarIcone() {
-    botaoTema.textContent = document.body.classList.contains("dark")
-      ? "☀️"
-      : "🌙";
-  }
-
-  atualizarIcone();
-
-  botaoTema.addEventListener("click", () => {
-    document.body.classList.toggle("dark");
-
-    const dark = document.body.classList.contains("dark");
-    localStorage.setItem("tema", dark ? "dark" : "light");
-
-    atualizarIcone();
   });
 
   carregar();
 });
 
-// -------- ENTRADA --------
-window.entrada = function (id) {
-  abrirModal("entrada", id);
+// -------- AÇÕES --------
+window.entrada = (id) => abrirModal("entrada", id);
+window.saida = (id) => abrirModal("saida", id);
+
+window.remover = async (id) => {
+  await fetch(`${API}/produtos/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: token },
+  });
+
+  carregar();
 };
 
-// -------- SAÍDA --------
-window.saida = function (id) {
-  abrirModal("saida", id);
-};
-
-// -------- REMOVER --------
-window.remover = async function (id) {
-  try {
-    await fetch(`${API}/produtos/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: token },
-    });
-
-    carregar();
-  } catch (err) {
-    console.error(err);
-    alert("Erro ao remover");
-  }
-};
-
-// -------- LOGOUT --------
-document.getElementById("btnLogout")?.addEventListener("click", () => {
-  localStorage.removeItem("token");
-  window.location.href = "login.html";
-});
-
+// -------- HISTÓRICO --------
 const modalHistorico = document.getElementById("modalHistorico");
 const listaHistorico = document.getElementById("listaHistorico");
 
 async function carregarHistorico() {
-  try {
-    const res = await fetch(`${API}/movimentacoes`, {
-      headers: { Authorization: token },
-    });
+  const res = await fetch(`${API}/movimentacoes`, {
+    headers: { Authorization: token },
+  });
 
-    const dados = await res.json();
+  const dados = await res.json();
 
-    if (!res.ok) {
-      alert(dados.erro);
-      return;
-    }
+  listaHistorico.innerHTML = "";
 
-    listaHistorico.innerHTML = "";
-
-    dados.forEach((item) => {
-      const tr = document.createElement("tr");
+  dados.forEach((item) => {
+    const tr = document.createElement("tr");
 
     tr.innerHTML = `
-  <td>${item.produto}</td>
-  <td>${item.tipo}</td>
-  <td>${item.quantidade}</td>
-  <td>${new Date(item.data).toLocaleString()}</td>
-`;
+      <td>${item.produto}</td>
+      <td>${item.tipo}</td>
+      <td>${item.quantidade}</td>
+      <td>${new Date(item.data).toLocaleString()}</td>
+    `;
 
-
-      listaHistorico.appendChild(tr);
-    });
-  } catch (err) {
-    console.error(err);
-    alert("Erro ao carregar histórico");
-  }
+    listaHistorico.appendChild(tr);
+  });
 }
 
-document.getElementById("verHistorico").addEventListener("click", () => {
+document.getElementById("verHistorico").onclick = () => {
   modalHistorico.classList.remove("hidden");
   carregarHistorico();
-});
+};
+
 function fecharHistorico() {
   modalHistorico.classList.add("hidden");
 }
