@@ -249,17 +249,25 @@ def dashboard():
     conn = conectar()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT quantidade, valor FROM produtos")
+    cursor.execute("SELECT produto, quantidade FROM produtos")
     dados = cursor.fetchall()
 
     conn.close()
 
-    total_itens = sum([row[0] for row in dados])
-    total_gasto = sum([row[0] * (row[1] or 0) for row in dados])
+    total_produtos = len(dados)
+    total_itens = sum([row[1] for row in dados])
+    baixo_estoque = len([row for row in dados if row[1] <= 5])
+
+    produtos = [
+        {"nome": row[0], "quantidade": row[1]}
+        for row in dados
+    ]
 
     return jsonify({
+        "total_produtos": total_produtos,
         "total_itens": total_itens,
-        "total_gasto": total_gasto
+        "baixo_estoque": baixo_estoque,
+        "produtos": produtos
     })
 
 # -------- START -------- #

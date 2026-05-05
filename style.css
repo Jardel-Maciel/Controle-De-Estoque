@@ -59,11 +59,15 @@ flex: 1;
 
 /* FORM */
 .form {
-display: flex;
-gap: 10px;
-margin-bottom: 20px;
+  display: flex;
+  flex-wrap: wrap; /* 🔥 ESSENCIAL */
+  gap: 10px;
+  margin-bottom: 20px;
 }
-
+.form input {
+  flex: 1 1 150px; /* cresce e quebra linha */
+  min-width: 140px;
+}
 /* BOTÃO */
 button {
 padding: 12px;
@@ -118,6 +122,19 @@ padding: 20px;
 border-radius: 12px;
 width: 320px;
 }
+#modalHistorico .modal-content {
+  width: 95%;
+  max-width: 800px; /* 🔥 deixa grande */
+}
+
+#modalHistorico table {
+  font-size: 14px;
+}
+
+#modalHistorico th,
+#modalHistorico td {
+  padding: 10px;
+}
 
 .modal-content input {
 width: 100%;
@@ -134,4 +151,19 @@ color: var(--text);
 #modalHistorico td,
 #modalHistorico th {
 border-bottom: 1px solid var(--border);
+}
+@media (max-width: 600px) {
+  .form {
+    flex-direction: column;
+  }
+
+  .form input,
+  .form button {
+    width: 100%;
+  }
+
+  .tela1 {
+    margin: 20px;
+    padding: 20px;
+  }
 }
