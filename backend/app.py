@@ -5,7 +5,7 @@ import uuid
 
 app = Flask(__name__)
 
-CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+CORS(app)
 
 # -------- BANCO DE DADOS -------- #
 def conectar():
@@ -208,9 +208,74 @@ def dashboard():
     
     
     
-@app.after_request
-def after_request(response):
-    response.headers.add("Access-Control-Allow-Origin", "*")
-    response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
-    response.headers.add("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
-    return response
+
+
+
+def criar_tabela_movimentacoes():
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS movimentacoes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            produto_id INTEGER,
+            tipo TEXT CHECK(tipo IN ('entrada', 'saida')),
+            quantidade INTEGER,
+            data DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    conn.commit()
+    conn.close()
+
+criar_tabela_movimentacoes()
+
+@app.route("/movimentacoes", methods=["POST"])
+def movimentar():
+    if not autenticar():
+        return jsonify({"erro": "Não autorizado"}), 401
+
+    dados = request.json
+
+    produto_id = dados.get("produto_id")
+    tipo = dados.get("tipo")
+    quantidade = int(dados.get("quantidade", 0))
+
+    if tipo not in ["entrada", "saida"]:
+        return jsonify({"erro": "Tipo inválido"}), 400
+
+    if quantidade <= 0:
+        return jsonify({"erro": "Quantidade inválida"}), 400
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT quantidade FROM produtos WHERE id = ?", (produto_id,))
+    produto = cursor.fetchone()
+
+    if not produto:
+        return jsonify({"erro": "Produto não encontrado"}), 404
+
+    estoque_atual = produto[0]
+
+    if tipo == "saida" and quantidade > estoque_atual:
+        return jsonify({"erro": "Estoque insuficiente"}), 400
+
+    novo_estoque = estoque_atual + quantidade if tipo == "entrada" else estoque_atual - quantidade
+
+    # atualiza estoque
+    cursor.execute(
+        "UPDATE produtos SET quantidade = ? WHERE id = ?",
+        (novo_estoque, produto_id)
+    )
+
+    # salva histórico
+    cursor.execute("""
+        INSERT INTO movimentacoes (produto_id, tipo, quantidade)
+        VALUES (?, ?, ?)
+    """, (produto_id, tipo, quantidade))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"msg": "Movimentação realizada"})

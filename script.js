@@ -1,6 +1,7 @@
+const API = "https://backend-estoque-fnfc.onrender.com";
+const token = localStorage.getItem("token");
 document.addEventListener("DOMContentLoaded", () => {
-  const API = "https://backend-estoque-fnfc.onrender.com";
-  const token = localStorage.getItem("token");
+
 
   const produto = document.getElementById("inputProduto");
   const quantidade = document.getElementById("quantidade");
@@ -40,6 +41,8 @@ document.addEventListener("DOMContentLoaded", () => {
             </span>
           </td>
           <td>
+            <button onclick="entrada(${item.id})">➕</button>
+            <button onclick="saida(${item.id})">➖</button>
             <button class="btn-danger" onclick="remover(${item.id})">Excluir</button>
           </td>
         `;
@@ -201,6 +204,67 @@ document.addEventListener("DOMContentLoaded", () => {
 
   carregar();
 });
+
+// -------- ENTRADA --------
+window.entrada = async function (id) {
+  const quantidade = prompt("Quantidade de entrada:");
+
+  if (!quantidade || quantidade <= 0) return;
+
+  try {
+    await fetch(`${API}/movimentacoes`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token,
+      },
+      body: JSON.stringify({
+        produto_id: id,
+        tipo: "entrada",
+        quantidade,
+      }),
+    });
+
+    carregar();
+  } catch (err) {
+    console.error(err);
+    alert("Erro na entrada");
+  }
+};
+
+// -------- SAÍDA --------
+window.saida = async function (id) {
+  const quantidade = prompt("Quantidade de saída:");
+
+  if (!quantidade || quantidade <= 0) return;
+
+  try {
+    const res = await fetch(`${API}/movimentacoes`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token,
+      },
+      body: JSON.stringify({
+        produto_id: id,
+        tipo: "saida",
+        quantidade,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.erro);
+      return;
+    }
+
+    carregar();
+  } catch (err) {
+    console.error(err);
+    alert("Erro na saída");
+  }
+};
 
 // -------- LOGOUT --------
 document.getElementById("btnLogout")?.addEventListener("click", () => {
