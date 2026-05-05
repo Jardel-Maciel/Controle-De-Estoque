@@ -233,3 +233,6 @@ button {
     font-size: 18px;
   }
 }
+canvas {
+  max-height: 280px;
+}
