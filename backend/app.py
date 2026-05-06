@@ -7,9 +7,14 @@ import base64
 import schedule
 import time
 import threading
-import requests  # 🔥 NOVO
+import smtplib
+import ssl
 
-# 🔥 matplotlib sem erro no servidor
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email.mime.text import MIMEText
+from email import encoders
+
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -161,53 +166,54 @@ def gerar_pdf():
 
     return pdf
 
-# -------- EMAIL (RESEND API) -------- #
+# -------- EMAIL (CORRIGIDO SEM TRAVAR RENDER) -------- #
 def enviar_email(pdf):
-    API_KEY = os.environ.get("RESEND_API_KEY")
+    REMETENTE = os.environ.get("EMAIL_USER")
+    SENHA = os.environ.get("EMAIL_PASS")
+    DESTINATARIO = "jardelmacieldossantos.dev@gmail.com"
 
-    if not API_KEY:
-        raise Exception("Configure RESEND_API_KEY no Render")
+    if not REMETENTE or not SENHA:
+        raise Exception("Configure EMAIL_USER e EMAIL_PASS no Render")
+
+    msg = MIMEMultipart()
+    msg["From"] = REMETENTE
+    msg["To"] = DESTINATARIO
+    msg["Subject"] = "Relatório de Estoque"
+
+    msg.attach(MIMEText("Segue relatório em anexo", "plain"))
 
     with open(pdf, "rb") as f:
-        arquivo = base64.b64encode(f.read()).decode()
+        part = MIMEBase("application", "octet-stream")
+        part.set_payload(f.read())
 
-    response = requests.post(
-        "https://api.resend.com/emails",
-        headers={
-            "Authorization": f"Bearer {API_KEY}",
-            "Content-Type": "application/json"
-        },
-        json={
-            "from": "Estoque <onboarding@resend.dev>",
-            "to": ["jardelmacieldossantos.dev@gmail.com"],
-            "subject": "Relatório de Estoque",
-            "html": "<strong>Segue relatório em anexo</strong>",
-            "attachments": [
-                {
-                    "filename": "relatorio.pdf",
-                    "content": arquivo
-                }
-            ]
-        }
-    )
+    encoders.encode_base64(part)
+    part.add_header("Content-Disposition", f"attachment; filename={pdf}")
+    msg.attach(part)
 
-    if response.status_code not in [200, 201]:
-        raise Exception(f"Erro ao enviar email: {response.text}")
+    context = ssl.create_default_context()
+
+    try:
+        # 🔥 CORREÇÃO PRINCIPAL: SSL direto (mais leve e não trava Render)
+        servidor = smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context, timeout=10)
+        servidor.login(REMETENTE, SENHA)
+        servidor.sendmail(REMETENTE, DESTINATARIO, msg.as_string())
+        servidor.quit()
+
+        print("Email enviado com sucesso!")
+
+    except Exception as e:
+        print("Erro ao enviar email:", str(e))
+        raise e
 
 # -------- TESTE -------- #
 @app.route("/testar-email")
 def testar():
-    def tarefa_background():
-        try:
-            pdf = gerar_pdf()
-            enviar_email(pdf)
-            print("Email enviado com sucesso")
-        except Exception as e:
-            print("Erro:", e)
-
-    threading.Thread(target=tarefa_background).start()
-
-    return {"status": "ok", "msg": "Relatório sendo processado"}
+    try:
+        pdf = gerar_pdf()
+        enviar_email(pdf)
+        return {"status": "ok", "msg": "Email enviado"}
+    except Exception as e:
+        return {"status": "erro", "msg": str(e)}, 500
 
 # -------- AGENDADOR -------- #
 def tarefa():
