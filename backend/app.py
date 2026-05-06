@@ -235,6 +235,8 @@ def rodar_agendador():
 
 threading.Thread(target=rodar_agendador, daemon=True).start()
 
+print("API KEY:", os.environ.get("SENDGRID_API_KEY"))
+
 # -------- START -------- #
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
