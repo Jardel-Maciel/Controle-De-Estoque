@@ -174,6 +174,8 @@ def movimentar():
     if not autenticar():
         return jsonify({"erro": "Não autorizado"}), 401
 
+    comentario = dados.get("comentario", "")
+    responsavel = dados.get("responsavel", "")
     dados = request.json
     produto_id = dados.get("produto_id")
     tipo = dados.get("tipo")
@@ -181,6 +183,25 @@ def movimentar():
 
     conn = conectar()
     cursor = conn.cursor()
+    
+    def atualizar_tabela_movimentacoes():
+        conn = conectar()
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("ALTER TABLE movimentacoes ADD COLUMN comentario TEXT")
+        except:
+            pass
+
+        try:
+            cursor.execute("ALTER TABLE movimentacoes ADD COLUMN responsavel TEXT")
+        except:
+            pass
+
+    conn.commit()
+    conn.close()
+
+    atualizar_tabela_movimentacoes()
 
     cursor.execute("SELECT quantidade FROM produtos WHERE id = ?", (produto_id,))
     produto = cursor.fetchone()
@@ -201,9 +222,10 @@ def movimentar():
     )
 
     cursor.execute("""
-        INSERT INTO movimentacoes (produto_id, tipo, quantidade)
-        VALUES (?, ?, ?)
-    """, (produto_id, tipo, quantidade))
+        INSERT INTO movimentacoes 
+        (produto_id, tipo, quantidade, comentario, responsavel)
+        VALUES (?, ?, ?, ?, ?)
+    """, (produto_id, tipo, quantidade, comentario, responsavel))
 
     conn.commit()
     conn.close()
@@ -220,13 +242,17 @@ def historico():
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT m.id, p.produto, m.tipo, m.quantidade, m.data
+        SELECT m.id, p.produto, m.tipo, m.quantidade, m.data,
+            m.comentario, m.responsavel
         FROM movimentacoes m
         JOIN produtos p ON p.id = m.produto_id
         ORDER BY m.data DESC
     """)
+    
+    
 
     dados = cursor.fetchall()
+    
     conn.close()
 
     return jsonify([
@@ -235,10 +261,14 @@ def historico():
             "produto": row[1],
             "tipo": row[2],
             "quantidade": row[3],
-            "data": row[4]
+            "data": row[4],
+            "comentario": row[5],
+            "responsavel": row[6]
         }
         for row in dados
+    
     ])
+    
 
 # -------- DASHBOARD + FINANCEIRO -------- #
 @app.route("/dashboard", methods=["GET"])

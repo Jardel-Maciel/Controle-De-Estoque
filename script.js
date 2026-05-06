@@ -175,6 +175,8 @@ async function carregarHistorico() {
       <td>${item.produto}</td>
       <td>${item.tipo}</td>
       <td>${item.quantidade}</td>
+      <td>${item.comentario || "-"}</td>
+      <td>${item.responsavel || "-"}</td>
       <td>${new Date(item.data).toLocaleString()}</td>
     `;
 
@@ -201,8 +203,9 @@ if (localStorage.getItem("tema") === "dark") {
 
 // atualizar ícone
 function atualizarIcone() {
-  botaoTema.textContent =
-    document.body.classList.contains("dark") ? "☀️" : "🌙";
+  botaoTema.textContent = document.body.classList.contains("dark")
+    ? "☀️"
+    : "🌙";
 }
 
 atualizarIcone();

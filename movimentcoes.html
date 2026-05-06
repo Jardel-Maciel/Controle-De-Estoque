@@ -1,57 +1,61 @@
 <!doctype html>
 <html lang="pt-br">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Movimentações | Estoque</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Movimentações | Estoque</title>
 
-  <link rel="stylesheet" href="dashboard.css">
-</head>
+    <link rel="stylesheet" href="dashboard.css" />
+  </head>
 
-<body>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <h2>📦 Estoque</h2>
 
-<div class="layout">
+        <nav>
+          <a href="dashboard.html">Dashboard</a>
+          <a href="index.html">Produtos</a>
+          <a href="movimentacoes.html">Movimentações</a>
+        </nav>
+      </aside>
 
-  <aside class="sidebar">
-    <h2>📦 Estoque</h2>
+      <main class="main">
+        <div class="topbar">
+          <h1>Movimentações</h1>
+        </div>
 
-    <nav>
-      <a href="dashboard.html">Dashboard</a>
-      <a href="index.html">Produtos</a>
-      <a href="movimentacoes.html">Movimentações</a>
-    </nav>
-  </aside>
-
-  <main class="main">
-
-    <div class="topbar">
-      <h1>Movimentações</h1>
+        <section class="chart-container">
+          <h2>Histórico</h2>
+          <div id="lista"></div>
+        </section>
+      </main>
     </div>
+    <input
+      type="text"
+      id="modalComentario"
+      placeholder="Comentário (ex: venda cliente João)"
+    />
+    <input type="text" id="modalResponsavel" placeholder="Responsável" />
 
-    <section class="chart-container">
-      <h2>Histórico</h2>
-      <div id="lista"></div>
-    </section>
+    <script>
+      const API = "https://backend-estoque-fnfc.onrender.com";
+      const token = localStorage.getItem("token");
+      const comentario = document.getElementById("modalComentario").value;
+      const responsavel = document.getElementById("modalResponsavel").value;
 
-  </main>
-</div>
+      async function carregar() {
+        const res = await fetch(`${API}/movimentacoes`, {
+          headers: { Authorization: token },
+        });
 
-<script>
-const API = "https://backend-estoque-fnfc.onrender.com";
-const token = localStorage.getItem("token");
+        const data = await res.json();
 
-async function carregar() {
-  const res = await fetch(`${API}/movimentacoes`, {
-    headers: { Authorization: token }
-  });
+        const lista = document.getElementById("lista");
+        lista.innerHTML = "";
 
-  const data = await res.json();
-
-  const lista = document.getElementById("lista");
-  lista.innerHTML = "";
-
-  data.forEach(m => {
-    lista.innerHTML += `
+        data.forEach((m) => {
+          lista.innerHTML += `
       <div class="card">
         <h3>${m.produto}</h3>
         <p>Tipo: ${m.tipo}</p>
@@ -59,11 +63,16 @@ async function carregar() {
         <p>Data: ${m.data}</p>
       </div>
     `;
-  });
-}
-
-carregar();
-</script>
-
-</body>
+        });
+      }
+      body: JSON.stringify({
+        produto_id: produtoIdAtual,
+        tipo: tipoMovimentacao,
+        quantidade,
+        comentario,
+        responsavel,
+      });
+      carregar();
+    </script>
+  </body>
 </html>
