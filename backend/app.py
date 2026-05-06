@@ -7,11 +7,7 @@ import base64
 import schedule
 import time
 import threading
-import smtplib
-
-from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email import encoders
+import requests  # 🔥 NOVO
 
 # 🔥 matplotlib sem erro no servidor
 import matplotlib
@@ -165,35 +161,38 @@ def gerar_pdf():
 
     return pdf
 
-# -------- EMAIL (GMAIL SMTP) -------- #
+# -------- EMAIL (RESEND API) -------- #
 def enviar_email(pdf):
-    REMETENTE = os.environ.get("EMAIL_USER")
-    SENHA = os.environ.get("EMAIL_PASS")
-    DESTINATARIO = "jardelmacieldossantos.dev@gmail.com"
+    API_KEY = os.environ.get("RESEND_API_KEY")
 
-    if not REMETENTE or not SENHA:
-        raise Exception("Configure EMAIL_USER e EMAIL_PASS no Render")
+    if not API_KEY:
+        raise Exception("Configure RESEND_API_KEY no Render")
 
-    msg = MIMEMultipart()
-    msg["From"] = REMETENTE
-    msg["To"] = DESTINATARIO
-    msg["Subject"] = "Relatório de Estoque"
-
-    # anexar PDF
     with open(pdf, "rb") as f:
-        part = MIMEBase("application", "octet-stream")
-        part.set_payload(f.read())
+        arquivo = base64.b64encode(f.read()).decode()
 
-    encoders.encode_base64(part)
-    part.add_header("Content-Disposition", f"attachment; filename={pdf}")
-    msg.attach(part)
+    response = requests.post(
+        "https://api.resend.com/emails",
+        headers={
+            "Authorization": f"Bearer {API_KEY}",
+            "Content-Type": "application/json"
+        },
+        json={
+            "from": "Estoque <onboarding@resend.dev>",
+            "to": ["jardelmacieldossantos.dev@gmail.com"],
+            "subject": "Relatório de Estoque",
+            "html": "<strong>Segue relatório em anexo</strong>",
+            "attachments": [
+                {
+                    "filename": "relatorio.pdf",
+                    "content": arquivo
+                }
+            ]
+        }
+    )
 
-    # enviar
-    servidor = smtplib.SMTP("smtp.gmail.com", 587)
-    servidor.starttls()
-    servidor.login(REMETENTE, SENHA)
-    servidor.send_message(msg)
-    servidor.quit()
+    if response.status_code not in [200, 201]:
+        raise Exception(f"Erro ao enviar email: {response.text}")
 
 # -------- TESTE -------- #
 @app.route("/testar-email")
