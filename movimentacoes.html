@@ -10,57 +10,78 @@
 
 <h1>Movimentações</h1>
 
+<div id="erro" style="color:red; margin:10px 0;"></div>
 <div id="lista"></div>
 
 <script>
 const API = "https://backend-estoque-fnfc.onrender.com";
 const token = localStorage.getItem("token");
 
+if (!token) {
+  document.getElementById("erro").innerText = "Usuário não autenticado. Faça login novamente.";
+}
+
 async function carregar() {
+  const lista = document.getElementById("lista");
+  const erroDiv = document.getElementById("erro");
+
   try {
     const res = await fetch(`${API}/movimentacoes`, {
-      headers: { Authorization: token }
+      method: "GET",
+      headers: {
+        "Authorization": token,
+        "Content-Type": "application/json"
+      }
     });
 
     if (!res.ok) {
-      const erro = await res.text();
-      console.error("Erro:", erro);
+      const text = await res.text();
+      erroDiv.innerText = "Erro ao carregar movimentações: " + text;
       return;
     }
 
     const data = await res.json();
 
-    const lista = document.getElementById("lista");
+    if (!Array.isArray(data) || data.length === 0) {
+      lista.innerHTML = "<p>Nenhuma movimentação encontrada.</p>";
+      return;
+    }
+
     lista.innerHTML = "";
 
-   data.forEach(m => {
-  lista.innerHTML += `
-    <div class="card">
-      <h3>${m.produto}</h3>
+    data.forEach(m => {
+      const dataFormatada = m.data
+        ? new Date(m.data).toLocaleString("pt-BR")
+        : "Data não disponível";
 
-      <span class="tipo ${m.tipo}">
-        ${m.tipo === "entrada" ? "ENTRADA" : "SAÍDA"}
-      </span>
+      lista.innerHTML += `
+        <div class="card">
+          <h3>${m.produto}</h3>
 
-      <p>Quantidade: ${m.quantidade}</p>
+          <span class="tipo ${m.tipo}">
+            ${m.tipo === "entrada" ? "ENTRADA" : "SAÍDA"}
+          </span>
 
-      <p class="comentario">
-        ${m.comentario || "Sem observação"}
-      </p>
+          <p><b>Quantidade:</b> ${m.quantidade}</p>
 
-      <p class="responsavel">
-        👤 ${m.responsavel || "Não informado"}
-      </p>
+          <p class="comentario">
+            ${m.comentario ? m.comentario : "Sem observação"}
+          </p>
 
-      <p class="data">
-        ${new Date(m.data).toLocaleString()}
-      </p>
-    </div>
-  `;
-});
+          <p class="responsavel">
+            👤 ${m.responsavel ? m.responsavel : "Não informado"}
+          </p>
+
+          <p class="data">
+            🕒 ${dataFormatada}
+          </p>
+        </div>
+      `;
+    });
 
   } catch (err) {
     console.error(err);
+    erroDiv.innerText = "Erro de conexão com o servidor.";
   }
 }
 
