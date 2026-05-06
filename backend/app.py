@@ -3,15 +3,21 @@ from flask_cors import CORS
 import sqlite3
 import uuid
 import os
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
-from reportlab.lib.styles import getSampleStyleSheet
-import matplotlib.pyplot as plt
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, Attachment
 import base64
 import schedule
 import time
 import threading
+
+# 🔥 matplotlib sem erro no servidor
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+from reportlab.lib.styles import getSampleStyleSheet
+
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail, Attachment
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
@@ -27,23 +33,9 @@ def criar_tabelas():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS produtos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            produto TEXT NOT NULL,
-            quantidade INTEGER NOT NULL,
-            valor REAL DEFAULT 0,
-            fornecedor TEXT,
-            contato TEXT
-        )
-    """)
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS movimentacoes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            produto_id INTEGER,
-            tipo TEXT CHECK(tipo IN ('entrada', 'saida')),
+            produto TEXT,
             quantidade INTEGER,
-            data DATETIME DEFAULT CURRENT_TIMESTAMP,
-            comentario TEXT,
-            responsavel TEXT
+            valor REAL
         )
     """)
 
@@ -54,22 +46,18 @@ criar_tabelas()
 
 # -------- AUTH -------- #
 usuarios = [{"email": "admin@teste.com", "senha": "123456"}]
-tokens = {}
 
 def autenticar():
-    token = request.headers.get("Authorization")
-    return bool(token)
+    return bool(request.headers.get("Authorization"))
 
 # -------- LOGIN -------- #
 @app.route("/login", methods=["POST"])
 def login():
     dados = request.json
 
-    for user in usuarios:
-        if user["email"] == dados.get("email") and user["senha"] == dados.get("senha"):
-            token = str(uuid.uuid4())
-            tokens[token] = user
-            return jsonify({"token": token})
+    for u in usuarios:
+        if u["email"] == dados.get("email") and u["senha"] == dados.get("senha"):
+            return jsonify({"token": str(uuid.uuid4())})
 
     return jsonify({"erro": "Credenciais inválidas"}), 401
 
@@ -81,20 +69,13 @@ def listar():
 
     conn = conectar()
     cursor = conn.cursor()
-
-    cursor.execute("SELECT id, produto, quantidade, valor, fornecedor, contato FROM produtos")
+    cursor.execute("SELECT * FROM produtos")
     dados = cursor.fetchall()
     conn.close()
 
     return jsonify([
-        {
-            "id": r[0],
-            "produto": r[1],
-            "quantidade": r[2],
-            "valor": r[3],
-            "fornecedor": r[4],
-            "contato": r[5]
-        } for r in dados
+        {"id": r[0], "produto": r[1], "quantidade": r[2], "valor": r[3]}
+        for r in dados
     ])
 
 @app.route("/produtos", methods=["POST"])
@@ -107,28 +88,15 @@ def criar():
     conn = conectar()
     cursor = conn.cursor()
 
-    cursor.execute("""
-        INSERT INTO produtos (produto, quantidade, valor, fornecedor, contato)
-        VALUES (?, ?, ?, ?, ?)
-    """, (d["produto"], int(d["quantidade"]), float(d.get("valor", 0)), d.get("fornecedor",""), d.get("contato","")))
+    cursor.execute(
+        "INSERT INTO produtos (produto, quantidade, valor) VALUES (?, ?, ?)",
+        (d["produto"], int(d["quantidade"]), float(d.get("valor", 0)))
+    )
 
     conn.commit()
     conn.close()
 
     return jsonify({"msg": "Produto criado"})
-
-@app.route("/produtos/<int:id>", methods=["DELETE"])
-def deletar(id):
-    if not autenticar():
-        return jsonify({"erro": "Não autorizado"}), 401
-
-    conn = conectar()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM produtos WHERE id = ?", (id,))
-    conn.commit()
-    conn.close()
-
-    return jsonify({"msg": "Removido"})
 
 # -------- DASHBOARD -------- #
 @app.route("/dashboard", methods=["GET"])
@@ -151,7 +119,7 @@ def dashboard():
                 "nome": p[0],
                 "quantidade": p[1],
                 "valorUnitario": p[2],
-                "valorTotal": p[1]*p[2]
+                "valorTotal": p[1] * p[2]
             } for p in dados
         ]
     })
@@ -170,7 +138,7 @@ def gerar_pdf():
     elementos = []
 
     elementos.append(Paragraph("Relatório de Estoque", styles["Title"]))
-    elementos.append(Spacer(1,10))
+    elementos.append(Spacer(1, 10))
 
     for p in dados:
         elementos.append(Paragraph(f"{p[0]} - Qtd: {p[1]} - R$ {p[2]}", styles["Normal"]))
@@ -185,14 +153,24 @@ def gerar_pdf():
     plt.savefig("grafico.png")
     plt.close()
 
+    elementos.append(Spacer(1, 20))
     elementos.append(Image("grafico.png", width=400, height=200))
 
     doc.build(elementos)
+
+    # limpar imagem
+    if os.path.exists("grafico.png"):
+        os.remove("grafico.png")
 
     return pdf
 
 # -------- EMAIL -------- #
 def enviar_email(pdf):
+    api_key = os.environ.get("SENDGRID_API_KEY")
+
+    if not api_key:
+        raise Exception("SENDGRID_API_KEY não configurada no Render")
+
     with open(pdf, "rb") as f:
         encoded = base64.b64encode(f.read()).decode()
 
@@ -204,7 +182,7 @@ def enviar_email(pdf):
     )
 
     message = Mail(
-        from_email="jardel.maciel22@gmail.com",  # 🔥 MUDE AQUI
+        from_email="jardel.maciel22@gmail.com",  # ⚠️ precisa ser verificado no SendGrid
         to_emails=["jardelmacieldossantos.dev@gmail.com"],
         subject="Relatório de Estoque",
         html_content="<strong>Segue relatório em anexo</strong>"
@@ -212,20 +190,32 @@ def enviar_email(pdf):
 
     message.attachment = attachment
 
-    sg = SendGridAPIClient(os.environ.get("SENDGRID_API_KEY"))
-    sg.send(message)
+    try:
+        sg = SendGridAPIClient(api_key)
+        sg.send(message)
+        print("Email enviado com sucesso!")
+    except Exception as e:
+        print("Erro ao enviar email:", str(e))
+        raise e
 
-# -------- ROTAS -------- #
+# -------- TESTE -------- #
 @app.route("/testar-email")
 def testar():
-    pdf = gerar_pdf()
-    enviar_email(pdf)
-    return {"msg": "Email enviado"}
+    try:
+        pdf = gerar_pdf()
+        enviar_email(pdf)
+        return {"status": "ok", "msg": "Email enviado"}
+    except Exception as e:
+        return {"status": "erro", "msg": str(e)}, 500
 
 # -------- AGENDADOR -------- #
 def tarefa():
-    pdf = gerar_pdf()
-    enviar_email(pdf)
+    try:
+        pdf = gerar_pdf()
+        enviar_email(pdf)
+        print("Relatório automático enviado")
+    except Exception as e:
+        print("Erro no agendador:", e)
 
 def rodar_agendador():
     schedule.every().monday.at("08:00").do(tarefa)
@@ -234,8 +224,6 @@ def rodar_agendador():
         time.sleep(60)
 
 threading.Thread(target=rodar_agendador, daemon=True).start()
-
-print("API KEY:", os.environ.get("SENDGRID_API_KEY"))
 
 # -------- START -------- #
 if __name__ == "__main__":
