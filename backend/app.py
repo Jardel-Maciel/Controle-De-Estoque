@@ -168,50 +168,57 @@ def gerar_pdf():
 
 # -------- EMAIL (CORRIGIDO SEM TRAVAR RENDER) -------- #
 def enviar_email(pdf):
-    REMETENTE = os.environ.get("EMAIL_USER")
-    SENHA = os.environ.get("EMAIL_PASS")
-    DESTINATARIO = "jardelmacieldossantos.dev@gmail.com"
-
-    if not REMETENTE or not SENHA:
-        raise Exception("Configure EMAIL_USER e EMAIL_PASS no Render")
-
-    msg = MIMEMultipart()
-    msg["From"] = REMETENTE
-    msg["To"] = DESTINATARIO
-    msg["Subject"] = "Relatório de Estoque"
-
-    msg.attach(MIMEText("Segue relatório em anexo", "plain"))
-
-    with open(pdf, "rb") as f:
-        part = MIMEBase("application", "octet-stream")
-        part.set_payload(f.read())
-
-    encoders.encode_base64(part)
-    part.add_header("Content-Disposition", f"attachment; filename={pdf}")
-    msg.attach(part)
-
-    context = ssl.create_default_context()
-
     try:
-        # 🔥 CORREÇÃO PRINCIPAL: SSL direto (mais leve e não trava Render)
-        servidor = smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context, timeout=10)
+        REMETENTE = os.environ.get("EMAIL_USER")
+        SENHA = os.environ.get("EMAIL_PASS")
+        DESTINATARIO = "jardelmacieldossantos.dev@gmail.com"
+
+        if not REMETENTE or not SENHA:
+            raise Exception("EMAIL_USER ou EMAIL_PASS não configurados")
+
+        msg = MIMEMultipart()
+        msg["From"] = REMETENTE
+        msg["To"] = DESTINATARIO
+        msg["Subject"] = "Relatório de Estoque"
+
+        with open(pdf, "rb") as f:
+            part = MIMEBase("application", "octet-stream")
+            part.set_payload(f.read())
+
+        encoders.encode_base64(part)
+        part.add_header("Content-Disposition", f"attachment; filename={pdf}")
+        msg.attach(part)
+
+        # 🔥 TIMEOUT + proteção contra travamento
+        servidor = smtplib.SMTP("smtp.gmail.com", 587, timeout=20)
+        servidor.ehlo()
+        servidor.starttls()
+        servidor.ehlo()
+
         servidor.login(REMETENTE, SENHA)
-        servidor.sendmail(REMETENTE, DESTINATARIO, msg.as_string())
+        servidor.send_message(msg)
         servidor.quit()
 
         print("Email enviado com sucesso!")
 
+        return True
+
     except Exception as e:
         print("Erro ao enviar email:", str(e))
-        raise e
+        return False
 
 # -------- TESTE -------- #
 @app.route("/testar-email")
 def testar():
     try:
         pdf = gerar_pdf()
-        enviar_email(pdf)
-        return {"status": "ok", "msg": "Email enviado"}
+        ok = enviar_email(pdf)
+
+        if ok:
+            return {"status": "ok", "msg": "Email enviado"}
+        else:
+            return {"status": "erro", "msg": "Falha ao enviar email (rede ou SMTP)"}, 500
+
     except Exception as e:
         return {"status": "erro", "msg": str(e)}, 500
 
