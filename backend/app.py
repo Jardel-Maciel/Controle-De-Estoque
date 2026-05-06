@@ -197,12 +197,17 @@ def enviar_email(pdf):
 # -------- TESTE -------- #
 @app.route("/testar-email")
 def testar():
-    try:
-        pdf = gerar_pdf()
-        enviar_email(pdf)
-        return {"status": "ok", "msg": "Email enviado"}
-    except Exception as e:
-        return {"status": "erro", "msg": str(e)}, 500
+    def tarefa_background():
+        try:
+            pdf = gerar_pdf()
+            enviar_email(pdf)
+            print("Email enviado com sucesso")
+        except Exception as e:
+            print("Erro:", e)
+
+    threading.Thread(target=tarefa_background).start()
+
+    return {"status": "ok", "msg": "Relatório sendo processado"}
 
 # -------- AGENDADOR -------- #
 def tarefa():
