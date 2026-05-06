@@ -69,3 +69,12 @@ async function carregarDashboard() {
     console.error("Erro geral:", err);
   }
 }
+
+document.getElementById("btnDownloadPDF").addEventListener("click", () => {
+  const API = "https://backend-estoque-fnfc.onrender.com";
+
+  const link = document.createElement("a");
+  link.href = `${API}/download-pdf`;
+  link.target = "_blank";
+  link.click();
+});

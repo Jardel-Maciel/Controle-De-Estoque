@@ -239,6 +239,20 @@ def rodar_agendador():
 
 threading.Thread(target=rodar_agendador, daemon=True).start()
 
+
+
+from flask import send_file
+
+@app.route("/download-pdf")
+def download_pdf():
+    pdf_path = "relatorio.pdf"  # ajuste para o caminho real do seu arquivo gerado
+
+    return send_file(
+        pdf_path,
+        as_attachment=True,
+        download_name="relatorio_estoque.pdf"
+    )
+
 # -------- START -------- #
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
