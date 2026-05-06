@@ -4,7 +4,8 @@ import sqlite3
 import uuid
 
 app = Flask(__name__)
-CORS(app)
+
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 # -------- BANCO -------- #
 def conectar():
@@ -234,6 +235,51 @@ def historico():
         }
         for row in dados
     ])
+
+# -------- DASHBOARD (ADICIONADO DE VOLTA) -------- #
+@app.route("/dashboard", methods=["GET"])
+def dashboard():
+    if not autenticar():
+        return jsonify({"erro": "Não autorizado"}), 401
+
+    try:
+        conn = conectar()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT produto, quantidade, valor FROM produtos")
+        dados = cursor.fetchall()
+
+        conn.close()
+
+        total_produtos = len(dados)
+        total_itens = sum([row[1] for row in dados])
+        baixo_estoque = len([row for row in dados if row[1] <= 5])
+
+        produtos = [
+            {
+                "nome": row[0],
+                "quantidade": row[1],
+                "valorUnitario": row[2],
+                "valorTotal": row[1] * row[2]
+            }
+            for row in dados
+        ]
+
+        return jsonify({
+            "total_produtos": total_produtos,
+            "total_itens": total_itens,
+            "baixo_estoque": baixo_estoque,
+            "produtos": produtos
+        })
+
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+# -------- CORS FIX -------- #
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        return '', 200
 
 # -------- START -------- #
 if __name__ == "__main__":

@@ -8,15 +8,12 @@ document.addEventListener("DOMContentLoaded", carregarDashboard);
 async function carregarDashboard() {
   try {
     const res = await fetch(`${API}/dashboard`, {
-      headers: {
-        Authorization: token,
-      },
+      headers: { Authorization: token },
     });
 
-    const data = await res.json();
-
     if (!res.ok) {
-      console.error(data);
+      const erro = await res.text();
+      console.error("Erro dashboard:", erro);
       return;
     }
 
