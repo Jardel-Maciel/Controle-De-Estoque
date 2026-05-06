@@ -7,6 +7,11 @@ import base64
 import schedule
 import time
 import threading
+import smtplib
+
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
 
 # 🔥 matplotlib sem erro no servidor
 import matplotlib
@@ -15,9 +20,6 @@ import matplotlib.pyplot as plt
 
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet
-
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, Attachment
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
@@ -158,45 +160,40 @@ def gerar_pdf():
 
     doc.build(elementos)
 
-    # limpar imagem
     if os.path.exists("grafico.png"):
         os.remove("grafico.png")
 
     return pdf
 
-# -------- EMAIL -------- #
+# -------- EMAIL (GMAIL SMTP) -------- #
 def enviar_email(pdf):
-    api_key = os.environ.get("SENDGRID_API_KEY")
+    REMETENTE = os.environ.get("EMAIL_USER")
+    SENHA = os.environ.get("EMAIL_PASS")
+    DESTINATARIO = "jardelmacieldossantos.dev@gmail.com"
 
-    if not api_key:
-        raise Exception("SENDGRID_API_KEY não configurada no Render")
+    if not REMETENTE or not SENHA:
+        raise Exception("Configure EMAIL_USER e EMAIL_PASS no Render")
 
+    msg = MIMEMultipart()
+    msg["From"] = REMETENTE
+    msg["To"] = DESTINATARIO
+    msg["Subject"] = "Relatório de Estoque"
+
+    # anexar PDF
     with open(pdf, "rb") as f:
-        encoded = base64.b64encode(f.read()).decode()
+        part = MIMEBase("application", "octet-stream")
+        part.set_payload(f.read())
 
-    attachment = Attachment(
-        file_content=encoded,
-        file_name="relatorio.pdf",
-        file_type="application/pdf",
-        disposition="attachment"
-    )
+    encoders.encode_base64(part)
+    part.add_header("Content-Disposition", f"attachment; filename={pdf}")
+    msg.attach(part)
 
-    message = Mail(
-        from_email="jardel.maciel22@gmail.com",  # ⚠️ precisa ser verificado no SendGrid
-        to_emails=["jardelmacieldossantos.dev@gmail.com"],
-        subject="Relatório de Estoque",
-        html_content="<strong>Segue relatório em anexo</strong>"
-    )
-
-    message.attachment = attachment
-
-    try:
-        sg = SendGridAPIClient(api_key)
-        sg.send(message)
-        print("Email enviado com sucesso!")
-    except Exception as e:
-        print("Erro ao enviar email:", str(e))
-        raise e
+    # enviar
+    servidor = smtplib.SMTP("smtp.gmail.com", 587)
+    servidor.starttls()
+    servidor.login(REMETENTE, SENHA)
+    servidor.send_message(msg)
+    servidor.quit()
 
 # -------- TESTE -------- #
 @app.route("/testar-email")
