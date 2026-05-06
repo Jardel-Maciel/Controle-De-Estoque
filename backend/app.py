@@ -459,6 +459,17 @@ def relatorio_manual():
     pdf = gerar_pdf()
     enviar_email_sendgrid(pdf)
     return {"msg": "Relatório enviado"}
+
+#------- teste envio de email--------#
+
+@app.route("/testar-email", methods=["GET"])
+def testar_email():
+    try:
+        pdf = gerar_pdf()
+        enviar_email_sendgrid(pdf)
+        return {"status": "ok", "msg": "Email enviado com sucesso"}
+    except Exception as e:
+        return {"status": "erro", "msg": str(e)}
 # -------- START -------- #
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
