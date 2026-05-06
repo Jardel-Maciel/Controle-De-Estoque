@@ -345,27 +345,40 @@ def criar_movimentacao():
     if not autenticar():
         return jsonify({"erro": "Não autorizado"}), 401
 
-    d = request.json
+    try:
+        d = request.json or {}
 
-    conn = conectar()
-    cursor = conn.cursor()
+        produto = d.get("produto")
+        tipo = d.get("tipo")
+        quantidade = d.get("quantidade")
+        comentario = d.get("comentario", "")
+        responsavel = d.get("responsavel", "Sistema")
 
-    cursor.execute("""
-        INSERT INTO movimentacoes 
-        (produto, tipo, quantidade, comentario, responsavel)
-        VALUES (?, ?, ?, ?, ?)
-    """, (
-        d.get("produto"),
-        d.get("tipo"),
-        d.get("quantidade"),
-        d.get("comentario", ""),
-        d.get("responsavel", "Sistema")
-    ))
+        if not produto or not tipo or not quantidade:
+            return jsonify({"erro": "Dados incompletos"}), 400
 
-    conn.commit()
-    conn.close()
+        quantidade = int(quantidade)
 
-    return jsonify({"msg": "Movimentação registrada"})
+        # normaliza tipo (resolve entrada/ENTRADA)
+        tipo = tipo.upper()
+
+        conn = conectar()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            INSERT INTO movimentacoes
+            (produto, tipo, quantidade, comentario, responsavel)
+            VALUES (?, ?, ?, ?, ?)
+        """, (produto, tipo, quantidade, comentario, responsavel))
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({"msg": "Movimentação registrada"})
+
+    except Exception as e:
+        print("ERRO MOVIMENTAÇÃO:", e)
+        return jsonify({"erro": str(e)}), 500
 
 # -------- START -------- #
 if __name__ == "__main__":
