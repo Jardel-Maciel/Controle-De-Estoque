@@ -280,6 +280,93 @@ def enviar_email(pdf):
         print("Erro ao enviar email:", e)
         return False
 
+
+def criar_tabelas():
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS produtos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            produto TEXT,
+            quantidade INTEGER,
+            valor REAL
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS movimentacoes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            produto TEXT,
+            tipo TEXT,
+            quantidade INTEGER,
+            comentario TEXT,
+            responsavel TEXT,
+            data TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    conn.commit()
+    conn.close()
+
+
+@app.route("/movimentacoes", methods=["GET"])
+def listar_movimentacoes():
+    if not autenticar():
+        return jsonify({"erro": "Não autorizado"}), 401
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT produto, tipo, quantidade, comentario, responsavel, data
+        FROM movimentacoes
+        ORDER BY id DESC
+    """)
+
+    dados = cursor.fetchall()
+    conn.close()
+
+    return jsonify([
+        {
+            "produto": r[0],
+            "tipo": r[1],
+            "quantidade": r[2],
+            "comentario": r[3],
+            "responsavel": r[4],
+            "data": r[5]
+        }
+        for r in dados
+    ])
+
+
+@app.route("/movimentacoes", methods=["POST"])
+def criar_movimentacao():
+    if not autenticar():
+        return jsonify({"erro": "Não autorizado"}), 401
+
+    d = request.json
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO movimentacoes 
+        (produto, tipo, quantidade, comentario, responsavel)
+        VALUES (?, ?, ?, ?, ?)
+    """, (
+        d.get("produto"),
+        d.get("tipo"),
+        d.get("quantidade"),
+        d.get("comentario", ""),
+        d.get("responsavel", "Sistema")
+    ))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"msg": "Movimentação registrada"})
+
 # -------- START -------- #
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
