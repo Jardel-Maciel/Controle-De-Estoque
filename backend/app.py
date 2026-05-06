@@ -130,45 +130,107 @@ def dashboard():
 def gerar_pdf():
     conn = conectar()
     cursor = conn.cursor()
+
+    # PRODUTOS
     cursor.execute("SELECT produto, quantidade, valor FROM produtos")
-    dados = cursor.fetchall()
+    produtos = cursor.fetchall()
+
+    # MOVIMENTAÇÕES
+    cursor.execute("SELECT tipo, quantidade FROM movimentacoes")
+    mov = cursor.fetchall()
+
     conn.close()
 
-    buffer = BytesIO()
+    pdf = "relatorio.pdf"
+    doc = SimpleDocTemplate(pdf)
 
-    doc = SimpleDocTemplate(buffer)
     styles = getSampleStyleSheet()
     elementos = []
 
-    elementos.append(Paragraph("Relatório de Estoque", styles["Title"]))
+    # =========================
+    # TÍTULO
+    # =========================
+    elementos.append(Paragraph("📊 RELATÓRIO PROFISSIONAL DE ESTOQUE", styles["Title"]))
+    elementos.append(Spacer(1, 12))
+
+    # =========================
+    # KPIs (RESUMO)
+    # =========================
+    total_produtos = len(produtos)
+    total_itens = sum(p[1] for p in produtos)
+    valor_total = sum(p[1] * p[2] for p in produtos)
+    baixo_estoque = len([p for p in produtos if p[1] <= 5])
+
+    elementos.append(Paragraph(f"📦 Total de Produtos: {total_produtos}", styles["Normal"]))
+    elementos.append(Paragraph(f"📦 Total de Itens em Estoque: {total_itens}", styles["Normal"]))
+    elementos.append(Paragraph(f"💰 Valor Total do Estoque: R$ {valor_total:.2f}", styles["Normal"]))
+    elementos.append(Paragraph(f"⚠️ Produtos com Baixo Estoque: {baixo_estoque}", styles["Normal"]))
+
+    elementos.append(Spacer(1, 15))
+
+    # =========================
+    # LISTA DE PRODUTOS
+    # =========================
+    elementos.append(Paragraph("📦 DETALHAMENTO DOS PRODUTOS", styles["Heading2"]))
     elementos.append(Spacer(1, 10))
 
-    for p in dados:
+    for p in produtos:
+        nome = p[0]
+        qtd = p[1]
+        valor = p[2]
+        total = qtd * valor
+
         elementos.append(
-            Paragraph(f"{p[0]} - Qtd: {p[1]} - R$ {p[2]}", styles["Normal"])
+            Paragraph(
+                f"• <b>{nome}</b> | Qtd: {qtd} | Unit: R$ {valor:.2f} | Total: R$ {total:.2f}",
+                styles["Normal"]
+            )
         )
 
-    nomes = [p[0] for p in dados]
-    qtd = [p[1] for p in dados]
+    elementos.append(Spacer(1, 20))
 
-    plt.figure()
-    plt.bar(nomes, qtd)
+    # =========================
+    # GRÁFICO PROFISSIONAL
+    # =========================
+    nomes = [p[0] for p in produtos]
+    qtds = [p[1] for p in produtos]
+
+    plt.figure(figsize=(8, 4))
+    plt.bar(nomes, qtds)
+    plt.title("Estoque por Produto")
     plt.xticks(rotation=45)
     plt.tight_layout()
 
-    img_buffer = BytesIO()
-    plt.savefig(img_buffer, format="png")
+    grafico_path = "grafico.png"
+    plt.savefig(grafico_path)
     plt.close()
-    img_buffer.seek(0)
 
+    elementos.append(Paragraph("📉 VISÃO GRÁFICA DO ESTOQUE", styles["Heading2"]))
+    elementos.append(Image(grafico_path, width=450, height=250))
+
+    # =========================
+    # MOVIMENTAÇÕES
+    # =========================
     elementos.append(Spacer(1, 20))
-    elementos.append(Image(img_buffer, width=400, height=200))
+    elementos.append(Paragraph("🔄 MOVIMENTAÇÕES RECENTES", styles["Heading2"]))
 
+    if mov:
+        for m in mov[-10:]:
+            elementos.append(
+                Paragraph(f"{m[0]} - {m[1]} itens", styles["Normal"])
+            )
+    else:
+        elementos.append(Paragraph("Nenhuma movimentação registrada.", styles["Normal"]))
+
+    # =========================
+    # GERAR PDF
+    # =========================
     doc.build(elementos)
 
-    buffer.seek(0)
-    return buffer
+    if os.path.exists(grafico_path):
+        os.remove(grafico_path)
 
+    return pdf
 # -------- DOWNLOAD PDF -------- #
 @app.route("/download-pdf")
 def download_pdf():
