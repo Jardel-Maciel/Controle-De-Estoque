@@ -127,6 +127,7 @@ def dashboard():
     })
 
 # -------- PDF (AGORA EM MEMÓRIA) -------- #
+
 def gerar_pdf():
     conn = conectar()
     cursor = conn.cursor()
@@ -231,6 +232,7 @@ def gerar_pdf():
         os.remove(grafico_path)
 
     return pdf
+
 # -------- DOWNLOAD PDF -------- #
 @app.route("/download-pdf")
 def download_pdf():
