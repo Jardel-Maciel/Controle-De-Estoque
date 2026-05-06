@@ -1,18 +1,17 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import sqlite3
 import uuid
 import os
-import base64
 import schedule
 import time
 import threading
 import smtplib
-import ssl
+
+from io import BytesIO
 
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
-from email.mime.text import MIMEText
 from email import encoders
 
 import matplotlib
@@ -127,7 +126,7 @@ def dashboard():
         ]
     })
 
-# -------- PDF -------- #
+# -------- PDF (AGORA EM MEMÓRIA) -------- #
 def gerar_pdf():
     conn = conectar()
     cursor = conn.cursor()
@@ -135,8 +134,9 @@ def gerar_pdf():
     dados = cursor.fetchall()
     conn.close()
 
-    pdf = "relatorio.pdf"
-    doc = SimpleDocTemplate(pdf)
+    buffer = BytesIO()
+
+    doc = SimpleDocTemplate(buffer)
     styles = getSampleStyleSheet()
     elementos = []
 
@@ -144,7 +144,9 @@ def gerar_pdf():
     elementos.append(Spacer(1, 10))
 
     for p in dados:
-        elementos.append(Paragraph(f"{p[0]} - Qtd: {p[1]} - R$ {p[2]}", styles["Normal"]))
+        elementos.append(
+            Paragraph(f"{p[0]} - Qtd: {p[1]} - R$ {p[2]}", styles["Normal"])
+        )
 
     nomes = [p[0] for p in dados]
     qtd = [p[1] for p in dados]
@@ -153,20 +155,33 @@ def gerar_pdf():
     plt.bar(nomes, qtd)
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.savefig("grafico.png")
+
+    img_buffer = BytesIO()
+    plt.savefig(img_buffer, format="png")
     plt.close()
+    img_buffer.seek(0)
 
     elementos.append(Spacer(1, 20))
-    elementos.append(Image("grafico.png", width=400, height=200))
+    elementos.append(Image(img_buffer, width=400, height=200))
 
     doc.build(elementos)
 
-    if os.path.exists("grafico.png"):
-        os.remove("grafico.png")
+    buffer.seek(0)
+    return buffer
 
-    return pdf
+# -------- DOWNLOAD PDF -------- #
+@app.route("/download-pdf")
+def download_pdf():
+    pdf_buffer = gerar_pdf()
 
-# -------- EMAIL (CORRIGIDO SEM TRAVAR RENDER) -------- #
+    return send_file(
+        pdf_buffer,
+        as_attachment=True,
+        download_name="relatorio_estoque.pdf",
+        mimetype="application/pdf"
+    )
+
+# -------- EMAIL (mantido) -------- #
 def enviar_email(pdf):
     try:
         REMETENTE = os.environ.get("EMAIL_USER")
@@ -189,69 +204,17 @@ def enviar_email(pdf):
         part.add_header("Content-Disposition", f"attachment; filename={pdf}")
         msg.attach(part)
 
-        # 🔥 TIMEOUT + proteção contra travamento
         servidor = smtplib.SMTP("smtp.gmail.com", 587, timeout=20)
-        servidor.ehlo()
         servidor.starttls()
-        servidor.ehlo()
-
         servidor.login(REMETENTE, SENHA)
         servidor.send_message(msg)
         servidor.quit()
 
-        print("Email enviado com sucesso!")
-
         return True
 
     except Exception as e:
-        print("Erro ao enviar email:", str(e))
+        print("Erro ao enviar email:", e)
         return False
-
-# -------- TESTE -------- #
-@app.route("/testar-email")
-def testar():
-    try:
-        pdf = gerar_pdf()
-        ok = enviar_email(pdf)
-
-        if ok:
-            return {"status": "ok", "msg": "Email enviado"}
-        else:
-            return {"status": "erro", "msg": "Falha ao enviar email (rede ou SMTP)"}, 500
-
-    except Exception as e:
-        return {"status": "erro", "msg": str(e)}, 500
-
-# -------- AGENDADOR -------- #
-def tarefa():
-    try:
-        pdf = gerar_pdf()
-        enviar_email(pdf)
-        print("Relatório automático enviado")
-    except Exception as e:
-        print("Erro no agendador:", e)
-
-def rodar_agendador():
-    schedule.every().monday.at("08:00").do(tarefa)
-    while True:
-        schedule.run_pending()
-        time.sleep(60)
-
-threading.Thread(target=rodar_agendador, daemon=True).start()
-
-
-
-from flask import send_file
-
-@app.route("/download-pdf")
-def download_pdf():
-    pdf_path = "relatorio.pdf"  # ajuste para o caminho real do seu arquivo gerado
-
-    return send_file(
-        pdf_path,
-        as_attachment=True,
-        download_name="relatorio_estoque.pdf"
-    )
 
 # -------- START -------- #
 if __name__ == "__main__":
