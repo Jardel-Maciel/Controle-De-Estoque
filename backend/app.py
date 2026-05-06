@@ -322,7 +322,7 @@ Valor total em estoque: R$ {valor_total:.2f}
 
 # -------- ENVIO DE EMAIL -------- #
 def enviar_email(relatorio):
-    remetente = "SEU_EMAIL@gmail.com"
+    remetente = "jardel.maciel22@gmail.com"
     senha = "Manut218"  # ⚠️ não usar senha normal
     destinatario = "jardel.maciel22@gmail.com"
 
