@@ -7,6 +7,8 @@ let produtoIdAtual = null;
 // -------- MODAL --------
 const modal = document.getElementById("modal");
 const inputQtd = document.getElementById("modalQuantidade");
+const inputResponsavel = document.getElementById("modalResponsavel"); // ✅ NOVO
+const inputComentario = document.getElementById("modalComentario");   // ✅ NOVO
 const tituloModal = document.getElementById("modalTitulo");
 
 function abrirModal(tipo, id) {
@@ -16,7 +18,11 @@ function abrirModal(tipo, id) {
   tituloModal.textContent =
     tipo === "entrada" ? "Entrada de Produto" : "Saída de Produto";
 
+  // limpar campos
   inputQtd.value = "";
+  if (inputResponsavel) inputResponsavel.value = ""; // ✅ NOVO
+  if (inputComentario) inputComentario.value = "";   // ✅ NOVO
+
   modal.classList.remove("hidden");
   inputQtd.focus();
 }
@@ -28,6 +34,8 @@ function fecharModal() {
 // -------- CONFIRMAR --------
 document.getElementById("confirmarModal").onclick = async () => {
   const quantidade = inputQtd.value;
+  const responsavel = inputResponsavel?.value || ""; // ✅ NOVO
+  const comentario = inputComentario?.value || "";   // ✅ NOVO
 
   if (!quantidade || quantidade <= 0) {
     alert("Quantidade inválida");
@@ -45,6 +53,8 @@ document.getElementById("confirmarModal").onclick = async () => {
         produto_id: produtoIdAtual,
         tipo: tipoMovimentacao,
         quantidade,
+        comentario,   // ✅ NOVO
+        responsavel,  // ✅ NOVO
       }),
     });
 
@@ -193,15 +203,13 @@ function fecharHistorico() {
   document.getElementById("modalHistorico").classList.add("hidden");
 }
 
-// -------- DARK MODE (AQUI ESTAVA O ERRO) --------
+// -------- DARK MODE --------
 const botaoTema = document.getElementById("toggleTema");
 
-// aplicar tema salvo
 if (localStorage.getItem("tema") === "dark") {
   document.body.classList.add("dark");
 }
 
-// atualizar ícone
 function atualizarIcone() {
   botaoTema.textContent = document.body.classList.contains("dark")
     ? "☀️"
@@ -210,7 +218,6 @@ function atualizarIcone() {
 
 atualizarIcone();
 
-// trocar tema
 botaoTema.onclick = () => {
   document.body.classList.toggle("dark");
 

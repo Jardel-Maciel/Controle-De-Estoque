@@ -33,18 +33,31 @@ async function carregar() {
     const lista = document.getElementById("lista");
     lista.innerHTML = "";
 
-    data.forEach(m => {
-      lista.innerHTML += `
-        <div>
-          <b>${m.produto}</b><br>
-          Tipo: ${m.tipo}<br>
-          Qtd: ${m.quantidade}<br>
-          Data: ${m.data}<br>
-          Comentário: ${m.comentario || "-"}<br>
-          Responsável: ${m.responsavel || "-"}<br><br>
-        </div>
-      `;
-    });
+   data.forEach(m => {
+  lista.innerHTML += `
+    <div class="card">
+      <h3>${m.produto}</h3>
+
+      <span class="tipo ${m.tipo}">
+        ${m.tipo === "entrada" ? "ENTRADA" : "SAÍDA"}
+      </span>
+
+      <p>Quantidade: ${m.quantidade}</p>
+
+      <p class="comentario">
+        ${m.comentario || "Sem observação"}
+      </p>
+
+      <p class="responsavel">
+        👤 ${m.responsavel || "Não informado"}
+      </p>
+
+      <p class="data">
+        ${new Date(m.data).toLocaleString()}
+      </p>
+    </div>
+  `;
+});
 
   } catch (err) {
     console.error(err);
