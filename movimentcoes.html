@@ -65,14 +65,36 @@
     `;
         });
       }
-      body: JSON.stringify({
-        produto_id: produtoIdAtual,
-        tipo: tipoMovimentacao,
-        quantidade,
-        comentario,
-        responsavel,
-      });
-      carregar();
+
+      async function carregar() {
+        const res = await fetch(`${API}/movimentacoes`, {
+          headers: { Authorization: token },
+        });
+
+        if (!res.ok) {
+          const erro = await res.text();
+          console.error("Erro do servidor:", erro);
+          return;
+        }
+
+        const data = await res.json();
+
+        const lista = document.getElementById("lista");
+        lista.innerHTML = "";
+
+        data.forEach((m) => {
+          lista.innerHTML += `
+      <div class="card">
+        <h3>${m.produto}</h3>
+        <p>Tipo: ${m.tipo}</p>
+        <p>Quantidade: ${m.quantidade}</p>
+        <p>Data: ${m.data}</p>
+        <p>Comentário: ${m.comentario || "-"}</p>
+        <p>Responsável: ${m.responsavel || "-"}</p>
+      </div>
+    `;
+        });
+      }
     </script>
   </body>
 </html>

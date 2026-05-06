@@ -15,13 +15,14 @@ def criar_tabelas():
     cursor = conn.cursor()
 
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS produtos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            produto TEXT NOT NULL,
-            quantidade INTEGER NOT NULL,
-            valor REAL DEFAULT 0,
-            fornecedor TEXT,
-            contato TEXT
+        CREATE TABLE IF NOT EXISTS movimentacoes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        produto_id INTEGER,
+        tipo TEXT CHECK(tipo IN ('entrada', 'saida')),
+        quantidade INTEGER,
+        data DATETIME DEFAULT CURRENT_TIMESTAMP,
+        comentario TEXT,
+            responsavel TEXT
         )
     """)
 
@@ -174,34 +175,16 @@ def movimentar():
     if not autenticar():
         return jsonify({"erro": "Não autorizado"}), 401
 
-    comentario = dados.get("comentario", "")
-    responsavel = dados.get("responsavel", "")
     dados = request.json
+
     produto_id = dados.get("produto_id")
     tipo = dados.get("tipo")
     quantidade = int(dados.get("quantidade", 0))
+    comentario = dados.get("comentario", "")
+    responsavel = dados.get("responsavel", "")
 
     conn = conectar()
     cursor = conn.cursor()
-    
-    def atualizar_tabela_movimentacoes():
-        conn = conectar()
-        cursor = conn.cursor()
-
-        try:
-            cursor.execute("ALTER TABLE movimentacoes ADD COLUMN comentario TEXT")
-        except:
-            pass
-
-        try:
-            cursor.execute("ALTER TABLE movimentacoes ADD COLUMN responsavel TEXT")
-        except:
-            pass
-
-    conn.commit()
-    conn.close()
-
-    atualizar_tabela_movimentacoes()
 
     cursor.execute("SELECT quantidade FROM produtos WHERE id = ?", (produto_id,))
     produto = cursor.fetchone()
@@ -230,7 +213,7 @@ def movimentar():
     conn.commit()
     conn.close()
 
-    return jsonify({"msg": "Movimentado"})
+    return jsonify({"msg": "Movimentado com sucesso"})
 
 # -------- HISTÓRICO -------- #
 @app.route("/movimentacoes", methods=["GET"])
