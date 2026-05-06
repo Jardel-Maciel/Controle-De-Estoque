@@ -15,14 +15,13 @@ def criar_tabelas():
     cursor = conn.cursor()
 
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS movimentacoes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        produto_id INTEGER,
-        tipo TEXT CHECK(tipo IN ('entrada', 'saida')),
-        quantidade INTEGER,
-        data DATETIME DEFAULT CURRENT_TIMESTAMP,
-        comentario TEXT,
-            responsavel TEXT
+        CREATE TABLE IF NOT EXISTS produtos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            produto TEXT NOT NULL,
+            quantidade INTEGER NOT NULL,
+            valor REAL DEFAULT 0,
+            fornecedor TEXT,
+            contato TEXT
         )
     """)
 
@@ -32,7 +31,9 @@ def criar_tabelas():
             produto_id INTEGER,
             tipo TEXT CHECK(tipo IN ('entrada', 'saida')),
             quantidade INTEGER,
-            data DATETIME DEFAULT CURRENT_TIMESTAMP
+            data DATETIME DEFAULT CURRENT_TIMESTAMP,
+            comentario TEXT,
+            responsavel TEXT
         )
     """)
 
@@ -62,7 +63,7 @@ def login():
 
     return jsonify({"erro": "Credenciais inválidas"}), 401
 
-# -------- LISTAR PRODUTOS -------- #
+# -------- PRODUTOS -------- #
 @app.route("/produtos", methods=["GET"])
 def listar():
     if not autenticar():
@@ -82,7 +83,7 @@ def listar():
     dados = cursor.fetchall()
     conn.close()
 
-    produtos = [
+    return jsonify([
         {
             "id": row[0],
             "produto": row[1],
@@ -92,23 +93,14 @@ def listar():
             "contato": row[5]
         }
         for row in dados
-    ]
+    ])
 
-    return jsonify(produtos)
-
-# -------- CRIAR PRODUTO -------- #
 @app.route("/produtos", methods=["POST"])
 def criar():
     if not autenticar():
         return jsonify({"erro": "Não autorizado"}), 401
 
     novo = request.json
-
-    if not novo.get("produto") or len(novo["produto"]) < 3:
-        return jsonify({"erro": "Produto inválido"}), 400
-
-    if not str(novo.get("quantidade")).isdigit():
-        return jsonify({"erro": "Quantidade inválida"}), 400
 
     conn = conectar()
     cursor = conn.cursor()
@@ -127,18 +119,14 @@ def criar():
     conn.commit()
     conn.close()
 
-    return jsonify({"msg": "Produto criado com sucesso"})
+    return jsonify({"msg": "Produto criado"})
 
-# -------- ATUALIZAR QUANTIDADE -------- #
 @app.route("/produtos/<int:id>", methods=["PUT"])
 def atualizar(id):
     if not autenticar():
         return jsonify({"erro": "Não autorizado"}), 401
 
     dados = request.json
-
-    if not str(dados.get("quantidade")).isdigit():
-        return jsonify({"erro": "Quantidade inválida"}), 400
 
     conn = conectar()
     cursor = conn.cursor()
@@ -153,7 +141,6 @@ def atualizar(id):
 
     return jsonify({"msg": "Atualizado"})
 
-# -------- DELETAR -------- #
 @app.route("/produtos/<int:id>", methods=["DELETE"])
 def deletar(id):
     if not autenticar():
@@ -169,7 +156,7 @@ def deletar(id):
 
     return jsonify({"msg": "Removido"})
 
-# -------- MOVIMENTAÇÃO -------- #
+# -------- MOVIMENTAÇÕES -------- #
 @app.route("/movimentacoes", methods=["POST"])
 def movimentar():
     if not autenticar():
@@ -215,7 +202,6 @@ def movimentar():
 
     return jsonify({"msg": "Movimentado com sucesso"})
 
-# -------- HISTÓRICO -------- #
 @app.route("/movimentacoes", methods=["GET"])
 def historico():
     if not autenticar():
@@ -226,16 +212,14 @@ def historico():
 
     cursor.execute("""
         SELECT m.id, p.produto, m.tipo, m.quantidade, m.data,
-            m.comentario, m.responsavel
+               COALESCE(m.comentario, ''),
+               COALESCE(m.responsavel, '')
         FROM movimentacoes m
         JOIN produtos p ON p.id = m.produto_id
         ORDER BY m.data DESC
     """)
-    
-    
 
     dados = cursor.fetchall()
-    
     conn.close()
 
     return jsonify([
@@ -249,45 +233,7 @@ def historico():
             "responsavel": row[6]
         }
         for row in dados
-    
     ])
-    
-
-# -------- DASHBOARD + FINANCEIRO -------- #
-@app.route("/dashboard", methods=["GET"])
-def dashboard():
-    if not autenticar():
-        return jsonify({"erro": "Não autorizado"}), 401
-
-    conn = conectar()
-    cursor = conn.cursor()
-
-    # 🔥 AGORA TRAZ O VALOR TAMBÉM
-    cursor.execute("SELECT produto, quantidade, valor FROM produtos")
-    dados = cursor.fetchall()
-
-    conn.close()
-
-    total_produtos = len(dados)
-    total_itens = sum([row[1] for row in dados])
-    baixo_estoque = len([row for row in dados if row[1] <= 5])
-
-    produtos = [
-    {
-        "nome": row[0],
-        "quantidade": row[1],
-        "valorUnitario": row[2],
-        "valorTotal": row[1] * row[2]
-    }
-    for row in dados
-]
-
-    return jsonify({
-        "total_produtos": total_produtos,
-        "total_itens": total_itens,
-        "baixo_estoque": baixo_estoque,
-        "produtos": produtos
-    })
 
 # -------- START -------- #
 if __name__ == "__main__":
