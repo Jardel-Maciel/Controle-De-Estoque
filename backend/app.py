@@ -5,7 +5,21 @@ import uuid
 import datetime
 
 app = Flask(__name__)
-CORS(app)
+
+# =========================
+# CORS (CORRIGIDO PARA DEV + PROD)
+# =========================
+CORS(app, resources={
+    r"/*": {
+        "origins": [
+            "http://127.0.0.1:5500",
+            "http://localhost:5500",
+            "*"
+        ],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
+})
 
 # =========================
 # BANCO
@@ -19,7 +33,6 @@ def criar_tabelas():
     conn = conectar()
     cursor = conn.cursor()
 
-    # PRODUTOS
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS produtos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -29,7 +42,6 @@ def criar_tabelas():
         )
     """)
 
-    # MOVIMENTAÇÕES (ESSENCIAL)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS movimentacoes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -58,8 +70,11 @@ def autenticar():
 # =========================
 # LOGIN
 # =========================
-@app.route("/login", methods=["POST"])
+@app.route("/login", methods=["POST", "OPTIONS"])
 def login():
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
+
     dados = request.json
 
     for u in usuarios:
@@ -71,8 +86,11 @@ def login():
 # =========================
 # MOVIMENTAÇÕES - LISTAR
 # =========================
-@app.route("/movimentacoes", methods=["GET"])
+@app.route("/movimentacoes", methods=["GET", "OPTIONS"])
 def listar_movimentacoes():
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
+
     if not autenticar():
         return jsonify({"erro": "Não autorizado"}), 401
 
@@ -105,10 +123,13 @@ def listar_movimentacoes():
         return jsonify({"erro": str(e)}), 500
 
 # =========================
-# MOVIMENTAÇÕES - CRIAR (CORRIGIDO)
+# MOVIMENTAÇÕES - CRIAR
 # =========================
-@app.route("/movimentacoes", methods=["POST"])
+@app.route("/movimentacoes", methods=["POST", "OPTIONS"])
 def criar_movimentacao():
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
+
     if not autenticar():
         return jsonify({"erro": "Não autorizado"}), 401
 
@@ -116,7 +137,7 @@ def criar_movimentacao():
         dados = request.json
 
         produto = dados.get("produto")
-        tipo = dados.get("tipo")  # entrada ou saida
+        tipo = dados.get("tipo")
         quantidade = int(dados.get("quantidade", 0))
         comentario = dados.get("comentario", "")
         responsavel = dados.get("responsavel", "Sistema")
@@ -128,8 +149,11 @@ def criar_movimentacao():
         conn = conectar()
         cursor = conn.cursor()
 
-        # verifica produto
-        cursor.execute("SELECT quantidade FROM produtos WHERE produto = ?", (produto,))
+        cursor.execute(
+            "SELECT quantidade FROM produtos WHERE produto = ?",
+            (produto,)
+        )
+
         row = cursor.fetchone()
 
         if not row:
@@ -138,25 +162,24 @@ def criar_movimentacao():
 
         estoque_atual = row["quantidade"]
 
-        # valida saída
         if tipo == "saida" and quantidade > estoque_atual:
             conn.close()
             return jsonify({"erro": "Estoque insuficiente"}), 400
 
-        # atualiza estoque
-        if tipo == "entrada":
-            novo_estoque = estoque_atual + quantidade
-        else:
-            novo_estoque = estoque_atual - quantidade
+        novo_estoque = (
+            estoque_atual + quantidade
+            if tipo == "entrada"
+            else estoque_atual - quantidade
+        )
 
         cursor.execute(
             "UPDATE produtos SET quantidade = ? WHERE produto = ?",
             (novo_estoque, produto)
         )
 
-        # salva movimentação
         cursor.execute("""
-            INSERT INTO movimentacoes (produto, tipo, quantidade, comentario, responsavel, data)
+            INSERT INTO movimentacoes
+            (produto, tipo, quantidade, comentario, responsavel, data)
             VALUES (?, ?, ?, ?, ?, ?)
         """, (produto, tipo, quantidade, comentario, responsavel, data))
 
@@ -169,15 +192,19 @@ def criar_movimentacao():
         return jsonify({"erro": str(e)}), 500
 
 # =========================
-# PRODUTOS (BÁSICO)
+# PRODUTOS
 # =========================
-@app.route("/produtos", methods=["GET"])
+@app.route("/produtos", methods=["GET", "OPTIONS"])
 def listar_produtos():
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
+
     if not autenticar():
         return jsonify({"erro": "Não autorizado"}), 401
 
     conn = conectar()
     cursor = conn.cursor()
+
     cursor.execute("SELECT * FROM produtos")
 
     dados = cursor.fetchall()
