@@ -232,4 +232,33 @@ if (!token) {
   window.location.href = "login.html";
 }
 
+// =========================
+// PESQUISA PRODUTOS
+// =========================
+document
+  .getElementById("pesquisaProduto")
+  .addEventListener("input", function () {
+
+    const termo =
+      this.value.toLowerCase();
+
+    const linhas =
+      document.querySelectorAll("tbody tr");
+
+    linhas.forEach((linha) => {
+
+      const texto =
+        linha.innerText.toLowerCase();
+
+      if (texto.includes(termo)) {
+
+        linha.style.display = "";
+
+      } else {
+
+        linha.style.display = "none";
+      }
+    });
+  });
+
 carregar();

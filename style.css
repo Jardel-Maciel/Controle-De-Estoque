@@ -167,3 +167,42 @@ border-bottom: 1px solid var(--border);
     padding: 20px;
   }
 }
+
+.busca-container {
+
+  width: 100%;
+
+  margin-bottom: 20px;
+}
+
+.busca-container input {
+
+  width: 100%;
+
+  padding: 14px 18px;
+
+  border: none;
+
+  outline: none;
+
+  border-radius: 14px;
+
+  background: #0f172a;
+
+  color: white;
+
+  font-size: 15px;
+
+  transition: 0.2s;
+}
+
+.busca-container input:focus {
+
+  box-shadow:
+    0 0 0 3px rgba(59,130,246,0.3);
+}
+
+.busca-container input::placeholder {
+
+  color: #94a3b8;
+}

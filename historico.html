@@ -1,0 +1,134 @@
+<!-- historico.html -->
+
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="historico.css">
+  <title>Histórico Semanal</title>
+
+  <link rel="stylesheet" href="historico.css"/>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+</head>
+
+<body>
+
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+      <h2>📦 Estoque</h2>
+
+      <nav>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="index.html">Produtos</a>
+        <a href="movimentacoes.html">Movimentações</a>
+        <a href="historico.html" class="active">
+          Histórico
+        </a>
+      </nav>
+
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <div class="topbar">
+        <h1>Histórico Semanal</h1>
+
+        <button id="btnAtualizar">
+          Atualizar
+        </button>
+      </div>
+
+      <!-- CARDS -->
+      <section class="cards">
+
+        <div class="card">
+          <h3>Total Entradas</h3>
+          <p id="totalEntradas">0</p>
+        </div>
+
+        <div class="card danger">
+          <h3>Total Saídas</h3>
+          <p id="totalSaidas">0</p>
+        </div>
+
+        <div class="card">
+          <h3>Movimentações</h3>
+          <p id="totalMovimentacoes">0</p>
+        </div>
+
+        <div class="card">
+          <h3>Produto Mais Movimentado</h3>
+          <p id="produtoTop">-</p>
+        </div>
+
+      </section>
+
+      <!-- GRÁFICO -->
+      <section class="chart-container">
+
+        <div class="chart-header">
+          <h2>Movimentações da Semana</h2>
+        </div>
+
+        <canvas id="graficoSemana"></canvas>
+
+      </section>
+
+      <!-- TABELA -->
+      <section class="table-container">
+
+        <div class="table-header">
+          <h2>Últimas Movimentações</h2>
+
+          <input
+            type="text"
+            id="pesquisa"
+            placeholder="Pesquisar produto..."
+          />
+        </div>
+
+        <div class="table-wrapper">
+
+          <table>
+
+            <thead>
+
+              <tr>
+                <th>Produto</th>
+                <th>Tipo</th>
+                <th>Quantidade</th>
+                <th>Responsável</th>
+                <th>Comentário</th>
+                <th>Data</th>
+              </tr>
+
+            </thead>
+
+            <tbody id="tabelaHistorico"></tbody>
+
+          </table>
+
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script src="historico.js"></script>
+
+</body>
+</html>

@@ -7,10 +7,22 @@ if (!token) {
 
 let graficoQuantidade;
 let graficoValor;
-let produtosGlobais = [];
+let produtosPDF = [];
 
 // =========================
-// CARREGAR DASHBOARD
+// CAPITALIZE
+// =========================
+function capitalizeTexto(texto) {
+
+  if (!texto) return "-";
+
+  return String(texto)
+    .toLowerCase()
+    .replace(/\b\w/g, letra => letra.toUpperCase());
+}
+
+// =========================
+// DASHBOARD
 // =========================
 async function carregarDashboard() {
 
@@ -45,30 +57,38 @@ async function carregarDashboard() {
       `R$ ${(dados.valor_total || 0).toFixed(2)}`;
 
     // =========================
-    // SALVAR PRODUTOS
+    // PRODUTOS PDF
     // =========================
-    produtosGlobais = dados.produtos || [];
+    preencherTabela(dados.produtos || []);
 
     // =========================
     // GRÁFICO QUANTIDADE
     // =========================
     const labelsQuantidade =
-      dados.grafico_quantidade.map(item => item.produto);
+      dados.grafico_quantidade.map(item =>
+        capitalizeTexto(item.produto)
+      );
 
     const valoresQuantidade =
-      dados.grafico_quantidade.map(item => item.quantidade);
+      dados.grafico_quantidade.map(item =>
+        item.quantidade
+      );
 
     // =========================
     // GRÁFICO VALOR
     // =========================
     const labelsValor =
-      dados.grafico_valor.map(item => item.produto);
+      dados.grafico_valor.map(item =>
+        capitalizeTexto(item.produto)
+      );
 
     const valoresValor =
-      dados.grafico_valor.map(item => item.valor_total);
+      dados.grafico_valor.map(item =>
+        item.valor_total
+      );
 
     // =========================
-    // DESTRUIR GRÁFICOS ANTIGOS
+    // DESTRUIR ANTIGOS
     // =========================
     if (graficoQuantidade) {
       graficoQuantidade.destroy();
@@ -81,19 +101,17 @@ async function carregarDashboard() {
     // =========================
     // CHART QUANTIDADE
     // =========================
-    const ctxQtd = document
-      .getElementById("grafico")
-      .getContext("2d");
+    const ctxQtd =
+      document.getElementById("grafico").getContext("2d");
 
     graficoQuantidade = new Chart(ctxQtd, {
-
       type: "bar",
 
       data: {
         labels: labelsQuantidade,
 
         datasets: [{
-          label: "Quantidade em Estoque",
+          label: "Quantidade",
 
           data: valoresQuantidade,
 
@@ -107,58 +125,24 @@ async function carregarDashboard() {
 
       options: {
         responsive: true,
-        maintainAspectRatio: false,
-
-        plugins: {
-          legend: {
-            labels: {
-              color: "#ffffff"
-            }
-          }
-        },
-
-        scales: {
-          x: {
-            ticks: {
-              color: "#ffffff"
-            },
-
-            grid: {
-              color: "rgba(255,255,255,0.05)"
-            }
-          },
-
-          y: {
-            beginAtZero: true,
-
-            ticks: {
-              color: "#ffffff"
-            },
-
-            grid: {
-              color: "rgba(255,255,255,0.05)"
-            }
-          }
-        }
+        maintainAspectRatio: false
       }
     });
 
     // =========================
     // CHART VALOR
     // =========================
-    const ctxValor = document
-      .getElementById("graficoValor")
-      .getContext("2d");
+    const ctxValor =
+      document.getElementById("graficoValor").getContext("2d");
 
     graficoValor = new Chart(ctxValor, {
-
       type: "bar",
 
       data: {
         labels: labelsValor,
 
         datasets: [{
-          label: "Valor em Estoque",
+          label: "Valor Total",
 
           data: valoresValor,
 
@@ -172,39 +156,7 @@ async function carregarDashboard() {
 
       options: {
         responsive: true,
-        maintainAspectRatio: false,
-
-        plugins: {
-          legend: {
-            labels: {
-              color: "#ffffff"
-            }
-          }
-        },
-
-        scales: {
-          x: {
-            ticks: {
-              color: "#ffffff"
-            },
-
-            grid: {
-              color: "rgba(255,255,255,0.05)"
-            }
-          },
-
-          y: {
-            beginAtZero: true,
-
-            ticks: {
-              color: "#ffffff"
-            },
-
-            grid: {
-              color: "rgba(255,255,255,0.05)"
-            }
-          }
-        }
+        maintainAspectRatio: false
       }
     });
 
@@ -217,64 +169,106 @@ async function carregarDashboard() {
 }
 
 // =========================
-// GERAR PDF PROFISSIONAL
+// GERAR RELATÓRIO SEMANAL
 // =========================
 document.getElementById("btnDownloadPDF").onclick = async () => {
 
-  const botao = document.getElementById("btnDownloadPDF");
-
-  botao.innerHTML = "Gerando PDF...";
-  botao.disabled = true;
-
   try {
 
+    // =========================
+    // BUSCAR MOVIMENTAÇÕES
+    // =========================
+    const movRes = await fetch(
+      `${API}/movimentacoes`,
+      {
+        headers: {
+          Authorization: token
+        }
+      }
+    );
+
+    const movimentacoes = await movRes.json();
+
+    // =========================
+    // PDF
+    // =========================
     const { jsPDF } = window.jspdf;
 
-    const pdf = new jsPDF("p", "mm", "a4");
-
-    // =========================
-    // CABEÇALHO
-    // =========================
-    pdf.setFillColor(15, 23, 42);
-    pdf.rect(0, 0, 210, 30, "F");
+    const pdf =
+      new jsPDF("p", "mm", "a4");
 
     // =========================
     // LOGO
     // =========================
+    const logo =
+      "logo.png";
+
+    // =====================================================
+    // FUNÇÃO MARCA D'ÁGUA
+    // =====================================================
+    function adicionarMarcaDagua() {
+
+      try {
+
+        pdf.saveGraphicsState();
+
+        pdf.setGState(
+          new pdf.GState({
+            opacity: 0.06
+          })
+        );
+
+        pdf.addImage(
+          logo,
+          "PNG",
+          40,
+          80,
+          130,
+          130
+        );
+
+        pdf.restoreGraphicsState();
+
+      } catch (e) {
+
+        console.log("Logo não encontrada");
+      }
+    }
+
+    // =====================================================
+    // PÁGINA 1
+    // =====================================================
+    adicionarMarcaDagua();
+
+    // HEADER
+    pdf.setFillColor(15, 23, 42);
+
+    pdf.rect(0, 0, 210, 32, "F");
+
+    // LOGO TOPO
     try {
-
-      const logo = new Image();
-
-      logo.src = "logo.png";
-
-      await new Promise((resolve) => {
-        logo.onload = resolve;
-        logo.onerror = resolve;
-      });
 
       pdf.addImage(
         logo,
         "PNG",
-        10,
+        12,
         6,
-        16,
-        16
+        18,
+        18
       );
 
     } catch (e) {
       console.log("Logo não encontrada");
     }
 
-    // =========================
     // TÍTULO
-    // =========================
-    pdf.setTextColor(255, 255, 255);
+    pdf.setTextColor(255);
 
-    pdf.setFontSize(20);
+    pdf.setFontSize(22);
 
     pdf.text(
-      "Relatório de Estoque",
-      32,
+      "Relatório Semanal",
+      36,
       18
     );
 
@@ -286,256 +280,439 @@ document.getElementById("btnDownloadPDF").onclick = async () => {
       18
     );
 
-    // =========================
-    // CARDS
-    // =========================
-    const cards = [
+    // =====================================================
+    // RESUMO
+    // =====================================================
+    pdf.setTextColor(20);
 
+    pdf.setFontSize(18);
+
+    pdf.text(
+      "Resumo do Estoque",
+      14,
+      48
+    );
+
+    const cards = [
       {
         titulo: "Produtos",
         valor: document.getElementById("totalProdutos").textContent
       },
-
       {
         titulo: "Itens",
         valor: document.getElementById("totalItens").textContent
       },
-
       {
         titulo: "Baixo Estoque",
         valor: document.getElementById("baixoEstoque").textContent
       },
-
       {
         titulo: "Valor Total",
         valor: document.getElementById("totalEstoque").textContent
       }
     ];
 
-    let x = 10;
+    let cardX = 14;
 
-    cards.forEach(card => {
+    cards.forEach((card) => {
 
-      pdf.setFillColor(30, 41, 59);
+      pdf.setFillColor(248,250,252);
 
       pdf.roundedRect(
-        x,
-        40,
-        45,
-        25,
-        3,
-        3,
+        cardX,
+        58,
+        42,
+        24,
+        4,
+        4,
         "F"
       );
 
-      pdf.setTextColor(180);
+      pdf.setDrawColor(226,232,240);
 
-      pdf.setFontSize(10);
+      pdf.roundedRect(
+        cardX,
+        58,
+        42,
+        24,
+        4,
+        4
+      );
+
+      pdf.setFontSize(9);
+
+      pdf.setTextColor(100);
 
       pdf.text(
         card.titulo,
-        x + 4,
-        49
+        cardX + 4,
+        66
       );
 
-      pdf.setTextColor(255);
+      pdf.setFontSize(16);
 
-      pdf.setFontSize(14);
+      pdf.setTextColor(15,23,42);
 
       pdf.text(
         String(card.valor),
-        x + 4,
-        60
+        cardX + 4,
+        77
       );
 
-      x += 48;
+      cardX += 48;
     });
 
-    // =========================
-    // TÍTULO TABELA
-    // =========================
-    pdf.setTextColor(15, 23, 42);
+    // =====================================================
+    // TABELA PRODUTOS
+    // =====================================================
+    let y = 100;
 
-    pdf.setFontSize(16);
+    pdf.setFontSize(18);
+
+    pdf.setTextColor(20);
 
     pdf.text(
       "Produtos em Estoque",
-      10,
-      82
+      14,
+      y
     );
 
-    // =========================
-    // HEADER TABELA
-    // =========================
-    pdf.setFillColor(15, 23, 42);
+    y += 12;
 
-    pdf.rect(10, 88, 190, 10, "F");
+    // CABEÇALHO
+    pdf.setFillColor(30,41,59);
+
+    pdf.roundedRect(
+      10,
+      y,
+      190,
+      10,
+      2,
+      2,
+      "F"
+    );
 
     pdf.setTextColor(255);
 
-    pdf.setFontSize(9);
+    pdf.setFontSize(10);
 
-    pdf.text("Produto", 14, 95);
-    pdf.text("Qtd", 100, 95);
-    pdf.text("Valor", 120, 95);
-    pdf.text("Total", 150, 95);
-    pdf.text("Status", 178, 95);
+    pdf.text("Produto", 16, y + 6);
+    pdf.text("Qtd", 92, y + 6);
+    pdf.text("Valor", 118, y + 6);
+    pdf.text("Total", 148, y + 6);
+    pdf.text("Status", 176, y + 6);
 
-    // =========================
-    // LINHAS PRODUTOS
-    // =========================
-    let y = 105;
+    y += 14;
 
-    produtosGlobais.forEach((item, index) => {
+    // LINHAS
+    produtosPDF.forEach((item, index) => {
 
       const total =
-        Number(item.quantidade) *
-        Number(item.valor);
+        item.quantidade * item.valor;
 
-      const estoqueBaixo =
-        Number(item.quantidade) <= 5;
+      const status =
+        item.quantidade <= 5
+          ? "Baixo"
+          : "Confortável";
 
-      // FUNDO LINHA
+      // FUNDO ZEBRADO
       if (index % 2 === 0) {
 
-        pdf.setFillColor(241, 245, 249);
+        pdf.setFillColor(248,250,252);
 
-      } else {
-
-        pdf.setFillColor(226, 232, 240);
+        pdf.rect(
+          10,
+          y - 5,
+          190,
+          10,
+          "F"
+        );
       }
 
-      pdf.rect(10, y - 6, 190, 10, "F");
-
-      // TEXOS
-      pdf.setTextColor(20);
+      pdf.setTextColor(30);
 
       pdf.setFontSize(9);
 
       pdf.text(
-        String(item.produto),
-        14,
+        capitalizeTexto(item.produto),
+        16,
         y
       );
 
       pdf.text(
         String(item.quantidade),
-        102,
+        95,
         y
       );
 
       pdf.text(
         `R$ ${Number(item.valor).toFixed(2)}`,
-        120,
+        118,
         y
       );
 
       pdf.text(
         `R$ ${total.toFixed(2)}`,
-        150,
+        148,
         y
       );
 
-      // =========================
-      // STATUS
-      // =========================
-      if (estoqueBaixo) {
+      // BADGE STATUS
+      if (item.quantidade <= 5) {
 
-        pdf.setFillColor(239, 68, 68);
-
-        pdf.roundedRect(
-          175,
-          y - 5,
-          20,
-          6,
-          2,
-          2,
-          "F"
-        );
-
-        pdf.setTextColor(255);
-
-        pdf.setFontSize(7);
-
-        pdf.text(
-          "BAIXO",
-          179,
-          y - 1
-        );
+        pdf.setFillColor(239,68,68);
 
       } else {
 
-        pdf.setFillColor(59, 130, 246);
-
-        pdf.roundedRect(
-          170,
-          y - 5,
-          28,
-          6,
-          2,
-          2,
-          "F"
-        );
-
-        pdf.setTextColor(255);
-
-        pdf.setFontSize(7);
-
-        pdf.text(
-          "CONFORTÁVEL",
-          172,
-          y - 1
-        );
+        pdf.setFillColor(59,130,246);
       }
 
-      y += 10;
+      pdf.roundedRect(
+        170,
+        y - 4,
+        24,
+        7,
+        2,
+        2,
+        "F"
+      );
 
-      // NOVA PÁGINA
-      if (y > 270) {
+      pdf.setTextColor(255);
 
-        pdf.addPage();
+      pdf.setFontSize(7);
 
-        y = 20;
-      }
+      pdf.text(
+        status,
+        173,
+        y
+      );
+
+      y += 11;
     });
 
-    // =========================
     // RODAPÉ
-    // =========================
-    pdf.setFontSize(9);
-
     pdf.setTextColor(120);
 
+    pdf.setFontSize(9);
+
     pdf.text(
-      "Sistema SaaS de Controle de Estoque",
+      "© Jardel Maciel - Sistema SaaS de Controle de Estoque",
       10,
       290
     );
 
     pdf.text(
-      "Dellmaciel © 2026",
-      160,
+      "Página 1",
+      180,
       290
     );
 
-    // =========================
-    // DOWNLOAD
-    // =========================
-    pdf.save("relatorio-profissional.pdf");
+    // =====================================================
+    // PÁGINA 2
+    // =====================================================
+    pdf.addPage();
 
-    botao.innerHTML = "📄 Baixar PDF";
-    botao.disabled = false;
+    adicionarMarcaDagua();
+
+    // HEADER
+    pdf.setFillColor(15, 23, 42);
+
+    pdf.rect(0, 0, 210, 32, "F");
+
+    // LOGO TOPO
+    try {
+
+      pdf.addImage(
+        logo,
+        "PNG",
+        12,
+        6,
+        18,
+        18
+      );
+
+    } catch (e) {}
+
+    pdf.setTextColor(255);
+
+    pdf.setFontSize(22);
+
+    pdf.text(
+      "Histórico Semanal",
+      36,
+      18
+    );
+
+    pdf.setFontSize(10);
+
+    pdf.text(
+      "Últimas movimentações registradas",
+      36,
+      24
+    );
+
+    let movY = 50;
+
+    // TABELA HEADER
+    pdf.setFillColor(30,41,59);
+
+    pdf.roundedRect(
+      10,
+      movY,
+      190,
+      10,
+      2,
+      2,
+      "F"
+    );
+
+    pdf.setTextColor(255);
+
+    pdf.setFontSize(9);
+
+    pdf.text("Produto", 14, movY + 6);
+    pdf.text("Tipo", 74, movY + 6);
+    pdf.text("Qtd", 102, movY + 6);
+    pdf.text("Responsável", 122, movY + 6);
+    pdf.text("Data", 170, movY + 6);
+
+    movY += 14;
+
+    // LINHAS
+    movimentacoes.slice(0, 20).forEach((mov, index) => {
+
+      if (movY > 270) {
+
+        pdf.addPage();
+
+        adicionarMarcaDagua();
+
+        movY = 20;
+      }
+
+      // ZEBRADO
+      if (index % 2 === 0) {
+
+        pdf.setFillColor(248,250,252);
+
+        pdf.rect(
+          10,
+          movY - 5,
+          190,
+          10,
+          "F"
+        );
+      }
+
+      pdf.setTextColor(30);
+
+      pdf.setFontSize(8);
+
+      pdf.text(
+        capitalizeTexto(mov.produto).substring(0, 24),
+        14,
+        movY
+      );
+
+      // BADGE TIPO
+      if (mov.tipo === "entrada") {
+
+        pdf.setFillColor(34,197,94);
+
+      } else {
+
+        pdf.setFillColor(239,68,68);
+      }
+
+      pdf.roundedRect(
+        72,
+        movY - 4,
+        22,
+        7,
+        2,
+        2,
+        "F"
+      );
+
+      pdf.setTextColor(255);
+
+      pdf.setFontSize(7);
+
+      pdf.text(
+        capitalizeTexto(mov.tipo),
+        75,
+        movY
+      );
+
+      pdf.setTextColor(30);
+
+      pdf.setFontSize(8);
+
+      pdf.text(
+        String(mov.quantidade),
+        104,
+        movY
+      );
+
+      pdf.text(
+        capitalizeTexto(mov.responsavel || "-")
+          .substring(0, 18),
+        122,
+        movY
+      );
+
+      const data =
+        new Date(mov.data)
+          .toLocaleDateString();
+
+      pdf.text(
+        data,
+        170,
+        movY
+      );
+
+      movY += 11;
+    });
+
+    // RODAPÉ
+    pdf.setTextColor(120);
+
+    pdf.setFontSize(9);
+
+    pdf.text(
+      "© Jardel Maciel - Histórico Semanal",
+      10,
+      290
+    );
+
+    pdf.text(
+      "Página 2",
+      180,
+      290
+    );
+
+    // =====================================================
+    // DOWNLOAD
+    // =====================================================
+    pdf.save(
+      "relatorio-semanal.pdf"
+    );
 
   } catch (err) {
 
     console.error(err);
 
-    botao.innerHTML = "📄 Baixar PDF";
-    botao.disabled = false;
-
     alert("Erro ao gerar PDF");
   }
 };
+
+// =========================
+// TABELA AUXILIAR
+// =========================
+function preencherTabela(produtos) {
+
+  produtosPDF = produtos;
+}
 
 // =========================
 // INIT
