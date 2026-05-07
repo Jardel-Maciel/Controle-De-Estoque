@@ -28,11 +28,11 @@ def conectar():
     conn.row_factory = sqlite3.Row
     return conn
 
+
 def criar_tabelas():
     conn = conectar()
     cursor = conn.cursor()
 
-    # PRODUTOS
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS produtos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -42,7 +42,6 @@ def criar_tabelas():
         )
     """)
 
-    # MOVIMENTAÇÕES
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS movimentacoes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -58,10 +57,11 @@ def criar_tabelas():
     conn.commit()
     conn.close()
 
+
 criar_tabelas()
 
 # =========================
-# AUTH SIMPLES
+# AUTH
 # =========================
 usuarios = [
     {
@@ -70,9 +70,11 @@ usuarios = [
     }
 ]
 
+
 def autenticar():
     token = request.headers.get("Authorization")
     return bool(token)
+
 
 # =========================
 # LOGIN
@@ -103,6 +105,77 @@ def login():
         return jsonify({
             "erro": str(e)
         }), 500
+
+
+# =========================
+# DASHBOARD
+# =========================
+@app.route("/dashboard", methods=["GET", "OPTIONS"])
+def dashboard():
+
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
+
+    if not autenticar():
+        return jsonify({
+            "erro": "Não autorizado"
+        }), 401
+
+    try:
+        conn = conectar()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT * FROM produtos")
+        produtos = cursor.fetchall()
+
+        total_produtos = len(produtos)
+
+        total_itens = sum([
+            p["quantidade"] for p in produtos
+        ])
+
+        baixo_estoque = len([
+            p for p in produtos
+            if p["quantidade"] <= 5
+        ])
+
+        valor_total = sum([
+            p["quantidade"] * p["valor"]
+            for p in produtos
+        ])
+
+        grafico_quantidade = [
+            {
+                "produto": p["produto"],
+                "quantidade": p["quantidade"]
+            }
+            for p in produtos
+        ]
+
+        grafico_valor = [
+            {
+                "produto": p["produto"],
+                "valor_total": p["quantidade"] * p["valor"]
+            }
+            for p in produtos
+        ]
+
+        conn.close()
+
+        return jsonify({
+            "total_produtos": total_produtos,
+            "total_itens": total_itens,
+            "baixo_estoque": baixo_estoque,
+            "valor_total": valor_total,
+            "grafico_quantidade": grafico_quantidade,
+            "grafico_valor": grafico_valor
+        })
+
+    except Exception as e:
+        return jsonify({
+            "erro": str(e)
+        }), 500
+
 
 # =========================
 # PRODUTOS - LISTAR
@@ -146,6 +219,7 @@ def listar_produtos():
         return jsonify({
             "erro": str(e)
         }), 500
+
 
 # =========================
 # PRODUTOS - CRIAR
@@ -202,6 +276,7 @@ def criar_produto():
             "erro": str(e)
         }), 500
 
+
 # =========================
 # PRODUTOS - REMOVER
 # =========================
@@ -220,10 +295,10 @@ def remover_produto(id):
         conn = conectar()
         cursor = conn.cursor()
 
-        cursor.execute("""
-            DELETE FROM produtos
-            WHERE id = ?
-        """, (id,))
+        cursor.execute(
+            "DELETE FROM produtos WHERE id = ?",
+            (id,)
+        )
 
         conn.commit()
         conn.close()
@@ -236,6 +311,7 @@ def remover_produto(id):
         return jsonify({
             "erro": str(e)
         }), 500
+
 
 # =========================
 # MOVIMENTAÇÕES - LISTAR
@@ -282,6 +358,7 @@ def listar_movimentacoes():
             "erro": str(e)
         }), 500
 
+
 # =========================
 # MOVIMENTAÇÕES - CRIAR
 # =========================
@@ -299,7 +376,6 @@ def criar_movimentacao():
     try:
         dados = request.get_json(force=True)
 
-        # FRONTEND ENVIA produto_id
         produto_id = dados.get("produto_id")
 
         tipo = str(
@@ -315,7 +391,6 @@ def criar_movimentacao():
 
         data = datetime.datetime.now().isoformat()
 
-        # VALIDAÇÃO
         if (
             not produto_id
             or tipo not in ["entrada", "saida"]
@@ -328,7 +403,6 @@ def criar_movimentacao():
         conn = conectar()
         cursor = conn.cursor()
 
-        # BUSCAR PRODUTO PELO ID
         cursor.execute("""
             SELECT produto, quantidade
             FROM produtos
@@ -347,7 +421,6 @@ def criar_movimentacao():
         produto = row["produto"]
         estoque_atual = row["quantidade"]
 
-        # VALIDAR ESTOQUE
         if tipo == "saida" and quantidade > estoque_atual:
             conn.close()
 
@@ -355,13 +428,11 @@ def criar_movimentacao():
                 "erro": "Estoque insuficiente"
             }), 400
 
-        # CALCULAR NOVO ESTOQUE
         if tipo == "entrada":
             novo_estoque = estoque_atual + quantidade
         else:
             novo_estoque = estoque_atual - quantidade
 
-        # ATUALIZAR PRODUTO
         cursor.execute("""
             UPDATE produtos
             SET quantidade = ?
@@ -371,7 +442,6 @@ def criar_movimentacao():
             produto_id
         ))
 
-        # SALVAR MOVIMENTAÇÃO
         cursor.execute("""
             INSERT INTO movimentacoes (
                 produto,
@@ -402,6 +472,7 @@ def criar_movimentacao():
         return jsonify({
             "erro": str(e)
         }), 500
+
 
 # =========================
 # START
