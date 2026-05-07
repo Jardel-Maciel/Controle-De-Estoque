@@ -7,15 +7,11 @@ import datetime
 app = Flask(__name__)
 
 # =========================
-# CORS (CORRIGIDO PARA DEV + PROD)
+# CORS (ESTÁVEL PARA DEV + RENDER)
 # =========================
 CORS(app, resources={
     r"/*": {
-        "origins": [
-            "http://127.0.0.1:5500",
-            "http://localhost:5500",
-            "*"
-        ],
+        "origins": "*",
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization"]
     }
@@ -75,13 +71,83 @@ def login():
     if request.method == "OPTIONS":
         return jsonify({}), 200
 
-    dados = request.json
+    try:
+        dados = request.get_json(force=True)
 
-    for u in usuarios:
-        if u["email"] == dados.get("email") and u["senha"] == dados.get("senha"):
-            return jsonify({"token": str(uuid.uuid4())})
+        for u in usuarios:
+            if u["email"] == dados.get("email") and u["senha"] == dados.get("senha"):
+                return jsonify({"token": str(uuid.uuid4())})
 
-    return jsonify({"erro": "Credenciais inválidas"}), 401
+        return jsonify({"erro": "Credenciais inválidas"}), 401
+
+    except:
+        return jsonify({"erro": "Requisição inválida"}), 400
+
+# =========================
+# PRODUTOS - LISTAR
+# =========================
+@app.route("/produtos", methods=["GET", "OPTIONS"])
+def listar_produtos():
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
+
+    if not autenticar():
+        return jsonify({"erro": "Não autorizado"}), 401
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM produtos")
+    dados = cursor.fetchall()
+
+    conn.close()
+
+    return jsonify([
+        {
+            "id": d["id"],
+            "produto": d["produto"],
+            "quantidade": d["quantidade"],
+            "valor": d["valor"]
+        }
+        for d in dados
+    ])
+
+# =========================
+# PRODUTOS - CRIAR (CORRIGIDO - ERA O ERRO 405)
+# =========================
+@app.route("/produtos", methods=["POST", "OPTIONS"])
+def criar_produto():
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
+
+    if not autenticar():
+        return jsonify({"erro": "Não autorizado"}), 401
+
+    try:
+        dados = request.get_json(force=True)
+
+        produto = dados.get("produto")
+        quantidade = int(dados.get("quantidade", 0))
+        valor = float(dados.get("valor", 0))
+
+        if not produto:
+            return jsonify({"erro": "Produto obrigatório"}), 400
+
+        conn = conectar()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            INSERT INTO produtos (produto, quantidade, valor)
+            VALUES (?, ?, ?)
+        """, (produto, quantidade, valor))
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({"msg": "Produto cadastrado com sucesso"})
+
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
 
 # =========================
 # MOVIMENTAÇÕES - LISTAR
@@ -94,33 +160,29 @@ def listar_movimentacoes():
     if not autenticar():
         return jsonify({"erro": "Não autorizado"}), 401
 
-    try:
-        conn = conectar()
-        cursor = conn.cursor()
+    conn = conectar()
+    cursor = conn.cursor()
 
-        cursor.execute("""
-            SELECT produto, tipo, quantidade, comentario, responsavel, data
-            FROM movimentacoes
-            ORDER BY id DESC
-        """)
+    cursor.execute("""
+        SELECT produto, tipo, quantidade, comentario, responsavel, data
+        FROM movimentacoes
+        ORDER BY id DESC
+    """)
 
-        dados = cursor.fetchall()
-        conn.close()
+    dados = cursor.fetchall()
+    conn.close()
 
-        return jsonify([
-            {
-                "produto": d["produto"],
-                "tipo": d["tipo"],
-                "quantidade": d["quantidade"],
-                "comentario": d["comentario"],
-                "responsavel": d["responsavel"],
-                "data": d["data"]
-            }
-            for d in dados
-        ])
-
-    except Exception as e:
-        return jsonify({"erro": str(e)}), 500
+    return jsonify([
+        {
+            "produto": d["produto"],
+            "tipo": d["tipo"],
+            "quantidade": d["quantidade"],
+            "comentario": d["comentario"],
+            "responsavel": d["responsavel"],
+            "data": d["data"]
+        }
+        for d in dados
+    ])
 
 # =========================
 # MOVIMENTAÇÕES - CRIAR
@@ -134,7 +196,7 @@ def criar_movimentacao():
         return jsonify({"erro": "Não autorizado"}), 401
 
     try:
-        dados = request.json
+        dados = request.get_json(force=True)
 
         produto = dados.get("produto")
         tipo = dados.get("tipo")
@@ -149,11 +211,7 @@ def criar_movimentacao():
         conn = conectar()
         cursor = conn.cursor()
 
-        cursor.execute(
-            "SELECT quantidade FROM produtos WHERE produto = ?",
-            (produto,)
-        )
-
+        cursor.execute("SELECT quantidade FROM produtos WHERE produto = ?", (produto,))
         row = cursor.fetchone()
 
         if not row:
@@ -166,11 +224,7 @@ def criar_movimentacao():
             conn.close()
             return jsonify({"erro": "Estoque insuficiente"}), 400
 
-        novo_estoque = (
-            estoque_atual + quantidade
-            if tipo == "entrada"
-            else estoque_atual - quantidade
-        )
+        novo_estoque = estoque_atual + quantidade if tipo == "entrada" else estoque_atual - quantidade
 
         cursor.execute(
             "UPDATE produtos SET quantidade = ? WHERE produto = ?",
@@ -178,8 +232,7 @@ def criar_movimentacao():
         )
 
         cursor.execute("""
-            INSERT INTO movimentacoes
-            (produto, tipo, quantidade, comentario, responsavel, data)
+            INSERT INTO movimentacoes (produto, tipo, quantidade, comentario, responsavel, data)
             VALUES (?, ?, ?, ?, ?, ?)
         """, (produto, tipo, quantidade, comentario, responsavel, data))
 
@@ -190,35 +243,6 @@ def criar_movimentacao():
 
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
-
-# =========================
-# PRODUTOS
-# =========================
-@app.route("/produtos", methods=["GET", "OPTIONS"])
-def listar_produtos():
-    if request.method == "OPTIONS":
-        return jsonify({}), 200
-
-    if not autenticar():
-        return jsonify({"erro": "Não autorizado"}), 401
-
-    conn = conectar()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT * FROM produtos")
-
-    dados = cursor.fetchall()
-    conn.close()
-
-    return jsonify([
-        {
-            "id": d["id"],
-            "produto": d["produto"],
-            "quantidade": d["quantidade"],
-            "valor": d["valor"]
-        }
-        for d in dados
-    ])
 
 # =========================
 # START
