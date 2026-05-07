@@ -1,239 +1,487 @@
 const API = "https://backend-estoque-fnfc.onrender.com";
 const token = localStorage.getItem("token");
 
+if (!token) {
+  window.location.href = "login.html";
+}
+
 let tipoMovimentacao = null;
 let produtoIdAtual = null;
+let produtosCache = [];
 
-// -------- MODAL --------
+// =========================
+// MODAL
+// =========================
 const modal = document.getElementById("modal");
-const inputQtd = document.getElementById("modalQuantidade");
-const inputResponsavel = document.getElementById("modalResponsavel"); // ✅ NOVO
-const inputComentario = document.getElementById("modalComentario");   // ✅ NOVO
-const tituloModal = document.getElementById("modalTitulo");
 
+const inputQtd =
+  document.getElementById("modalQuantidade");
+
+const inputResponsavel =
+  document.getElementById("modalResponsavel");
+
+const inputComentario =
+  document.getElementById("modalComentario");
+
+const tituloModal =
+  document.getElementById("modalTitulo");
+
+// =========================
+// ABRIR MODAL
+// =========================
 function abrirModal(tipo, id) {
+
   tipoMovimentacao = tipo;
   produtoIdAtual = id;
 
   tituloModal.textContent =
-    tipo === "entrada" ? "Entrada de Produto" : "Saída de Produto";
+    tipo === "entrada"
+      ? "Entrada de Produto"
+      : "Saída de Produto";
 
-  // limpar campos
+  // LIMPAR CAMPOS
   inputQtd.value = "";
-  if (inputResponsavel) inputResponsavel.value = ""; // ✅ NOVO
-  if (inputComentario) inputComentario.value = "";   // ✅ NOVO
+
+  if (inputResponsavel) {
+    inputResponsavel.value = "";
+  }
+
+  if (inputComentario) {
+    inputComentario.value = "";
+  }
 
   modal.classList.remove("hidden");
+
   inputQtd.focus();
 }
 
+// =========================
+// FECHAR MODAL
+// =========================
 function fecharModal() {
+
   modal.classList.add("hidden");
 }
 
-// -------- CONFIRMAR --------
-document.getElementById("confirmarModal").onclick = async () => {
-  const quantidade = inputQtd.value;
-  const responsavel = inputResponsavel?.value || ""; // ✅ NOVO
-  const comentario = inputComentario?.value || "";   // ✅ NOVO
+// =========================
+// CONFIRMAR MOVIMENTAÇÃO
+// =========================
+document
+  .getElementById("confirmarModal")
+  .onclick = async () => {
 
-  if (!quantidade || quantidade <= 0) {
-    alert("Quantidade inválida");
-    return;
-  }
+    const quantidade = inputQtd.value;
 
-  try {
-    const res = await fetch(`${API}/movimentacoes`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: token,
-      },
-      body: JSON.stringify({
-        produto_id: produtoIdAtual,
-        tipo: tipoMovimentacao,
-        quantidade,
-        comentario,   // ✅ NOVO
-        responsavel,  // ✅ NOVO
-      }),
-    });
+    const responsavel =
+      inputResponsavel?.value || "";
 
-    const data = await res.json();
+    const comentario =
+      inputComentario?.value || "";
 
-    if (!res.ok) {
-      alert(data.erro);
+    if (!quantidade || quantidade <= 0) {
+
+      alert("Quantidade inválida");
+
       return;
     }
 
-    fecharModal();
-    carregar();
-  } catch (err) {
-    console.error(err);
-    alert("Erro na movimentação");
-  }
-};
+    try {
 
-document.getElementById("cancelarModal").onclick = fecharModal;
+      const res = await fetch(
+        `${API}/movimentacoes`,
+        {
+          method: "POST",
 
-// -------- CARREGAR PRODUTOS --------
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token
+          },
+
+          body: JSON.stringify({
+            produto_id: produtoIdAtual,
+            tipo: tipoMovimentacao,
+            quantidade,
+            comentario,
+            responsavel
+          })
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+
+        alert(data.erro);
+
+        return;
+      }
+
+      fecharModal();
+
+      carregar();
+
+    } catch (err) {
+
+      console.error(err);
+
+      alert("Erro na movimentação");
+    }
+  };
+
+// =========================
+// CANCELAR MODAL
+// =========================
+document
+  .getElementById("cancelarModal")
+  .onclick = fecharModal;
+
+// =========================
+// CARREGAR PRODUTOS
+// =========================
 async function carregar() {
+
   try {
-    const res = await fetch(`${API}/produtos`, {
-      headers: { Authorization: token },
-    });
+
+    const res = await fetch(
+      `${API}/produtos`,
+      {
+        headers: {
+          Authorization: token
+        }
+      }
+    );
 
     const dados = await res.json();
 
-    const lista = document.getElementById("lista");
-    lista.innerHTML = "";
+    produtosCache = dados;
 
-    dados.forEach((item) => {
-      const tr = document.createElement("tr");
+    renderizarProdutos(dados);
 
-      tr.innerHTML = `
-        <td>${item.produto}</td>
-        <td>${item.quantidade}</td>
-        <td>R$ ${item.valor || 0}</td>
-        <td>${item.fornecedor || "-"}</td>
-        <td>${item.contato || "-"}</td>
-        <td>
-          <button onclick="entrada(${item.id})">➕</button>
-          <button onclick="saida(${item.id})">➖</button>
-          <button class="btn-danger" onclick="remover(${item.id})">Excluir</button>
-        </td>
-      `;
-
-      lista.appendChild(tr);
-    });
   } catch (err) {
+
     console.error(err);
-    alert("Erro ao carregar");
+
+    alert("Erro ao carregar produtos");
   }
 }
 
-// -------- CADASTRAR --------
-document.getElementById("cadastrar").onclick = async () => {
-  const produto = document.getElementById("inputProduto").value;
-  const quantidade = document.getElementById("quantidade").value;
-  const valor = document.getElementById("valor").value;
-  const fornecedor = document.getElementById("fornecedor").value;
-  const contato = document.getElementById("contato").value;
+// =========================
+// RENDERIZAR PRODUTOS
+// =========================
+function renderizarProdutos(produtos) {
 
-  if (!produto || !quantidade) {
-    alert("Preencha produto e quantidade");
-    return;
-  }
-
-  try {
-    const res = await fetch(`${API}/produtos`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: token,
-      },
-      body: JSON.stringify({
-        produto,
-        quantidade,
-        valor,
-        fornecedor,
-        contato,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      alert(data.erro);
-      return;
-    }
-
-    carregar();
-  } catch (err) {
-    console.error(err);
-    alert("Erro ao cadastrar");
-  }
-};
-
-// -------- AÇÕES --------
-window.entrada = (id) => abrirModal("entrada", id);
-window.saida = (id) => abrirModal("saida", id);
-
-window.remover = async (id) => {
-  await fetch(`${API}/produtos/${id}`, {
-    method: "DELETE",
-    headers: { Authorization: token },
-  });
-
-  carregar();
-};
-
-// -------- HISTÓRICO --------
-async function carregarHistorico() {
-  const res = await fetch(`${API}/movimentacoes`, {
-    headers: { Authorization: token },
-  });
-
-  const dados = await res.json();
-  const lista = document.getElementById("listaHistorico");
+  const lista =
+    document.getElementById("lista");
 
   lista.innerHTML = "";
 
-  dados.forEach((item) => {
-    const tr = document.createElement("tr");
+  produtos.forEach((item) => {
+
+    const tr =
+      document.createElement("tr");
 
     tr.innerHTML = `
-      <td>${item.produto}</td>
-      <td>${item.tipo}</td>
-      <td>${item.quantidade}</td>
-      <td>${item.comentario || "-"}</td>
-      <td>${item.responsavel || "-"}</td>
-      <td>${new Date(item.data).toLocaleString()}</td>
+      <td style="text-transform: capitalize;">
+        ${item.produto}
+      </td>
+
+      <td>
+        ${item.quantidade}
+      </td>
+
+      <td>
+        R$ ${Number(item.valor || 0).toFixed(2)}
+      </td>
+
+      <td style="text-transform: capitalize;">
+        ${item.fornecedor || "-"}
+      </td>
+
+      <td>
+        ${item.contato || "-"}
+      </td>
+
+      <td class="acoes">
+        <button onclick="entrada(${item.id})">
+          ➕
+        </button>
+
+        <button onclick="saida(${item.id})">
+          ➖
+        </button>
+
+        <button
+          class="btn-danger"
+          onclick="remover(${item.id})"
+        >
+          Excluir
+        </button>
+      </td>
     `;
 
     lista.appendChild(tr);
   });
 }
 
-document.getElementById("verHistorico").onclick = () => {
-  document.getElementById("modalHistorico").classList.remove("hidden");
-  carregarHistorico();
+// =========================
+// CADASTRAR PRODUTO
+// =========================
+document
+  .getElementById("cadastrar")
+  .onclick = async () => {
+
+    const inputProduto =
+      document.getElementById("inputProduto");
+
+    const inputQuantidade =
+      document.getElementById("quantidade");
+
+    const inputValor =
+      document.getElementById("valor");
+
+    const inputFornecedor =
+      document.getElementById("fornecedor");
+
+    const inputContato =
+      document.getElementById("contato");
+
+    const produto =
+      inputProduto.value.trim();
+
+    const quantidade =
+      inputQuantidade.value;
+
+    const valor =
+      inputValor.value;
+
+    const fornecedor =
+      inputFornecedor.value.trim();
+
+    const contato =
+      inputContato.value.trim();
+
+    if (!produto || !quantidade) {
+
+      alert("Preencha produto e quantidade");
+
+      return;
+    }
+
+    try {
+
+      const res = await fetch(
+        `${API}/produtos`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token
+          },
+
+          body: JSON.stringify({
+            produto,
+            quantidade,
+            valor,
+            fornecedor,
+            contato
+          })
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+
+        alert(data.erro);
+
+        return;
+      }
+
+      // =========================
+      // LIMPAR INPUTS
+      // =========================
+      inputProduto.value = "";
+      inputQuantidade.value = "";
+      inputValor.value = "";
+      inputFornecedor.value = "";
+      inputContato.value = "";
+
+      // FOCUS NO PRODUTO
+      inputProduto.focus();
+
+      carregar();
+
+    } catch (err) {
+
+      console.error(err);
+
+      alert("Erro ao cadastrar");
+    }
+  };
+
+// =========================
+// AÇÕES
+// =========================
+window.entrada = (id) => {
+  abrirModal("entrada", id);
 };
 
-function fecharHistorico() {
-  document.getElementById("modalHistorico").classList.add("hidden");
-}
-
-// -------- DARK MODE --------
-const botaoTema = document.getElementById("toggleTema");
-
-if (localStorage.getItem("tema") === "dark") {
-  document.body.classList.add("dark");
-}
-
-function atualizarIcone() {
-  botaoTema.textContent = document.body.classList.contains("dark")
-    ? "☀️"
-    : "🌙";
-}
-
-atualizarIcone();
-
-botaoTema.onclick = () => {
-  document.body.classList.toggle("dark");
-
-  const dark = document.body.classList.contains("dark");
-  localStorage.setItem("tema", dark ? "dark" : "light");
-
-  atualizarIcone();
+window.saida = (id) => {
+  abrirModal("saida", id);
 };
 
-// -------- INIT --------
-if (!token) {
-  window.location.href = "login.html";
+window.remover = async (id) => {
+
+  const confirmar = confirm(
+    "Deseja realmente excluir este produto?"
+  );
+
+  if (!confirmar) {
+    return;
+  }
+
+  try {
+
+    await fetch(
+      `${API}/produtos/${id}`,
+      {
+        method: "DELETE",
+
+        headers: {
+          Authorization: token
+        }
+      }
+    );
+
+    carregar();
+
+  } catch (err) {
+
+    console.error(err);
+
+    alert("Erro ao remover produto");
+  }
+};
+
+// =========================
+// HISTÓRICO
+// =========================
+async function carregarHistorico() {
+
+  try {
+
+    const res = await fetch(
+      `${API}/movimentacoes`,
+      {
+        headers: {
+          Authorization: token
+        }
+      }
+    );
+
+    const dados = await res.json();
+
+    const lista =
+      document.getElementById("listaHistorico");
+
+    lista.innerHTML = "";
+
+    dados.forEach((item) => {
+
+      const tr =
+        document.createElement("tr");
+
+      tr.innerHTML = `
+        <td style="text-transform: capitalize;">
+          ${item.produto}
+        </td>
+
+        <td style="text-transform: capitalize;">
+          ${item.tipo}
+        </td>
+
+        <td>
+          ${item.quantidade}
+        </td>
+
+        <td>
+          ${new Date(item.data)
+            .toLocaleString()}
+        </td>
+
+        <td style="text-transform: capitalize;">
+          ${item.comentario || "-"}
+        </td>
+
+        <td style="text-transform: capitalize;">
+          ${item.responsavel || "-"}
+        </td>
+      `;
+
+      lista.appendChild(tr);
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    alert("Erro ao carregar histórico");
+  }
 }
 
 // =========================
-// PESQUISA PRODUTOS
+// ABRIR HISTÓRICO
+// =========================
+document
+  .getElementById("verHistorico")
+  .onclick = () => {
+
+    document
+      .getElementById("modalHistorico")
+      .classList.remove("hidden");
+
+    carregarHistorico();
+  };
+
+// =========================
+// FECHAR HISTÓRICO
+// =========================
+function fecharHistorico() {
+
+  document
+    .getElementById("modalHistorico")
+    .classList.add("hidden");
+}
+
+window.fecharHistorico =
+  fecharHistorico;
+
+// =========================
+// PESQUISA ESTOQUE
+// =========================
+document
+  .getElementById("pesquisaEstoque")
+  .addEventListener("input", function () {
+
+    const termo =
+      this.value.toLowerCase();
+
+    const filtrados =
+      produtosCache.filter((item) => {
+
+        return (
+          item.produto
+            .toLowerCase()
+            .includes(termo)
+        );
+      });
+
+    renderizarProdutos(filtrados);
+  });
+
+// =========================
+// PESQUISA HISTÓRICO
 // =========================
 document
   .getElementById("pesquisaProduto")
@@ -243,22 +491,74 @@ document
       this.value.toLowerCase();
 
     const linhas =
-      document.querySelectorAll("tbody tr");
+      document.querySelectorAll(
+        "#listaHistorico tr"
+      );
 
     linhas.forEach((linha) => {
 
       const texto =
         linha.innerText.toLowerCase();
 
-      if (texto.includes(termo)) {
-
-        linha.style.display = "";
-
-      } else {
-
-        linha.style.display = "none";
-      }
+      linha.style.display =
+        texto.includes(termo)
+          ? ""
+          : "none";
     });
   });
 
+// =========================
+// DARK MODE
+// =========================
+const botaoTema =
+  document.getElementById("toggleTema");
+
+if (
+  localStorage.getItem("tema")
+  === "dark"
+) {
+  document.body.classList.add("dark");
+}
+
+function atualizarIcone() {
+
+  botaoTema.textContent =
+    document.body.classList.contains("dark")
+      ? "☀️"
+      : "🌙";
+}
+
+atualizarIcone();
+
+botaoTema.onclick = () => {
+
+  document.body.classList.toggle("dark");
+
+  const dark =
+    document.body.classList.contains("dark");
+
+  localStorage.setItem(
+    "tema",
+    dark ? "dark" : "light"
+  );
+
+  atualizarIcone();
+};
+
+// =========================
+// LOGOUT
+// =========================
+document
+  .getElementById("btnLogout")
+  .onclick = () => {
+
+    localStorage.removeItem("token");
+
+    window.location.href =
+      "login.html";
+  };
+
+// =========================
+// INIT
+// =========================
 carregar();

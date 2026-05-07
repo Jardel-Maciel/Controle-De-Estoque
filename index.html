@@ -3,58 +3,169 @@
 <html lang="pt-br">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+
     <title>Estoque</title>
+
     <link rel="stylesheet" href="style.css" />
     <link rel="icon" href="favicon.ico" />
+
+    <!-- Fonte -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
   </head>
 
   <body>
+
     <section class="tela1">
+
+      <!-- TOPO -->
       <div class="topo">
-        <button id="toggleTema">🌙</button>
-        <button id="verHistorico">📊 Histórico</button>
-        <button onclick="window.open('dashboard.html')">Dashboard</button>
-        <button id="btnLogout">Sair</button>
+
+        <div class="topo-esquerda">
+          <button id="toggleTema">🌙</button>
+
+          <button id="verHistorico">
+            📊 Histórico
+          </button>
+
+          <button
+            onclick="window.open('dashboard.html')"
+          >
+            Dashboard
+          </button>
+        </div>
+
+        <div class="topo-direita">
+          <button id="btnLogout">
+            Sair
+          </button>
+        </div>
+
       </div>
 
-      <h1 class="titulo">📦 Controle de Estoque</h1>
+      <!-- TÍTULO -->
+      <h1 class="titulo">
+        📦 Controle de Estoque
+      </h1>
 
-      <form class="form" onsubmit="return false;">
-        <input type="text" id="inputProduto" placeholder="Produto" />
-        <input type="number" id="quantidade" placeholder="Quantidade" />
+      <!-- FORMULÁRIO -->
+      <form
+        class="form"
+        onsubmit="return false;"
+      >
 
-        <input type="number" id="valor" placeholder="Valor (R$)" />
-        <input type="text" id="fornecedor" placeholder="Fornecedor" />
-        <input type="text" id="contato" placeholder="Contato" />
+        <input
+          type="text"
+          id="inputProduto"
+          placeholder="Produto"
+        />
 
-        <button type="button" id="cadastrar">Cadastrar</button>
+        <input
+          type="number"
+          id="quantidade"
+          placeholder="Quantidade"
+        />
+
+        <input
+          type="number"
+          id="valor"
+          placeholder="Valor (R$)"
+        />
+
+        <input
+          type="text"
+          id="fornecedor"
+          placeholder="Fornecedor"
+        />
+
+        <input
+          type="text"
+          id="contato"
+          placeholder="Contato"
+        />
+
+        <button
+          type="button"
+          id="cadastrar"
+        >
+          Cadastrar
+        </button>
+
       </form>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Produto</th>
-            <th>Quantidade</th>
-            <th>Valor</th>
-            <th>Fornecedor</th>
-            <th>Contato</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody id="lista"></tbody>
-      </table>
+      <!-- BUSCA PRODUTOS -->
+      <div class="busca-container">
+
+        <input
+          type="text"
+          id="pesquisaEstoque"
+          placeholder="🔎 Pesquisar produto no estoque..."
+        />
+
+      </div>
+
+      <!-- TABELA -->
+      <div class="table-container">
+
+        <table>
+
+          <thead>
+            <tr>
+              <th>Produto</th>
+              <th>Quantidade</th>
+              <th>Valor</th>
+              <th>Fornecedor</th>
+              <th>Contato</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+
+          <tbody id="lista"></tbody>
+
+        </table>
+
+      </div>
+
     </section>
 
-    <!-- MODAL -->
-    <div id="modal" class="modal hidden">
+    <!-- MODAL MOVIMENTAÇÃO -->
+    <div
+      id="modal"
+      class="modal hidden"
+    >
+
       <div class="modal-content">
-        <h3 id="modalTitulo">Movimentação</h3>
 
-        <input type="number" id="modalQuantidade" placeholder="Quantidade" />
+        <h3 id="modalTitulo">
+          Movimentação
+        </h3>
 
-        <!-- 🔥 NOVOS CAMPOS -->
-        <input type="text" id="modalResponsavel" placeholder="Responsável" />
+        <input
+          type="number"
+          id="modalQuantidade"
+          placeholder="Quantidade"
+        />
+
+        <input
+          type="text"
+          id="modalResponsavel"
+          placeholder="Responsável"
+        />
+
         <input
           type="text"
           id="modalComentario"
@@ -62,42 +173,78 @@
         />
 
         <div class="modal-actions">
-          <button id="confirmarModal">Confirmar</button>
-          <button id="cancelarModal" class="btn-cancel">Cancelar</button>
+
+          <button id="confirmarModal">
+            Confirmar
+          </button>
+
+          <button
+            id="cancelarModal"
+            class="btn-cancel"
+          >
+            Cancelar
+          </button>
+
         </div>
+
       </div>
+
     </div>
 
-    <!-- HISTÓRICO -->
-    <div id="modalHistorico" class="modal hidden">
-      <div class="modal-content">
-        <h3>Histórico de Movimentações</h3>
+    <!-- MODAL HISTÓRICO -->
+    <div
+      id="modalHistorico"
+      class="modal hidden"
+    >
 
+      <div class="modal-content historico-modal">
+
+        <h3>
+          Histórico de Movimentações
+        </h3>
+
+        <!-- BUSCA HISTÓRICO -->
         <div class="busca-container">
+
           <input
             type="text"
             id="pesquisaProduto"
             placeholder="🔎 Pesquisar produto..."
           />
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Produto</th>
-              <th>Tipo</th>
-              <th>Qtd</th>
-              <th>Data</th>
-              <th>Comentário</th>
-              <th>Responsável</th>
-            </tr>
-          </thead>
-          <tbody id="listaHistorico"></tbody>
-        </table>
 
-        <button onclick="fecharHistorico()">Fechar</button>
+        </div>
+
+        <!-- TABELA HISTÓRICO -->
+        <div class="table-container">
+
+          <table>
+
+            <thead>
+              <tr>
+                <th>Produto</th>
+                <th>Tipo</th>
+                <th>Qtd</th>
+                <th>Data</th>
+                <th>Comentário</th>
+                <th>Responsável</th>
+              </tr>
+            </thead>
+
+            <tbody id="listaHistorico"></tbody>
+
+          </table>
+
+        </div>
+
+        <button onclick="fecharHistorico()">
+          Fechar
+        </button>
+
       </div>
+
     </div>
 
     <script src="script.js"></script>
+
   </body>
 </html>
