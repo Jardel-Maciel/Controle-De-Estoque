@@ -1,91 +1,292 @@
 <!doctype html>
 <html lang="pt-br">
+
 <head>
 <meta charset="UTF-8">
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0"
+/>
+
 <title>Movimentações</title>
+
 <link rel="stylesheet" href="dashboard.css">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+
+<link
+  rel="preconnect"
+  href="https://fonts.gstatic.com"
+  crossorigin
+>
+
+<link
+  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+  rel="stylesheet"
+>
 </head>
 
 <body>
 
-<h1>Movimentações</h1>
+<div class="layout">
 
-<div id="erro" style="color:red; margin:10px 0;"></div>
-<div id="lista"></div>
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <h2>📦 Estoque</h2>
+
+    <nav>
+
+      <a href="dashboard.html">
+        Dashboard
+      </a>
+
+      <a href="index.html">
+        Produtos
+      </a>
+
+      <a
+        href="movimentacoes.html"
+        class="active"
+      >
+        Movimentações
+      </a>
+
+      <a href="historico.html">
+        Histórico
+      </a>
+
+    </nav>
+
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+
+      <div>
+        <h1>Movimentações</h1>
+
+        <p class="subtitulo">
+          Controle completo de entradas e saídas
+        </p>
+      </div>
+
+      <!-- AÇÕES -->
+      <div
+        style="
+          display:flex;
+          align-items:center;
+          gap:12px;
+        "
+      >
+
+        <!-- PESQUISA -->
+        <input
+          type="text"
+          id="pesquisaProduto"
+          placeholder="🔎 Pesquisar produto..."
+          style="
+            padding:12px 16px;
+            border:none;
+            border-radius:12px;
+            background:#1e293b;
+            color:white;
+            min-width:260px;
+            outline:none;
+            font-size:14px;
+          "
+        />
+
+        <!-- BOTÃO VOLTAR -->
+        <button
+          onclick="window.location.href='dashboard.html'"
+          id="btnAtualizar"
+        >
+          ← Voltar Para Dashboard
+        </button>
+
+      </div>
+
+    </div>
+
+    <!-- ERRO -->
+    <div
+      id="erro"
+      style="color:red; margin:10px 0;"
+    ></div>
+
+    <!-- LISTA -->
+    <div id="lista"></div>
+
+  </main>
+
+</div>
 
 <script>
-const API = "https://backend-estoque-fnfc.onrender.com";
-const token = localStorage.getItem("token");
+
+const API =
+  "https://backend-estoque-fnfc.onrender.com";
+
+const token =
+  localStorage.getItem("token");
 
 if (!token) {
-  document.getElementById("erro").innerText = "Usuário não autenticado. Faça login novamente.";
+
+  document.getElementById("erro")
+    .innerText =
+      "Usuário não autenticado. Faça login novamente.";
 }
 
 async function carregar() {
-  const lista = document.getElementById("lista");
-  const erroDiv = document.getElementById("erro");
+
+  const lista =
+    document.getElementById("lista");
+
+  const erroDiv =
+    document.getElementById("erro");
 
   try {
-    const res = await fetch(`${API}/movimentacoes`, {
-      method: "GET",
-      headers: {
-        "Authorization": token,
-        "Content-Type": "application/json"
+
+    const res = await fetch(
+      `${API}/movimentacoes`,
+      {
+        method: "GET",
+
+        headers: {
+          "Authorization": token,
+          "Content-Type": "application/json"
+        }
       }
-    });
+    );
 
     if (!res.ok) {
-      const text = await res.text();
-      erroDiv.innerText = "Erro ao carregar movimentações: " + text;
+
+      const text =
+        await res.text();
+
+      erroDiv.innerText =
+        "Erro ao carregar movimentações: " + text;
+
       return;
     }
 
-    const data = await res.json();
+    const data =
+      await res.json();
 
-    if (!Array.isArray(data) || data.length === 0) {
-      lista.innerHTML = "<p>Nenhuma movimentação encontrada.</p>";
+    if (
+      !Array.isArray(data)
+      || data.length === 0
+    ) {
+
+      lista.innerHTML =
+        "<p>Nenhuma movimentação encontrada.</p>";
+
       return;
     }
 
     lista.innerHTML = "";
 
     data.forEach(m => {
-      const dataFormatada = m.data
-        ? new Date(m.data).toLocaleString("pt-BR")
-        : "Data não disponível";
+
+      const dataFormatada =
+        m.data
+          ? new Date(m.data)
+              .toLocaleString("pt-BR")
+          : "Data não disponível";
 
       lista.innerHTML += `
         <div class="card">
-          <h3>${m.produto}</h3>
+
+          <h3 style="text-transform: capitalize;">
+            ${m.produto}
+          </h3>
 
           <span class="tipo ${m.tipo}">
-            ${m.tipo === "entrada" ? "ENTRADA" : "SAÍDA"}
+            ${m.tipo === "entrada"
+              ? "ENTRADA"
+              : "SAÍDA"}
           </span>
 
-          <p><b>Quantidade:</b> ${m.quantidade}</p>
-
-          <p class="comentario">
-            ${m.comentario ? m.comentario : "Sem observação"}
+          <p>
+            <b>Quantidade:</b>
+            ${m.quantidade}
           </p>
 
-          <p class="responsavel">
-            👤 ${m.responsavel ? m.responsavel : "Não informado"}
+          <p
+            class="comentario"
+            style="text-transform: capitalize;"
+          >
+            ${m.comentario
+              ? m.comentario
+              : "Sem observação"}
+          </p>
+
+          <p
+            class="responsavel"
+            style="text-transform: capitalize;"
+          >
+            👤 ${m.responsavel
+              ? m.responsavel
+              : "Não informado"}
           </p>
 
           <p class="data">
             🕒 ${dataFormatada}
           </p>
+
         </div>
       `;
     });
 
+    // =========================
+    // PESQUISA
+    // =========================
+    document
+      .getElementById("pesquisaProduto")
+      .addEventListener(
+        "input",
+        function () {
+
+          const termo =
+            this.value.toLowerCase();
+
+          const cards =
+            document.querySelectorAll(".card");
+
+          cards.forEach((card) => {
+
+            const texto =
+              card.innerText.toLowerCase();
+
+            if (
+              texto.includes(termo)
+            ) {
+
+              card.style.display = "";
+
+            } else {
+
+              card.style.display = "none";
+            }
+          });
+        }
+      );
+
   } catch (err) {
+
     console.error(err);
-    erroDiv.innerText = "Erro de conexão com o servidor.";
+
+    erroDiv.innerText =
+      "Erro de conexão com o servidor.";
   }
 }
 
 carregar();
+
 </script>
 
 </body>

@@ -1,19 +1,41 @@
 <!-- historico.html -->
 
 <!doctype html>
+
 <html lang="pt-br">
+
 <head>
+
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <link rel="stylesheet" href="historico.css">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
   <title>Histórico Semanal</title>
 
-  <link rel="stylesheet" href="historico.css"/>
+  <link
+    rel="stylesheet"
+    href="historico.css"
+  />
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- FONT -->
+  <link
+    rel="preconnect"
+    href="https://fonts.googleapis.com"
+  />
 
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+  />
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
 
 </head>
 
@@ -24,15 +46,31 @@
     <!-- SIDEBAR -->
     <aside class="sidebar">
 
-      <h2>📦 Estoque</h2>
+      <h2>
+        📦 Estoque
+      </h2>
 
       <nav>
-        <a href="dashboard.html">Dashboard</a>
-        <a href="index.html">Produtos</a>
-        <a href="movimentacoes.html">Movimentações</a>
-        <a href="historico.html" class="active">
+
+        <a href="dashboard.html">
+          Dashboard
+        </a>
+
+        <a href="index.html">
+          Produtos
+        </a>
+
+        <a href="movimentacoes.html">
+          Movimentações
+        </a>
+
+        <a
+          href="historico.html"
+          class="active"
+        >
           Histórico
         </a>
+
       </nav>
 
     </aside>
@@ -40,35 +78,83 @@
     <!-- MAIN -->
     <main class="main">
 
+      <!-- TOPO -->
       <div class="topbar">
-        <h1>Histórico Semanal</h1>
 
-        <button id="btnAtualizar">
-          Atualizar
-        </button>
+        <div class="topbar-left">
+
+          <h1>
+            Histórico Semanal
+          </h1>
+
+        </div>
+
+        <div class="topbar-actions">
+
+          <button
+            class="btn-dashboard"
+            onclick="window.location.href='dashboard.html'"
+          >
+            ⬅ Dashboard
+          </button>
+
+          <button id="btnAtualizar">
+            Atualizar
+          </button>
+
+        </div>
+
       </div>
 
       <!-- CARDS -->
       <section class="cards">
 
         <div class="card">
-          <h3>Total Entradas</h3>
-          <p id="totalEntradas">0</p>
+
+          <h3>
+            Total Entradas
+          </h3>
+
+          <p id="totalEntradas">
+            0
+          </p>
+
         </div>
 
         <div class="card danger">
-          <h3>Total Saídas</h3>
-          <p id="totalSaidas">0</p>
+
+          <h3>
+            Total Saídas
+          </h3>
+
+          <p id="totalSaidas">
+            0
+          </p>
+
         </div>
 
         <div class="card">
-          <h3>Movimentações</h3>
-          <p id="totalMovimentacoes">0</p>
+
+          <h3>
+            Movimentações
+          </h3>
+
+          <p id="totalMovimentacoes">
+            0
+          </p>
+
         </div>
 
         <div class="card">
-          <h3>Produto Mais Movimentado</h3>
-          <p id="produtoTop">-</p>
+
+          <h3>
+            Produto Mais Movimentado
+          </h3>
+
+          <p id="produtoTop">
+            -
+          </p>
+
         </div>
 
       </section>
@@ -77,7 +163,11 @@
       <section class="chart-container">
 
         <div class="chart-header">
-          <h2>Movimentações da Semana</h2>
+
+          <h2>
+            Movimentações da Semana
+          </h2>
+
         </div>
 
         <canvas id="graficoSemana"></canvas>
@@ -88,13 +178,17 @@
       <section class="table-container">
 
         <div class="table-header">
-          <h2>Últimas Movimentações</h2>
+
+          <h2>
+            Últimas Movimentações
+          </h2>
 
           <input
             type="text"
             id="pesquisa"
-            placeholder="Pesquisar produto..."
+            placeholder="🔎 Pesquisar Produto..."
           />
+
         </div>
 
         <div class="table-wrapper">
@@ -126,8 +220,10 @@
 
   </div>
 
+  <!-- CHART -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+  <!-- JS -->
   <script src="historico.js"></script>
 
 </body>
