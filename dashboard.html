@@ -1,73 +1,107 @@
 <!doctype html>
 <html lang="pt-br">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dashboard</title>
+<head>
 
-    <link rel="stylesheet" href="dashboard.css" />
+  <meta charset="UTF-8" />
 
-    <!-- Fonte -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter&display=swap"
-      rel="stylesheet"
-    />
-  </head>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
 
-  <body>
-    <div class="layout">
-      <aside class="sidebar">
-        <h2>📦 Estoque</h2>
-        <nav>
-          <a href="#">Dashboard</a>
-          <a href="index.html">Produtos</a>
-          <a href="movimentacoes.html">Movimentações</a>
-        </nav>
-      </aside>
+  <title>Dashboard</title>
 
-      <main class="main">
-        <div class="topbar">
-          <h1>Dashboard</h1>
+  <link rel="stylesheet" href="dashboard.css" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+  />
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter&display=swap"
+    rel="stylesheet"
+  />
+
+</head>
+
+<body>
+
+  <div class="layout">
+
+    <aside class="sidebar">
+
+      <h2>📦 Estoque</h2>
+
+      <nav>
+        <a href="#">Dashboard</a>
+        <a href="index.html">Produtos</a>
+        <a href="movimentacoes.html">Movimentações</a>
+      </nav>
+
+    </aside>
+
+    <main class="main">
+
+      <div class="topbar">
+        <h1>Dashboard</h1>
+
+        <button id="btnDownloadPDF" class="btn-pdf">
+          📄 Baixar PDF
+        </button>
+      </div>
+
+      <section class="cards">
+
+        <div class="card">
+          <h3>Total Produtos</h3>
+          <p id="totalProdutos">0</p>
         </div>
 
-        <section class="cards">
-          <div class="card">
-            <h3>Total Produtos</h3>
-            <p id="totalProdutos">0</p>
-          </div>
+        <div class="card">
+          <h3>Total Itens</h3>
+          <p id="totalItens">0</p>
+        </div>
 
-          <div class="card">
-            <h3>Total Itens</h3>
-            <p id="totalItens">0</p>
-          </div>
+        <div class="card warning">
+          <h3>Baixo Estoque</h3>
+          <p id="baixoEstoque">0</p>
+        </div>
 
-          <div class="card warning">
-            <h3>Baixo Estoque</h3>
-            <p id="baixoEstoque">0</p>
-          </div>
+        <div class="card">
+          <h3>Custo Total</h3>
+          <p id="totalEstoque">R$ 0,00</p>
+        </div>
 
-          <div class="card">
-            <h3>Custo total</h3>
-            <p id="totalEstoque">R$ 0,00</p>
-          </div>
-        </section>
+      </section>
 
-        <section class="chart-container">
-          <h2>Quantidade</h2>
-          <canvas id="grafico"></canvas>
-        </section>
+      <section class="chart-container">
+        <h2>Quantidade</h2>
+        <canvas id="grafico"></canvas>
+      </section>
 
-        <section class="chart-container">
-          <h2>Valor</h2>
-          <canvas id="graficoValor"></canvas>
-        </section>
-        <button id="btnDownloadPDF" class="btn-pdf">Baixar PDF</button>
-      </main>
-    </div>
+      <section class="chart-container">
+        <h2>Valor</h2>
+        <canvas id="graficoValor"></canvas>
+      </section>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="dashboard.js"></script>
-  </body>
+    </main>
+
+  </div>
+
+  <!-- CHART -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- HTML2CANVAS -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+  <!-- JSPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <script src="dashboard.js"></script>
+
+</body>
 </html>
