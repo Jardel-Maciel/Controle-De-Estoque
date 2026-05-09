@@ -189,6 +189,10 @@ function renderizarProdutos(produtos) {
         ${item.quantidade}
       </td>
 
+      <td>${item.cnpj || "-"}</td>
+      <td>${item.numero_nota || "-"}</td>
+      <td>${item.data_emissao || "-"}</td>
+
       <td>
         R$ ${Number(item.valor || 0).toFixed(2)}
       </td>

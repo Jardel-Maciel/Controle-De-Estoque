@@ -26,6 +26,7 @@ def criar_tabelas():
     # =========================
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS produtos (
+
             id INTEGER PRIMARY KEY AUTOINCREMENT,
 
             produto TEXT UNIQUE,
@@ -36,7 +37,17 @@ def criar_tabelas():
 
             fornecedor TEXT,
 
-            contato TEXT
+            contato TEXT,
+
+            cnpj TEXT,
+
+            numero_nota TEXT,
+
+            serie TEXT,
+
+            chave_nfe TEXT,
+
+            data_emissao TEXT
         )
     """)
 
@@ -45,6 +56,7 @@ def criar_tabelas():
     # =========================
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS movimentacoes (
+
             id INTEGER PRIMARY KEY AUTOINCREMENT,
 
             produto TEXT,
@@ -66,6 +78,7 @@ def criar_tabelas():
     # =========================
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS notas_fiscais (
+
             id INTEGER PRIMARY KEY AUTOINCREMENT,
 
             numero_nota TEXT,
@@ -89,25 +102,35 @@ def criar_tabelas():
     # =========================
     # GARANTIR COLUNAS
     # =========================
-    try:
 
-        cursor.execute("""
-            ALTER TABLE produtos
-            ADD COLUMN fornecedor TEXT
-        """)
+    colunas = [
 
-    except:
-        pass
+        ("fornecedor", "TEXT"),
 
-    try:
+        ("contato", "TEXT"),
 
-        cursor.execute("""
-            ALTER TABLE produtos
-            ADD COLUMN contato TEXT
-        """)
+        ("cnpj", "TEXT"),
 
-    except:
-        pass
+        ("numero_nota", "TEXT"),
+
+        ("serie", "TEXT"),
+
+        ("chave_nfe", "TEXT"),
+
+        ("data_emissao", "TEXT")
+    ]
+
+    for coluna, tipo in colunas:
+
+        try:
+
+            cursor.execute(f"""
+                ALTER TABLE produtos
+                ADD COLUMN {coluna} {tipo}
+            """)
+
+        except:
+            pass
 
     conn.commit()
 

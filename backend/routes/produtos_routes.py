@@ -38,18 +38,33 @@ def listar_produtos():
 
         return jsonify([
 
-    {
-        "id": item["id"],
-        "produto": item["produto"],
-        "quantidade": item["quantidade"],
-        "valor": item["valor"],
-        "fornecedor": item["fornecedor"],
-        "contato": item["contato"]
-    }
+            {
+                "id": item["id"],
 
-    for item in dados
+                "produto": item["produto"],
 
-])
+                "quantidade": item["quantidade"],
+
+                "valor": item["valor"],
+
+                "fornecedor": item["fornecedor"],
+
+                "contato": item["contato"],
+
+                "cnpj": item["cnpj"],
+
+                "numero_nota": item["numero_nota"],
+
+                "serie": item["serie"],
+
+                "chave_nfe": item["chave_nfe"],
+
+                "data_emissao": item["data_emissao"]
+            }
+
+            for item in dados
+
+        ])
 
     except Exception as e:
 
@@ -88,6 +103,16 @@ def criar_produto():
             dados.get("valor", 0)
         )
 
+        fornecedor = dados.get(
+            "fornecedor",
+            ""
+        )
+
+        contato = dados.get(
+            "contato",
+            ""
+        )
+
         conn = conectar()
 
         cursor = conn.cursor()
@@ -96,13 +121,17 @@ def criar_produto():
             INSERT INTO produtos (
                 produto,
                 quantidade,
-                valor
+                valor,
+                fornecedor,
+                contato
             )
-            VALUES (?, ?, ?)
+            VALUES (?, ?, ?, ?, ?)
         """, (
             produto,
             quantidade,
-            valor
+            valor,
+            fornecedor,
+            contato
         ))
 
         conn.commit()
