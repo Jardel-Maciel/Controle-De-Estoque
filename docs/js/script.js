@@ -13,7 +13,8 @@ let produtosCache = [];
 // =========================
 // MODAL
 // =========================
-const modal = document.getElementById("modal");
+const modal =
+  document.getElementById("modal");
 
 const inputQtd =
   document.getElementById("modalQuantidade");
@@ -181,6 +182,7 @@ function renderizarProdutos(produtos) {
       document.createElement("tr");
 
     tr.innerHTML = `
+
       <td style="text-transform: capitalize;">
         ${item.produto}
       </td>
@@ -189,16 +191,24 @@ function renderizarProdutos(produtos) {
         ${item.quantidade}
       </td>
 
-      <td>${item.cnpj || "-"}</td>
-      <td>${item.numero_nota || "-"}</td>
-      <td>${item.data_emissao || "-"}</td>
-
       <td>
         R$ ${Number(item.valor || 0).toFixed(2)}
       </td>
 
       <td style="text-transform: capitalize;">
         ${item.fornecedor || "-"}
+      </td>
+
+      <td>
+        ${item.cnpj || "-"}
+      </td>
+
+      <td>
+        ${item.numero_nota || "-"}
+      </td>
+
+      <td>
+        ${item.data_emissao || "-"}
       </td>
 
       <td>
@@ -609,7 +619,6 @@ inputXML.addEventListener("change", async (e) => {
 
     alert("XML importado com sucesso!");
 
-    // RECARREGA PRODUTOS
     carregar();
 
   } catch (erro) {
