@@ -1,19 +1,22 @@
 from flask import Flask
 from flask_cors import CORS
 
-# ROTAS
-from routes.auth_routes import auth_bp
-from routes.dashboard_routes import dashboard_bp
-from routes.produtos_routes import produtos_bp
-from routes.movimentacoes_routes import movimentacoes_bp
-
-# BANCO
-from database.database import criar_tabelas
-
 # =========================
 # APP
 # =========================
 app = Flask(__name__)
+
+# =========================
+# ROTAS
+# =========================
+from routes.auth_routes import auth_bp
+from routes.dashboard_routes import dashboard_bp
+from routes.produtos_routes import produtos_bp
+from routes.movimentacoes_routes import movimentacoes_bp
+from routes.xml_importador import xml_bp
+
+# BANCO
+from database.database import criar_tabelas
 
 # =========================
 # CORS
@@ -38,6 +41,9 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(dashboard_bp)
 app.register_blueprint(produtos_bp)
 app.register_blueprint(movimentacoes_bp)
+
+# IMPORTADOR XML
+app.register_blueprint(xml_bp)
 
 # =========================
 # START
