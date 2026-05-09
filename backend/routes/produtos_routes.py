@@ -37,14 +37,19 @@ def listar_produtos():
         conn.close()
 
         return jsonify([
-            {
-                "id": item["id"],
-                "produto": item["produto"],
-                "quantidade": item["quantidade"],
-                "valor": item["valor"]
-            }
-            for item in dados
-        ])
+
+    {
+        "id": item["id"],
+        "produto": item["produto"],
+        "quantidade": item["quantidade"],
+        "valor": item["valor"],
+        "fornecedor": item["fornecedor"],
+        "contato": item["contato"]
+    }
+
+    for item in dados
+
+])
 
     except Exception as e:
 

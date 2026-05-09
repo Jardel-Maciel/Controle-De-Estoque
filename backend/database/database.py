@@ -21,40 +21,61 @@ def criar_tabelas():
 
     cursor = conn.cursor()
 
+    # =========================
     # PRODUTOS
+    # =========================
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS produtos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+
             produto TEXT UNIQUE,
+
             quantidade INTEGER DEFAULT 0,
-            valor REAL DEFAULT 0
+
+            valor REAL DEFAULT 0,
+
+            fornecedor TEXT,
+
+            contato TEXT
         )
     """)
 
+    # =========================
     # MOVIMENTAÇÕES
+    # =========================
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS movimentacoes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+
             produto TEXT,
+
             tipo TEXT,
+
             quantidade INTEGER,
+
             comentario TEXT,
+
             responsavel TEXT,
+
             data TEXT
         )
     """)
+
     # =========================
-# TABELA NOTAS FISCAIS
-# =========================
+    # NOTAS FISCAIS
+    # =========================
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS notas_fiscais (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
 
             numero_nota TEXT,
+
             serie TEXT,
+
             chave_nfe TEXT UNIQUE,
 
             fornecedor TEXT,
+
             cnpj TEXT,
 
             data_emissao TEXT,
@@ -64,6 +85,29 @@ def criar_tabelas():
             xml_original TEXT
         )
     """)
+
+    # =========================
+    # GARANTIR COLUNAS
+    # =========================
+    try:
+
+        cursor.execute("""
+            ALTER TABLE produtos
+            ADD COLUMN fornecedor TEXT
+        """)
+
+    except:
+        pass
+
+    try:
+
+        cursor.execute("""
+            ALTER TABLE produtos
+            ADD COLUMN contato TEXT
+        """)
+
+    except:
+        pass
 
     conn.commit()
 
