@@ -3,10 +3,7 @@
 <html lang="pt-br">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>Estoque</title>
 
@@ -16,11 +13,7 @@
     <!-- Fonte -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
 
-    <link
-      rel="preconnect"
-      href="https://fonts.gstatic.com"
-      crossorigin
-    />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
@@ -29,100 +22,56 @@
   </head>
 
   <body>
-
     <section class="tela1">
-
       <!-- TOPO -->
       <div class="topo">
-
         <div class="topo-esquerda">
           <button id="toggleTema">🌙</button>
 
-          <button id="verHistorico">
-            📊 Histórico
-          </button>
+          <button id="verHistorico">📊 Histórico</button>
 
-          <button
-            onclick="window.open('dashboard.html')"
-          >
-            Dashboard
-          </button>
+          <button onclick="window.open('dashboard.html')">Dashboard</button>
         </div>
 
         <div class="topo-direita">
-          <button id="btnLogout">
-            Sair
-          </button>
+          <button id="btnLogout">Sair</button>
         </div>
 
+        <button id="btnImportarXML">📄 Importar XML</button>
+
+        <input type="file" id="inputXML" accept=".xml" style="display: none" />
       </div>
 
       <!-- TÍTULO -->
-      <h1 class="titulo">
-        📦 Controle de Estoque
-      </h1>
+      <h1 class="titulo">📦 Controle de Estoque</h1>
 
       <!-- FORMULÁRIO -->
-      <form
-        class="form"
-        onsubmit="return false;"
-      >
+      <form class="form" onsubmit="return false;">
+        <input type="text" id="inputProduto" placeholder="Produto" />
 
-        <input
-          type="text"
-          id="inputProduto"
-          placeholder="Produto"
-        />
+        <input type="number" id="quantidade" placeholder="Quantidade" />
 
-        <input
-          type="number"
-          id="quantidade"
-          placeholder="Quantidade"
-        />
+        <input type="number" id="valor" placeholder="Valor (R$)" />
 
-        <input
-          type="number"
-          id="valor"
-          placeholder="Valor (R$)"
-        />
+        <input type="text" id="fornecedor" placeholder="Fornecedor" />
 
-        <input
-          type="text"
-          id="fornecedor"
-          placeholder="Fornecedor"
-        />
+        <input type="text" id="contato" placeholder="Contato" />
 
-        <input
-          type="text"
-          id="contato"
-          placeholder="Contato"
-        />
-
-        <button
-          type="button"
-          id="cadastrar"
-        >
-          Cadastrar
-        </button>
-
+        <button type="button" id="cadastrar">Cadastrar</button>
       </form>
 
       <!-- BUSCA PRODUTOS -->
       <div class="busca-container">
-
         <input
           type="text"
           id="pesquisaEstoque"
           placeholder="🔎 Pesquisar produto no estoque..."
         />
-
       </div>
 
       <!-- TABELA -->
       <div class="table-container">
-
         <table>
-
           <thead>
             <tr>
               <th>Produto</th>
@@ -135,36 +84,18 @@
           </thead>
 
           <tbody id="lista"></tbody>
-
         </table>
-
       </div>
-
     </section>
 
     <!-- MODAL MOVIMENTAÇÃO -->
-    <div
-      id="modal"
-      class="modal hidden"
-    >
-
+    <div id="modal" class="modal hidden">
       <div class="modal-content">
+        <h3 id="modalTitulo">Movimentação</h3>
 
-        <h3 id="modalTitulo">
-          Movimentação
-        </h3>
+        <input type="number" id="modalQuantidade" placeholder="Quantidade" />
 
-        <input
-          type="number"
-          id="modalQuantidade"
-          placeholder="Quantidade"
-        />
-
-        <input
-          type="text"
-          id="modalResponsavel"
-          placeholder="Responsável"
-        />
+        <input type="text" id="modalResponsavel" placeholder="Responsável" />
 
         <input
           type="text"
@@ -173,52 +104,30 @@
         />
 
         <div class="modal-actions">
+          <button id="confirmarModal">Confirmar</button>
 
-          <button id="confirmarModal">
-            Confirmar
-          </button>
-
-          <button
-            id="cancelarModal"
-            class="btn-cancel"
-          >
-            Cancelar
-          </button>
-
+          <button id="cancelarModal" class="btn-cancel">Cancelar</button>
         </div>
-
       </div>
-
     </div>
 
     <!-- MODAL HISTÓRICO -->
-    <div
-      id="modalHistorico"
-      class="modal hidden"
-    >
-
+    <div id="modalHistorico" class="modal hidden">
       <div class="modal-content historico-modal">
-
-        <h3>
-          Histórico de Movimentações
-        </h3>
+        <h3>Histórico de Movimentações</h3>
 
         <!-- BUSCA HISTÓRICO -->
         <div class="busca-container">
-
           <input
             type="text"
             id="pesquisaProduto"
             placeholder="🔎 Pesquisar produto..."
           />
-
         </div>
 
         <!-- TABELA HISTÓRICO -->
         <div class="table-container">
-
           <table>
-
             <thead>
               <tr>
                 <th>Produto</th>
@@ -231,20 +140,13 @@
             </thead>
 
             <tbody id="listaHistorico"></tbody>
-
           </table>
-
         </div>
 
-        <button onclick="fecharHistorico()">
-          Fechar
-        </button>
-
+        <button onclick="fecharHistorico()">Fechar</button>
       </div>
-
     </div>
 
     <script src="js/script.js"></script>
-
   </body>
 </html>

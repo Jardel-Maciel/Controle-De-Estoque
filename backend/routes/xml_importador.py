@@ -18,7 +18,7 @@ def conectar():
 # =========================
 # IMPORTAR XML
 # =========================
-@xml_bp.route("/importar-xml", methods=["POST"])
+@xml_bp.route("/xml/importar", methods=["POST", "OPTIONS"])
 def importar_xml():
 
     try:

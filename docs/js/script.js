@@ -558,6 +558,69 @@ document
       "login.html";
   };
 
+  // =========================
+// IMPORTAR XML
+// =========================
+
+const btnImportarXML =
+  document.getElementById("btnImportarXML");
+
+const inputXML =
+  document.getElementById("inputXML");
+
+btnImportarXML.addEventListener("click", () => {
+
+  inputXML.click();
+
+});
+
+inputXML.addEventListener("change", async (e) => {
+
+  const arquivo = e.target.files[0];
+
+  if (!arquivo) return;
+
+  const formData = new FormData();
+
+  formData.append("arquivo", arquivo);
+
+  try {
+
+    const resposta = await fetch(
+      `${API}/xml/importar`,
+      {
+        method: "POST",
+
+        headers: {
+          Authorization: token
+        },
+
+        body: formData
+      }
+    );
+
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+
+      alert(dados.erro || "Erro ao importar XML");
+
+      return;
+    }
+
+    alert("XML importado com sucesso!");
+
+    // RECARREGA PRODUTOS
+    carregarProdutos();
+
+  } catch (erro) {
+
+    console.error(erro);
+
+    alert("Erro ao importar XML");
+  }
+
+});
 // =========================
 // INIT
 // =========================
