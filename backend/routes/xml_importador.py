@@ -14,12 +14,16 @@ def conectar():
     conn.row_factory = sqlite3.Row
     return conn
 
+    
 
 # =========================
 # IMPORTAR XML
 # =========================
 @xml_bp.route("/xml/importar", methods=["POST", "OPTIONS"])
 def importar_xml():
+    
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
 
     try:
 
