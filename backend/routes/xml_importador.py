@@ -21,19 +21,27 @@ def conectar():
 # =========================
 @xml_bp.route("/xml/importar", methods=["POST", "OPTIONS"])
 def importar_xml():
-    
+
     if request.method == "OPTIONS":
         return jsonify({}), 200
 
     try:
 
-        arquivo = request.files.get("xml")
+        print("FILES:", request.files)
 
-        if not arquivo:
+        if "arquivo" not in request.files:
+
             return jsonify({
                 "erro": "Arquivo XML não enviado"
             }), 400
 
+        arquivo = request.files["arquivo"]
+
+        if arquivo.filename == "":
+
+            return jsonify({
+                "erro": "Nenhum arquivo selecionado"
+            }), 400
         # =========================
         # LER XML
         # =========================
