@@ -189,27 +189,34 @@ def importar_xml():
                 cursor.execute("""
                     UPDATE produtos
                     SET quantidade = ?,
-                        valor = ?
-                    WHERE id = ?
+                        valor = ?,
+                        fornecedor = ?,
+                        contato = ?
+                    WHERE produto = ?
                 """, (
                     nova_quantidade,
                     valor,
-                    existente["id"]
+                    fornecedor,
+                    cnpj,
+                    nome
                 ))
-
             else:
 
                 cursor.execute("""
                     INSERT INTO produtos (
                         produto,
                         quantidade,
-                        valor
+                        valor,
+                        fornecedor,
+                        contato
                     )
-                    VALUES (?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?)
                 """, (
                     nome,
                     quantidade,
-                    valor
+                    valor,
+                    fornecedor,
+                    cnpj
                 ))
 
             produtos_importados.append(nome)
