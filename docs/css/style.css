@@ -58,7 +58,9 @@ body {
 
   min-height: 100vh;
 
-  padding: 30px;
+  padding: 25px;
+
+  overflow-x: hidden;
 }
 
 /* =========================
@@ -69,7 +71,7 @@ CONTAINER
 
   width: 100%;
 
-  max-width: 1600px;
+  max-width: 1900px;
 
   margin: auto;
 
@@ -77,7 +79,7 @@ CONTAINER
 
   border-radius: var(--radius);
 
-  padding: 30px;
+  padding: 35px;
 
   box-shadow: var(--shadow);
 }
@@ -98,7 +100,7 @@ TOPO
 
   flex-wrap: wrap;
 
-  margin-bottom: 25px;
+  margin-bottom: 30px;
 }
 
 .topo-esquerda,
@@ -106,17 +108,18 @@ TOPO
 
   display: flex;
 
+  align-items: center;
+
   gap: 12px;
 
   flex-wrap: wrap;
 }
 
 /* =========================
-GRUPOS DE BOTÕES
+BOTÕES TOPO
 ========================= */
 
-.topo-esquerda button,
-.topo-direita button {
+.topo button {
 
   display: flex;
 
@@ -126,44 +129,58 @@ GRUPOS DE BOTÕES
 
   gap: 8px;
 
-  min-width: 140px;
+  min-width: 145px;
 
-  height: 48px;
-
-  padding: 0 18px;
+  height: 50px;
 
   border-radius: 14px;
+
+  border: none;
+
+  cursor: pointer;
+
+  color: white;
 
   font-size: 14px;
 
   font-weight: 600;
+
+  transition: 0.2s ease;
+
+  padding: 0 18px;
 }
 
-/* BOTÃO SAIR */
+.topo button:hover {
 
-#btnLogout {
-
-  background: var(--danger);
+  transform: translateY(-2px);
 }
 
-#btnLogout:hover {
+.topo button:active {
 
-  background: #dc2626;
+  transform: scale(0.98);
 }
 
-/* BOTÃO IMPORTAR XML */
+/* TEMA */
 
-#btnImportarXML {
+#toggleTema {
 
-  background: var(--success);
+  min-width: 52px;
+
+  width: 52px;
+
+  font-size: 18px;
+
+  padding: 0;
+
+  background: var(--primary);
 }
 
-#btnImportarXML:hover {
+#toggleTema:hover {
 
-  background: #059669;
+  background: var(--primary-hover);
 }
 
-/* BOTÃO HISTÓRICO */
+/* HISTÓRICO */
 
 #verHistorico {
 
@@ -175,17 +192,28 @@ GRUPOS DE BOTÕES
   background: #6d28d9;
 }
 
-/* BOTÃO TEMA */
+/* IMPORTAR */
 
-#toggleTema {
+#btnImportarXML {
 
-  min-width: 52px;
+  background: var(--success);
+}
 
-  width: 52px;
+#btnImportarXML:hover {
 
-  padding: 0;
+  background: #059669;
+}
 
-  font-size: 18px;
+/* LOGOUT */
+
+#btnLogout {
+
+  background: var(--danger);
+}
+
+#btnLogout:hover {
+
+  background: #dc2626;
 }
 
 /* =========================
@@ -194,9 +222,9 @@ TÍTULO
 
 .titulo {
 
-  font-size: 32px;
+  font-size: 34px;
 
-  font-weight: 700;
+  font-weight: 800;
 
   margin-bottom: 30px;
 }
@@ -210,7 +238,7 @@ FORMULÁRIO
   display: grid;
 
   grid-template-columns:
-    repeat(auto-fit, minmax(180px, 1fr));
+    repeat(auto-fit, minmax(200px, 1fr));
 
   gap: 15px;
 
@@ -219,9 +247,14 @@ FORMULÁRIO
   align-items: end;
 }
 
+.form input {
+
+  width: 100%;
+}
+
 .form button {
 
-  height: 50px;
+  height: 52px;
 
   width: 100%;
 }
@@ -231,6 +264,8 @@ INPUTS
 ========================= */
 
 input {
+
+  width: 100%;
 
   padding: 14px 16px;
 
@@ -290,14 +325,16 @@ button {
 button:hover {
 
   background: var(--primary-hover);
-
-  transform: translateY(-2px);
 }
 
 button:active {
 
   transform: scale(0.98);
 }
+
+/* =========================
+BOTÃO PERIGO
+========================= */
 
 .btn-danger {
 
@@ -322,8 +359,6 @@ BUSCA
 
 .busca-container input {
 
-  width: 100%;
-
   background: var(--bg);
 }
 
@@ -337,9 +372,9 @@ TABELA
 
   overflow-x: auto;
 
-  border: 1px solid var(--border);
-
   border-radius: var(--radius);
+
+  border: 1px solid var(--border);
 
   background: var(--card);
 }
@@ -348,14 +383,15 @@ table {
 
   width: 100%;
 
-  min-width: 1450px;
+  min-width: 1650px;
 
   border-collapse: collapse;
 }
 
 thead {
 
-  background: rgba(37,99,235,0.08);
+  background:
+    rgba(37,99,235,0.08);
 }
 
 th {
@@ -374,7 +410,7 @@ th {
 th,
 td {
 
-  padding: 18px 16px;
+  padding: 18px 18px;
 
   text-align: left;
 
@@ -392,7 +428,8 @@ td {
 
 tr:hover {
 
-  background: rgba(148,163,184,0.06);
+  background:
+    rgba(148,163,184,0.06);
 }
 
 /* =========================
@@ -409,7 +446,7 @@ AÇÕES
 
   gap: 10px;
 
-  min-width: 180px;
+  min-width: 220px;
 }
 
 .acoes button {
@@ -420,28 +457,33 @@ AÇÕES
 
   justify-content: center;
 
-  width: 42px;
-
   height: 42px;
-
-  padding: 0;
 
   border-radius: 12px;
 
-  font-size: 16px;
+  font-weight: 700;
+}
 
-  font-weight: bold;
+/* BOTÕES + E - */
+
+.acoes button:not(.btn-danger) {
+
+  width: 42px;
+
+  min-width: 42px;
+
+  padding: 0;
+
+  font-size: 18px;
 }
 
 /* BOTÃO EXCLUIR */
 
 .acoes .btn-danger {
 
-  width: auto;
+  min-width: 100px;
 
-  min-width: 90px;
-
-  padding: 0 16px;
+  padding: 0 18px;
 
   font-size: 13px;
 }
@@ -478,13 +520,13 @@ MODAL
 
   width: 100%;
 
-  max-width: 420px;
+  max-width: 450px;
 
   background: var(--card);
 
   border-radius: 22px;
 
-  padding: 25px;
+  padding: 28px;
 
   box-shadow: var(--shadow);
 }
@@ -493,15 +535,17 @@ MODAL
 
   margin-bottom: 18px;
 
-  font-size: 22px;
+  font-size: 24px;
 }
 
 .modal-content input {
 
-  width: 100%;
-
   margin-bottom: 14px;
 }
+
+/* =========================
+AÇÕES MODAL
+========================= */
 
 .modal-actions {
 
@@ -516,8 +560,10 @@ MODAL
 
   flex: 1;
 
-  height: 48px;
+  height: 50px;
 }
+
+/* CANCELAR */
 
 .btn-cancel {
 
@@ -537,7 +583,7 @@ MODAL HISTÓRICO
 
 .historico-modal {
 
-  max-width: 1200px;
+  max-width: 1400px;
 }
 
 #modalHistorico .table-container {
@@ -551,8 +597,8 @@ SCROLLBAR
 
 ::-webkit-scrollbar {
 
-  height: 10px;
   width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -566,7 +612,7 @@ SCROLLBAR
 RESPONSIVO
 ========================= */
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
 
   body {
 
@@ -580,7 +626,7 @@ RESPONSIVO
 
   .titulo {
 
-    font-size: 24px;
+    font-size: 26px;
   }
 
   .topo {
@@ -599,10 +645,6 @@ RESPONSIVO
   .topo button {
 
     flex: 1;
-  }
-
-  .topo-esquerda button,
-  .topo-direita button {
 
     min-width: unset;
   }
@@ -614,11 +656,11 @@ RESPONSIVO
 
   table {
 
-    min-width: 1200px;
+    min-width: 1400px;
   }
 
   .acoes {
 
-    min-width: 150px;
+    min-width: 200px;
   }
 }
