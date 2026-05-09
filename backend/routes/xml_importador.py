@@ -32,76 +32,106 @@ def importar_xml():
             }), 400
 
         # =========================
-        # LER XML
+        # XML
         # =========================
         tree = ET.parse(arquivo)
 
         root = tree.getroot()
-        
+
         # =========================
-        # DADOS DA NF-E
+        # NAMESPACE NF-E
         # =========================
-        infNFe = root.find(".//infNFe")
+        ns = {
+            "nfe": "http://www.portalfiscal.inf.br/nfe"
+        }
 
-        ide = root.find(".//ide")
+        # =========================
+        # DADOS NF-E
+        # =========================
+        infNFe = root.find(".//nfe:infNFe", ns)
 
-        emit = root.find(".//emit")
+        ide = root.find(".//nfe:ide", ns)
 
-        total = root.find(".//ICMSTot")
+        emit = root.find(".//nfe:emit", ns)
 
-        # NÚMERO NOTA
+        total = root.find(".//nfe:ICMSTot", ns)
+
         numero_nota = ""
 
         if ide is not None:
-            numero_nota = ide.findtext("nNF", "")
+            numero_nota = ide.findtext(
+                "nfe:nNF",
+                "",
+                ns
+            )
 
-        # SÉRIE
         serie = ""
 
         if ide is not None:
-            serie = ide.findtext("serie", "")
+            serie = ide.findtext(
+                "nfe:serie",
+                "",
+                ns
+            )
 
-        # DATA
         data_emissao = ""
 
         if ide is not None:
-            data_emissao = ide.findtext("dhEmi", "")
+            data_emissao = ide.findtext(
+                "nfe:dhEmi",
+                "",
+                ns
+            )
 
-        # CHAVE
         chave_nfe = ""
 
         if infNFe is not None:
-            chave_nfe = infNFe.attrib.get("Id", "")
+            chave_nfe = infNFe.attrib.get(
+                "Id",
+                ""
+            )
 
-        # FORNECEDOR
         fornecedor = ""
 
         if emit is not None:
-            fornecedor = emit.findtext("xNome", "")
+            fornecedor = emit.findtext(
+                "nfe:xNome",
+                "",
+                ns
+            )
 
-        # CNPJ
         cnpj = ""
 
         if emit is not None:
-            cnpj = emit.findtext("CNPJ", "")
+            cnpj = emit.findtext(
+                "nfe:CNPJ",
+                "",
+                ns
+            )
 
-        # VALOR TOTAL
         valor_total_nota = 0
 
         if total is not None:
 
             valor_total_nota = float(
-                total.findtext("vNF", "0")
+                total.findtext(
+                    "nfe:vNF",
+                    "0",
+                    ns
+                )
             )
 
+        # =========================
+        # BANCO
+        # =========================
         conn = conectar()
 
         cursor = conn.cursor()
 
         produtos_importados = []
-        
+
         # =========================
-        # VERIFICAR NF DUPLICADA
+        # VERIFICAR DUPLICIDADE
         # =========================
         cursor.execute("""
             SELECT id
@@ -116,11 +146,11 @@ def importar_xml():
             conn.close()
 
             return jsonify({
-                "erro": "Esta NF-e já foi importada"
+                "erro": "NF-e já importada"
             }), 400
 
         # =========================
-        # SALVAR NF
+        # SALVAR NOTA
         # =========================
         cursor.execute("""
             INSERT INTO notas_fiscais (
@@ -146,30 +176,42 @@ def importar_xml():
         ))
 
         # =========================
-        # PRODUTOS DO XML
+        # PRODUTOS
         # =========================
-        for det in root.iter("det"):
+        for det in root.findall(".//nfe:det", ns):
 
-            prod = det.find("prod")
+            prod = det.find("nfe:prod", ns)
 
             if prod is None:
                 continue
 
-            nome = prod.findtext("xProd", "").strip()
+            nome = prod.findtext(
+                "nfe:xProd",
+                "",
+                ns
+            ).strip()
 
             quantidade = float(
-                prod.findtext("qCom", "0")
+                prod.findtext(
+                    "nfe:qCom",
+                    "0",
+                    ns
+                )
             )
 
             valor = float(
-                prod.findtext("vUnCom", "0")
+                prod.findtext(
+                    "nfe:vUnCom",
+                    "0",
+                    ns
+                )
             )
 
             if not nome:
                 continue
 
             # =========================
-            # VERIFICAR EXISTENTE
+            # PRODUTO EXISTENTE
             # =========================
             cursor.execute("""
                 SELECT id, quantidade
@@ -191,15 +233,22 @@ def importar_xml():
                     SET quantidade = ?,
                         valor = ?,
                         fornecedor = ?,
-                        contato = ?
+                        contato = ?,
+                        cnpj = ?,
+                        numero_nota = ?,
+                        data_emissao = ?
                     WHERE produto = ?
                 """, (
                     nova_quantidade,
                     valor,
                     fornecedor,
                     cnpj,
+                    cnpj,
+                    numero_nota,
+                    data_emissao,
                     nome
                 ))
+
             else:
 
                 cursor.execute("""
@@ -208,15 +257,21 @@ def importar_xml():
                         quantidade,
                         valor,
                         fornecedor,
-                        contato
+                        contato,
+                        cnpj,
+                        numero_nota,
+                        data_emissao
                     )
-                    VALUES (?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     nome,
                     quantidade,
                     valor,
                     fornecedor,
-                    cnpj
+                    cnpj,
+                    cnpj,
+                    numero_nota,
+                    data_emissao
                 ))
 
             produtos_importados.append(nome)
