@@ -201,7 +201,7 @@ document.getElementById("btnDownloadPDF").onclick = async () => {
     // =========================
 // PÁGINA 1 - CAPA PROFISSIONAL
 // =========================
-header("RELATÓRIO DE ESTOQUE", "Visão geral do sistema");
+header("RELATÓRIO DE ESTOQUE", "Visão executiva do sistema");
 
 const dataAtual = new Date().toLocaleString();
 
@@ -210,48 +210,35 @@ pdf.setFontSize(9);
 pdf.text(`Gerado em: ${dataAtual}`, 14, 40);
 
 // =========================
-// GRID DE KPIs (SAAS STYLE)
+// KPI CARDS (PADRÃO EMPRESA)
 // =========================
 const cards = [
-  {
-    label: "Produtos",
-    value: dashboard.total_produtos || 0
-  },
-  {
-    label: "Itens",
-    value: dashboard.total_itens || 0
-  },
-  {
-    label: "Baixo Estoque",
-    value: dashboard.baixo_estoque || 0
-  },
-  {
-    label: "Valor Total",
-    value: `R$ ${(dashboard.valor_total || 0).toFixed(2)}`
-  }
+  ["Produtos", dashboard.total_produtos || 0],
+  ["Itens", dashboard.total_itens || 0],
+  ["Baixo Estoque", dashboard.baixo_estoque || 0],
+  ["Valor Total", `R$ ${(dashboard.valor_total || 0).toFixed(2)}`]
 ];
 
 let x = 14;
 let y = 55;
 
-cards.forEach((c, i) => {
-  pdf.setFillColor(248, 250, 252);
+cards.forEach(([label, value], i) => {
+
+  pdf.setFillColor(255, 255, 255);
   pdf.roundedRect(x, y, 45, 22, 3, 3, "F");
+
+  pdf.setDrawColor(226, 232, 240);
+  pdf.roundedRect(x, y, 45, 22, 3, 3);
 
   pdf.setTextColor(100);
   pdf.setFontSize(8);
-  pdf.text(c.label, x + 4, y + 8);
+  pdf.text(label, x + 4, y + 8);
 
   pdf.setTextColor(15, 23, 42);
   pdf.setFontSize(12);
-  pdf.text(String(c.value), x + 4, y + 16);
+  pdf.text(String(value), x + 4, y + 16);
 
   x += 48;
-
-  if ((i + 1) % 4 === 0) {
-    x = 14;
-    y += 28;
-  }
 });
 
 // =========================
