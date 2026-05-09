@@ -17,7 +17,6 @@ let dashboard = {};
 async function carregarLogo() {
   try {
     const res = await fetch("assets/logo.png");
-
     if (!res.ok) throw new Error("Logo não encontrada");
 
     const blob = await res.blob();
@@ -30,6 +29,7 @@ async function carregarLogo() {
       };
       reader.readAsDataURL(blob);
     });
+
   } catch (e) {
     console.warn("Logo não carregada");
     logoBase64 = null;
@@ -41,10 +41,9 @@ async function carregarLogo() {
 // =========================
 function capitalizeTexto(texto) {
   if (!texto) return "-";
-
   return String(texto)
     .toLowerCase()
-    .replace(/\b\w/g, (letra) => letra.toUpperCase());
+    .replace(/\b\w/g, (l) => l.toUpperCase());
 }
 
 // =========================
@@ -66,84 +65,45 @@ async function carregarDashboard() {
     }
 
     dashboard = dados;
+    produtosPDF = dados.produtos || [];
 
-    // =========================
-    // CARDS
-    // =========================
-    document.getElementById("totalProdutos").textContent =
-      dados.total_produtos || 0;
-
-    document.getElementById("totalItens").textContent =
-      dados.total_itens || 0;
-
-    document.getElementById("baixoEstoque").textContent =
-      dados.baixo_estoque || 0;
-
+    document.getElementById("totalProdutos").textContent = dados.total_produtos || 0;
+    document.getElementById("totalItens").textContent = dados.total_itens || 0;
+    document.getElementById("baixoEstoque").textContent = dados.baixo_estoque || 0;
     document.getElementById("totalEstoque").textContent =
       `R$ ${(dados.valor_total || 0).toFixed(2)}`;
 
-    // =========================
-    // DADOS PARA PDF
-    // =========================
-    produtosPDF = dados.produtos || [];
-
-    // =========================
-    // GRÁFICO QUANTIDADE
-    // =========================
     if (graficoQuantidade) graficoQuantidade.destroy();
 
-    const ctxQtd = document.getElementById("grafico").getContext("2d");
-
-    graficoQuantidade = new Chart(ctxQtd, {
+    graficoQuantidade = new Chart(document.getElementById("grafico"), {
       type: "bar",
       data: {
-        labels: (dados.grafico_quantidade || []).map((i) =>
+        labels: (dados.grafico_quantidade || []).map(i =>
           capitalizeTexto(i.produto)
         ),
-        datasets: [
-          {
-            label: "Quantidade",
-            data: (dados.grafico_quantidade || []).map((i) => i.quantidade),
-            backgroundColor: "rgba(56,189,248,0.7)",
-            borderRadius: 8,
-            maxBarThickness: 45
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false
+        datasets: [{
+          label: "Quantidade",
+          data: (dados.grafico_quantidade || []).map(i => i.quantidade),
+          backgroundColor: "rgba(99,102,241,0.7)",
+          borderRadius: 10
+        }]
       }
     });
 
-    // =========================
-    // GRÁFICO VALOR
-    // =========================
     if (graficoValor) graficoValor.destroy();
 
-    const ctxValor = document
-      .getElementById("graficoValor")
-      .getContext("2d");
-
-    graficoValor = new Chart(ctxValor, {
+    graficoValor = new Chart(document.getElementById("graficoValor"), {
       type: "bar",
       data: {
-        labels: (dados.grafico_valor || []).map((i) =>
+        labels: (dados.grafico_valor || []).map(i =>
           capitalizeTexto(i.produto)
         ),
-        datasets: [
-          {
-            label: "Valor Total",
-            data: (dados.grafico_valor || []).map((i) => i.valor_total),
-            backgroundColor: "rgba(34,197,94,0.7)",
-            borderRadius: 8,
-            maxBarThickness: 45
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false
+        datasets: [{
+          label: "Valor Total",
+          data: (dados.grafico_valor || []).map(i => i.valor_total),
+          backgroundColor: "rgba(16,185,129,0.7)",
+          borderRadius: 10
+        }]
       }
     });
 
@@ -154,180 +114,172 @@ async function carregarDashboard() {
 }
 
 // =========================
-// BOTÃO PDF
+// PDF SAAS PREMIUM
 // =========================
 document.getElementById("btnDownloadPDF").onclick = async () => {
   try {
     await carregarLogo();
 
     const movRes = await fetch(`${API}/movimentacoes`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+      headers: { Authorization: `Bearer ${token}` }
     });
 
-    const data = await movRes.json();
+    const raw = await movRes.json();
 
-    const movimentacoes = Array.isArray(data)
-      ? data
-      : (data && data.movimentacoes ? data.movimentacoes : []);
+    const movimentacoes =
+      Array.isArray(raw) ? raw :
+      Array.isArray(raw.movimentacoes) ? raw.movimentacoes :
+      Array.isArray(raw.data) ? raw.data : [];
 
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF("p", "mm", "a4");
 
-    const primary = [15, 23, 42];
-
-    // =========================
-    // HEADER
-    // =========================
+    // ================= HEADER PREMIUM =================
     function header(title, subtitle = "") {
-      pdf.setFillColor(...primary);
-      pdf.rect(0, 0, 210, 32, "F");
+      pdf.setFillColor(15, 23, 42);
+      pdf.rect(0, 0, 210, 36, "F");
 
       if (logoBase64) {
-        pdf.addImage(logoBase64, "PNG", 13, 7, 16, 16);
+        pdf.addImage(logoBase64, "PNG", 12, 8, 18, 18);
       }
 
       pdf.setTextColor(255);
-      pdf.setFontSize(16);
+      pdf.setFontSize(17);
       pdf.text(title, 36, 18);
 
-      if (subtitle) {
-        pdf.setFontSize(9);
-        pdf.text(subtitle, 36, 25);
-      }
+      pdf.setTextColor(180);
+      pdf.setFontSize(9);
+      pdf.text(subtitle, 36, 26);
     }
 
-    // =========================
-// PÁGINA 1 - CAPA PROFISSIONAL
-// =========================
-header("RELATÓRIO DE ESTOQUE", "Visão executiva do sistema");
+    // ================= CAPA =================
+    header("Estoque Intelligence", "Relatório executivo SaaS");
 
-const dataAtual = new Date().toLocaleString();
+    pdf.setTextColor(120);
+    pdf.setFontSize(9);
+    pdf.text(`Gerado em: ${new Date().toLocaleString()}`, 14, 45);
 
-pdf.setTextColor(120);
-pdf.setFontSize(9);
-pdf.text(`Gerado em: ${dataAtual}`, 14, 40);
+    // ================= KPIs PREMIUM =================
+    const cards = [
+      ["Produtos", dashboard.total_produtos || 0],
+      ["Itens", dashboard.total_itens || 0],
+      ["Baixo Estoque", dashboard.baixo_estoque || 0],
+      ["Valor Total", `R$ ${(dashboard.valor_total || 0).toFixed(2)}`]
+    ];
 
-// =========================
-// KPI CARDS (PADRÃO EMPRESA)
-// =========================
-const cards = [
-  ["Produtos", dashboard.total_produtos || 0],
-  ["Itens", dashboard.total_itens || 0],
-  ["Baixo Estoque", dashboard.baixo_estoque || 0],
-  ["Valor Total", `R$ ${(dashboard.valor_total || 0).toFixed(2)}`]
-];
+    let x = 14;
+    let y = 55;
 
-let x = 14;
-let y = 55;
+    cards.forEach(([label, value]) => {
 
-cards.forEach(([label, value], i) => {
+      pdf.setFillColor(248, 250, 252);
+      pdf.roundedRect(x, y, 45, 24, 4, 4, "F");
 
-  pdf.setFillColor(255, 255, 255);
-  pdf.roundedRect(x, y, 45, 22, 3, 3, "F");
+      pdf.setDrawColor(226, 232, 240);
+      pdf.roundedRect(x, y, 45, 24, 4, 4);
 
-  pdf.setDrawColor(226, 232, 240);
-  pdf.roundedRect(x, y, 45, 22, 3, 3);
+      pdf.setTextColor(100);
+      pdf.setFontSize(8);
+      pdf.text(label.toUpperCase(), x + 4, y + 8);
 
-  pdf.setTextColor(100);
-  pdf.setFontSize(8);
-  pdf.text(label, x + 4, y + 8);
+      pdf.setTextColor(15, 23, 42);
+      pdf.setFontSize(12);
+      pdf.text(String(value), x + 4, y + 17);
 
-  pdf.setTextColor(15, 23, 42);
-  pdf.setFontSize(12);
-  pdf.text(String(value), x + 4, y + 16);
+      x += 48;
+    });
 
-  x += 48;
-});
+    // ================= TABELA PREMIUM =================
+    pdf.setFontSize(12);
+    pdf.setTextColor(15, 23, 42);
+    pdf.text("Inventário de Produtos", 14, 110);
 
-// =========================
-// TABELA PROFISSIONAL
-// =========================
-pdf.setFontSize(12);
-pdf.setTextColor(20);
-pdf.text("Produtos em Estoque", 14, 110);
+    let yTable = 120;
 
-let yTable = 120;
+    (dashboard.produtos || []).forEach((p, i) => {
 
-// HEADER TABELA
-pdf.setFillColor(15, 23, 42);
-pdf.rect(10, yTable, 190, 10, "F");
+      if (yTable > 265) {
+        pdf.addPage();
+        header("Estoque Intelligence", "Visão geral de inventário");
+        yTable = 40;
+      }
 
-pdf.setTextColor(255);
-pdf.setFontSize(9);
+      const baixo = p.quantidade <= 5;
 
-pdf.text("Produto", 14, yTable + 7);
-pdf.text("Qtd", 90, yTable + 7);
-pdf.text("Valor", 120, yTable + 7);
-pdf.text("Status", 160, yTable + 7);
+      if (i % 2 === 0) {
+        pdf.setFillColor(248, 250, 252);
+        pdf.rect(10, yTable - 5, 190, 8, "F");
+      }
 
-yTable += 14;
+      pdf.setTextColor(30);
+      pdf.setFontSize(9);
 
-// LINHAS
-(dashboard.produtos || []).forEach((p, index) => {
+      pdf.text(p.produto || "-", 14, yTable);
+      pdf.text(String(p.quantidade || 0), 95, yTable);
+      pdf.text(`R$ ${Number(p.valor || 0).toFixed(2)}`, 125, yTable);
 
-  if (yTable > 270) {
+      // BADGE PREMIUM
+      if (baixo) {
+        pdf.setFillColor(239, 68, 68);
+        pdf.setTextColor(255);
+        pdf.roundedRect(165, yTable - 4, 30, 6, 3, 3, "F");
+        pdf.text("LOW", 173, yTable);
+      } else {
+        pdf.setFillColor(16, 185, 129);
+        pdf.setTextColor(255);
+        pdf.roundedRect(165, yTable - 4, 30, 6, 3, 3, "F");
+        pdf.text("OK", 175, yTable);
+      }
+
+      yTable += 10;
+    });
+
+    // ================= MOVIMENTAÇÕES PREMIUM =================
     pdf.addPage();
-    header("RELATÓRIO DE ESTOQUE");
-    yTable = 40;
-  }
-
-  const total = p.quantidade * p.valor;
-  const baixo = p.quantidade <= 5;
-
-  if (index % 2 === 0) {
-    pdf.setFillColor(248, 250, 252);
-    pdf.rect(10, yTable - 5, 190, 8, "F");
-  }
-
-  pdf.setTextColor(30);
-  pdf.setFontSize(8);
-
-  pdf.text(p.produto || "-", 14, yTable);
-  pdf.text(String(p.quantidade || 0), 90, yTable);
-  pdf.text(`R$ ${Number(p.valor || 0).toFixed(2)}`, 120, yTable);
-
-  // STATUS BADGE
-  if (baixo) {
-    pdf.setFillColor(239, 68, 68);
-  } else {
-    pdf.setFillColor(34, 197, 94);
-  }
-
-  pdf.roundedRect(160, yTable - 4, 30, 6, 2, 2, "F");
-
-  pdf.setTextColor(255);
-  pdf.text(baixo ? "BAIXO" : "OK", 168, yTable);
-
-  yTable += 10;
-});
-
-    // =========================
-    // PÁGINA 2 - MOVIMENTAÇÕES
-    // =========================
-    pdf.addPage();
-    header("Movimentações", "Histórico");
+    header("Movimentações", "Audit log do sistema");
 
     let y2 = 45;
 
     movimentacoes.forEach((mov) => {
-      if (y2 > 270) {
+
+      if (y2 > 250) {
         pdf.addPage();
-        header("Movimentações");
+        header("Movimentações", "Audit log do sistema");
         y2 = 45;
       }
 
-      pdf.text(
-        `${mov.produto || "-"} | ${mov.tipo || "-"} | Qtd: ${mov.quantidade || 0}`,
-        14,
-        y2
-      );
+      const dataFormatada = mov.created_at
+        ? new Date(mov.created_at).toLocaleString()
+        : "-";
+
+      pdf.setFillColor(255, 255, 255);
+      pdf.roundedRect(10, y2 - 6, 190, 30, 4, 4, "F");
+
+      pdf.setDrawColor(229, 231, 235);
+      pdf.roundedRect(10, y2 - 6, 190, 30, 4, 4);
+
+      pdf.setTextColor(15, 23, 42);
+      pdf.setFontSize(9);
+
+      pdf.text(`Produtos: ${mov.produto || "-"}`, 14, y2);
+      y2 += 5;
+
+      pdf.text(`Quantidade: ${mov.quantidade || 0} | Tipo: ${mov.tipo || "-"}`, 14, y2);
+      y2 += 5;
+
+      pdf.text(`Responsavel: ${mov.responsavel || "-"}`, 14, y2);
+      y2 += 5;
+
+      pdf.text(`Motivo: ${mov.motivo || "-"}`, 14, y2);
+      y2 += 5;
+
+      pdf.setTextColor(120);
+      pdf.text(`Data: ${dataFormatada}`, 14, y2);
 
       y2 += 10;
     });
 
-    pdf.save("relatorio.pdf");
+    pdf.save("estoque-intelligence.pdf");
 
   } catch (err) {
     console.error(err);
