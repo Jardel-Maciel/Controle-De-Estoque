@@ -1,4 +1,5 @@
 const API = "https://backend-estoque-fnfc.onrender.com";
+
 const token = localStorage.getItem("token");
 
 if (!token) {
@@ -39,7 +40,6 @@ function abrirModal(tipo, id) {
       ? "Entrada de Produto"
       : "Saída de Produto";
 
-  // LIMPAR CAMPOS
   inputQtd.value = "";
 
   if (inputResponsavel) {
@@ -202,6 +202,7 @@ function renderizarProdutos(produtos) {
       </td>
 
       <td class="acoes">
+
         <button onclick="entrada(${item.id})">
           ➕
         </button>
@@ -216,6 +217,7 @@ function renderizarProdutos(produtos) {
         >
           Excluir
         </button>
+
       </td>
     `;
 
@@ -298,16 +300,12 @@ document
         return;
       }
 
-      // =========================
-      // LIMPAR INPUTS
-      // =========================
       inputProduto.value = "";
       inputQuantidade.value = "";
       inputValor.value = "";
       inputFornecedor.value = "";
       inputContato.value = "";
 
-      // FOCUS NO PRODUTO
       inputProduto.focus();
 
       carregar();
@@ -337,9 +335,7 @@ window.remover = async (id) => {
     "Deseja realmente excluir este produto?"
   );
 
-  if (!confirmar) {
-    return;
-  }
+  if (!confirmar) return;
 
   try {
 
@@ -558,10 +554,9 @@ document
       "login.html";
   };
 
-  // =========================
+// =========================
 // IMPORTAR XML
 // =========================
-
 const btnImportarXML =
   document.getElementById("btnImportarXML");
 
@@ -611,7 +606,7 @@ inputXML.addEventListener("change", async (e) => {
     alert("XML importado com sucesso!");
 
     // RECARREGA PRODUTOS
-    carregarProdutos();
+    carregar();
 
   } catch (erro) {
 
@@ -621,6 +616,7 @@ inputXML.addEventListener("change", async (e) => {
   }
 
 });
+
 // =========================
 // INIT
 // =========================

@@ -1,25 +1,21 @@
 from flask import Blueprint, request, jsonify
 import xml.etree.ElementTree as ET
-import sqlite3
-import datetime
 
-xml_bp = Blueprint("xml", __name__)
+from database.database import conectar
 
-
-# =========================
-# CONEXÃO
-# =========================
-def conectar():
-    conn = sqlite3.connect("banco.db")
-    conn.row_factory = sqlite3.Row
-    return conn
-
-    
+xml_bp = Blueprint(
+    "xml",
+    __name__,
+    url_prefix="/xml"
+)
 
 # =========================
 # IMPORTAR XML
 # =========================
-@xml_bp.route("/xml/importar", methods=["POST", "OPTIONS"])
+@xml_bp.route(
+    "/importar",
+    methods=["POST", "OPTIONS"]
+)
 def importar_xml():
 
     if request.method == "OPTIONS":
@@ -27,21 +23,14 @@ def importar_xml():
 
     try:
 
-        print("FILES:", request.files)
+        arquivo = request.files.get("arquivo")
 
-        if "arquivo" not in request.files:
-
-            return jsonify({
-                "erro": "Arquivo XML não enviado"
-            }), 400
-
-        arquivo = request.files["arquivo"]
-
-        if arquivo.filename == "":
+        if not arquivo:
 
             return jsonify({
-                "erro": "Nenhum arquivo selecionado"
+                "erro": "Arquivo não enviado"
             }), 400
+
         # =========================
         # LER XML
         # =========================
@@ -49,70 +38,51 @@ def importar_xml():
 
         root = tree.getroot()
 
-        ns = {
-            "nfe": "http://www.portalfiscal.inf.br/nfe"
-        }
-
         conn = conectar()
 
         cursor = conn.cursor()
 
-        produtos_importados = 0
+        produtos_importados = []
 
         # =========================
-        # FORNECEDOR
+        # PRODUTOS DO XML
         # =========================
-        emit = root.find(".//nfe:emit", ns)
+        for det in root.iter("det"):
 
-        fornecedor = "Fornecedor"
-
-        if emit is not None:
-
-            nome_emit = emit.find("nfe:xNome", ns)
-
-            if nome_emit is not None:
-                fornecedor = nome_emit.text
-
-        # =========================
-        # PRODUTOS
-        # =========================
-        for det in root.findall(".//nfe:det", ns):
-
-            prod = det.find("nfe:prod", ns)
+            prod = det.find("prod")
 
             if prod is None:
                 continue
 
-            nome = prod.find("nfe:xProd", ns)
+            nome = prod.findtext("xProd", "").strip()
 
-            quantidade = prod.find("nfe:qCom", ns)
+            quantidade = float(
+                prod.findtext("qCom", "0")
+            )
 
-            valor = prod.find("nfe:vUnCom", ns)
+            valor = float(
+                prod.findtext("vUnCom", "0")
+            )
 
-            produto_nome = nome.text.strip()
-
-            qtd = int(float(quantidade.text))
-
-            valor_unitario = float(valor.text)
+            if not nome:
+                continue
 
             # =========================
-            # VERIFICAR EXISTÊNCIA
+            # VERIFICAR EXISTENTE
             # =========================
             cursor.execute("""
-                SELECT *
+                SELECT id, quantidade
                 FROM produtos
                 WHERE produto = ?
-            """, (produto_nome,))
+            """, (nome,))
 
             existente = cursor.fetchone()
 
-            # =========================
-            # PRODUTO EXISTE
-            # =========================
             if existente:
 
-                novo_estoque = (
-                    existente["quantidade"] + qtd
+                nova_quantidade = (
+                    existente["quantidade"]
+                    + quantidade
                 )
 
                 cursor.execute("""
@@ -121,14 +91,11 @@ def importar_xml():
                         valor = ?
                     WHERE id = ?
                 """, (
-                    novo_estoque,
-                    valor_unitario,
+                    nova_quantidade,
+                    valor,
                     existente["id"]
                 ))
 
-            # =========================
-            # NOVO PRODUTO
-            # =========================
             else:
 
                 cursor.execute("""
@@ -139,46 +106,23 @@ def importar_xml():
                     )
                     VALUES (?, ?, ?)
                 """, (
-                    produto_nome,
-                    qtd,
-                    valor_unitario
+                    nome,
+                    quantidade,
+                    valor
                 ))
 
-            # =========================
-            # MOVIMENTAÇÃO
-            # =========================
-            cursor.execute("""
-                INSERT INTO movimentacoes (
-                    produto,
-                    tipo,
-                    quantidade,
-                    comentario,
-                    responsavel,
-                    data
-                )
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (
-                produto_nome,
-                "entrada",
-                qtd,
-                f"Importação XML - {fornecedor}",
-                "Sistema XML",
-                datetime.datetime.now().isoformat()
-            ))
-
-            produtos_importados += 1
+            produtos_importados.append(nome)
 
         conn.commit()
 
         conn.close()
 
         return jsonify({
-            "msg": f"{produtos_importados} produtos importados com sucesso"
+            "msg": "XML importado com sucesso",
+            "produtos": produtos_importados
         })
 
     except Exception as e:
-
-        print("ERRO XML:", str(e))
 
         return jsonify({
             "erro": str(e)
