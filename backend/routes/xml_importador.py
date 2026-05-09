@@ -178,6 +178,8 @@ def importar_xml():
 
     except Exception as e:
 
+        print("ERRO XML:", str(e))
+
         return jsonify({
             "erro": str(e)
         }), 500
