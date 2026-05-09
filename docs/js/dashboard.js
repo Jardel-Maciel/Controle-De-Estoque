@@ -67,6 +67,9 @@ async function carregarDashboard() {
 
     dashboard = dados;
 
+    // =========================
+    // CARDS
+    // =========================
     document.getElementById("totalProdutos").textContent =
       dados.total_produtos || 0;
 
@@ -79,10 +82,15 @@ async function carregarDashboard() {
     document.getElementById("totalEstoque").textContent =
       `R$ ${(dados.valor_total || 0).toFixed(2)}`;
 
-    preencherTabela(dados.produtos || []);
+    // =========================
+    // DADOS PARA PDF
+    // =========================
+    produtosPDF = dados.produtos || [];
 
+    // =========================
+    // GRÁFICO QUANTIDADE
+    // =========================
     if (graficoQuantidade) graficoQuantidade.destroy();
-    if (graficoValor) graficoValor.destroy();
 
     const ctxQtd = document.getElementById("grafico").getContext("2d");
 
@@ -107,6 +115,11 @@ async function carregarDashboard() {
         maintainAspectRatio: false
       }
     });
+
+    // =========================
+    // GRÁFICO VALOR
+    // =========================
+    if (graficoValor) graficoValor.destroy();
 
     const ctxValor = document
       .getElementById("graficoValor")
@@ -133,6 +146,7 @@ async function carregarDashboard() {
         maintainAspectRatio: false
       }
     });
+
   } catch (err) {
     console.error(err);
     alert("Erro ao carregar dashboard");
@@ -162,19 +176,6 @@ document.getElementById("btnDownloadPDF").onclick = async () => {
     const pdf = new jsPDF("p", "mm", "a4");
 
     const primary = [15, 23, 42];
-    const grayBg = [248, 250, 252];
-    const textDark = [30, 41, 59];
-
-    // =========================
-    // STATUS
-    // =========================
-    function statusCor(qtd) {
-      return qtd <= 5 ? [239, 68, 68] : [34, 197, 94];
-    }
-
-    function statusTexto(qtd) {
-      return qtd <= 5 ? "ESTOQUE BAIXO" : "CONFORTÁVEL";
-    }
 
     // =========================
     // HEADER
@@ -198,92 +199,137 @@ document.getElementById("btnDownloadPDF").onclick = async () => {
     }
 
     // =========================
-    // MARCA D'ÁGUA
-    // =========================
-    function watermark() {
-      if (!logoBase64) return;
+// PÁGINA 1 - CAPA PROFISSIONAL
+// =========================
+header("RELATÓRIO DE ESTOQUE", "Visão geral do sistema");
 
-      try {
-        const GState = pdf.GState || window.jspdf?.GState;
-        if (GState) {
-          pdf.setGState(new GState({ opacity: 0.06 }));
-        }
-      } catch (e) {}
+const dataAtual = new Date().toLocaleString();
 
-      pdf.addImage(logoBase64, "PNG", 60, 100, 90, 90);
-    }
+pdf.setTextColor(120);
+pdf.setFontSize(9);
+pdf.text(`Gerado em: ${dataAtual}`, 14, 40);
 
-    // =========================
-    // PÁGINA 1 - RESUMO
-    // =========================
-    watermark();
-    header("Relatório de Estoque", "Resumo do Sistema");
+// =========================
+// GRID DE KPIs (SAAS STYLE)
+// =========================
+const cards = [
+  {
+    label: "Produtos",
+    value: dashboard.total_produtos || 0
+  },
+  {
+    label: "Itens",
+    value: dashboard.total_itens || 0
+  },
+  {
+    label: "Baixo Estoque",
+    value: dashboard.baixo_estoque || 0
+  },
+  {
+    label: "Valor Total",
+    value: `R$ ${(dashboard.valor_total || 0).toFixed(2)}`
+  }
+];
 
-    pdf.setTextColor(...textDark);
-    pdf.setFontSize(12);
+let x = 14;
+let y = 55;
 
-    pdf.text(`Total de Produtos: ${dashboard.total_produtos || 0}`, 14, 45);
-    pdf.text(`Total de Itens: ${dashboard.total_itens || 0}`, 14, 52);
-    pdf.text(`Baixo Estoque: ${dashboard.baixo_estoque || 0}`, 14, 59);
-    pdf.text(
-      `Valor Total: R$ ${(dashboard.valor_total || 0).toFixed(2)}`,
-      14,
-      66
-    );
+cards.forEach((c, i) => {
+  pdf.setFillColor(248, 250, 252);
+  pdf.roundedRect(x, y, 45, 22, 3, 3, "F");
 
-    pdf.text("Lista de Produtos:", 14, 80);
+  pdf.setTextColor(100);
+  pdf.setFontSize(8);
+  pdf.text(c.label, x + 4, y + 8);
 
-    let y = 90;
+  pdf.setTextColor(15, 23, 42);
+  pdf.setFontSize(12);
+  pdf.text(String(c.value), x + 4, y + 16);
 
-    (dashboard.produtos || []).forEach((p) => {
-      if (y > 270) {
-        pdf.addPage();
-        watermark();
-        header("Relatório de Estoque");
-        y = 40;
-      }
+  x += 48;
 
-      const cor = statusCor(p.quantidade || 0);
+  if ((i + 1) % 4 === 0) {
+    x = 14;
+    y += 28;
+  }
+});
 
-      pdf.setFillColor(...cor);
-      pdf.setTextColor(255);
+// =========================
+// TABELA PROFISSIONAL
+// =========================
+pdf.setFontSize(12);
+pdf.setTextColor(20);
+pdf.text("Produtos em Estoque", 14, 110);
 
-      pdf.roundedRect(10, y - 5, 190, 8, 2, 2, "F");
+let yTable = 120;
 
-      pdf.text(
-        `${p.nome || "Produto"} | Qtd: ${p.quantidade || 0} | ${statusTexto(
-          p.quantidade || 0
-        )}`,
-        14,
-        y
-      );
+// HEADER TABELA
+pdf.setFillColor(15, 23, 42);
+pdf.rect(10, yTable, 190, 10, "F");
 
-      y += 10;
-    });
+pdf.setTextColor(255);
+pdf.setFontSize(9);
+
+pdf.text("Produto", 14, yTable + 7);
+pdf.text("Qtd", 90, yTable + 7);
+pdf.text("Valor", 120, yTable + 7);
+pdf.text("Status", 160, yTable + 7);
+
+yTable += 14;
+
+// LINHAS
+(dashboard.produtos || []).forEach((p, index) => {
+
+  if (yTable > 270) {
+    pdf.addPage();
+    header("RELATÓRIO DE ESTOQUE");
+    yTable = 40;
+  }
+
+  const total = p.quantidade * p.valor;
+  const baixo = p.quantidade <= 5;
+
+  if (index % 2 === 0) {
+    pdf.setFillColor(248, 250, 252);
+    pdf.rect(10, yTable - 5, 190, 8, "F");
+  }
+
+  pdf.setTextColor(30);
+  pdf.setFontSize(8);
+
+  pdf.text(p.produto || "-", 14, yTable);
+  pdf.text(String(p.quantidade || 0), 90, yTable);
+  pdf.text(`R$ ${Number(p.valor || 0).toFixed(2)}`, 120, yTable);
+
+  // STATUS BADGE
+  if (baixo) {
+    pdf.setFillColor(239, 68, 68);
+  } else {
+    pdf.setFillColor(34, 197, 94);
+  }
+
+  pdf.roundedRect(160, yTable - 4, 30, 6, 2, 2, "F");
+
+  pdf.setTextColor(255);
+  pdf.text(baixo ? "BAIXO" : "OK", 168, yTable);
+
+  yTable += 10;
+});
 
     // =========================
     // PÁGINA 2 - MOVIMENTAÇÕES
     // =========================
     pdf.addPage();
-    watermark();
-    header("Movimentações", "Histórico de entradas e saídas");
+    header("Movimentações", "Histórico");
 
     let y2 = 45;
 
     movimentacoes.forEach((mov) => {
       if (y2 > 270) {
         pdf.addPage();
-        watermark();
         header("Movimentações");
         y2 = 45;
       }
-
-      const cor = mov.tipo === "entrada" ? [34, 197, 94] : [239, 68, 68];
-
-      pdf.setFillColor(...cor);
-      pdf.setTextColor(255);
-
-      pdf.roundedRect(10, y2 - 5, 190, 8, 2, 2, "F");
 
       pdf.text(
         `${mov.produto || "-"} | ${mov.tipo || "-"} | Qtd: ${mov.quantidade || 0}`,
@@ -295,18 +341,12 @@ document.getElementById("btnDownloadPDF").onclick = async () => {
     });
 
     pdf.save("relatorio.pdf");
+
   } catch (err) {
     console.error(err);
     alert("Erro ao gerar PDF");
   }
 };
-
-// =========================
-// AUXILIAR
-// =========================
-function preencherTabela(produtos) {
-  produtosPDF = produtos;
-}
 
 // =========================
 // INIT

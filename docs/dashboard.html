@@ -2,7 +2,6 @@
 <html lang="pt-br">
   <head>
     <meta charset="UTF-8" />
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>Dashboard</title>
@@ -10,7 +9,6 @@
     <link rel="stylesheet" href="css/dashboard.css" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
-
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
     <link
@@ -21,6 +19,8 @@
 
   <body>
     <div class="layout">
+
+      <!-- SIDEBAR -->
       <aside class="sidebar">
         <h2>📦 Estoque</h2>
 
@@ -28,17 +28,23 @@
           <a href="#">Dashboard</a>
           <a href="index.html">Produtos</a>
           <a href="movimentacoes.html">Movimentações</a>
-          <a href="historico.html">Historico</a>
+          <a href="historico.html">Histórico</a>
         </nav>
       </aside>
 
+      <!-- MAIN -->
       <main class="main">
+
+        <!-- TOPBAR -->
         <div class="topbar">
           <h1>Dashboard</h1>
 
-          <button id="btnDownloadPDF" class="btn-pdf">📄 Baixar PDF</button>
+          <button id="btnDownloadPDF" class="btn-pdf">
+            📄 Baixar PDF
+          </button>
         </div>
 
+        <!-- CARDS -->
         <section class="cards">
           <div class="card">
             <h3>Total Produtos</h3>
@@ -61,44 +67,23 @@
           </div>
         </section>
 
+        <!-- GRÁFICO 1 -->
         <section class="chart-container">
           <h2>Quantidade</h2>
           <canvas id="grafico"></canvas>
         </section>
 
+        <!-- GRÁFICO 2 -->
         <section class="chart-container">
           <h2>Valor</h2>
           <canvas id="graficoValor"></canvas>
         </section>
+
       </main>
     </div>
 
-    <section class="tabela-relatorio">
-      <div class="table-header">
-        <h2>Produtos em Estoque</h2>
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Produto</th>
-            <th>Quantidade</th>
-            <th>Valor Unitário</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-
-        <tbody id="tabelaProdutos"></tbody>
-      </table>
-    </section>
-
-    <!-- CHART -->
+    <!-- SCRIPTS -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <!-- HTML2CANVAS -->
-    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-
-    <!-- JSPDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script src="js/dashboard.js"></script>

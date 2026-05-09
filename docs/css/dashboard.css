@@ -410,3 +410,44 @@ h1 {
   transform: translateY(-2px);
   opacity: 0.95;
 }
+
+.tabela-relatorio {
+  margin-top: 30px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+.tabela-relatorio table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: Inter;
+}
+
+.tabela-relatorio th {
+  background: #0f172a;
+  color: #fff;
+  padding: 12px;
+  text-align: left;
+  font-size: 13px;
+}
+
+.tabela-relatorio td {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  font-size: 13px;
+}
+
+.tabela-relatorio tr:hover {
+  background: #f1f5f9;
+}
+
+.card {
+  transition: 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
