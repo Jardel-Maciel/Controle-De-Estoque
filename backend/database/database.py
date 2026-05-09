@@ -43,6 +43,27 @@ def criar_tabelas():
             data TEXT
         )
     """)
+    # =========================
+# TABELA NOTAS FISCAIS
+# =========================
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS notas_fiscais (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+            numero_nota TEXT,
+            serie TEXT,
+            chave_nfe TEXT UNIQUE,
+
+            fornecedor TEXT,
+            cnpj TEXT,
+
+            data_emissao TEXT,
+
+            valor_total REAL,
+
+            xml_original TEXT
+        )
+    """)
 
     conn.commit()
 

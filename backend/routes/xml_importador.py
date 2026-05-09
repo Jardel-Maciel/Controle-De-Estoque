@@ -37,12 +37,113 @@ def importar_xml():
         tree = ET.parse(arquivo)
 
         root = tree.getroot()
+        
+        # =========================
+        # DADOS DA NF-E
+        # =========================
+        infNFe = root.find(".//infNFe")
+
+        ide = root.find(".//ide")
+
+        emit = root.find(".//emit")
+
+        total = root.find(".//ICMSTot")
+
+        # NÚMERO NOTA
+        numero_nota = ""
+
+        if ide is not None:
+            numero_nota = ide.findtext("nNF", "")
+
+        # SÉRIE
+        serie = ""
+
+        if ide is not None:
+            serie = ide.findtext("serie", "")
+
+        # DATA
+        data_emissao = ""
+
+        if ide is not None:
+            data_emissao = ide.findtext("dhEmi", "")
+
+        # CHAVE
+        chave_nfe = ""
+
+        if infNFe is not None:
+            chave_nfe = infNFe.attrib.get("Id", "")
+
+        # FORNECEDOR
+        fornecedor = ""
+
+        if emit is not None:
+            fornecedor = emit.findtext("xNome", "")
+
+        # CNPJ
+        cnpj = ""
+
+        if emit is not None:
+            cnpj = emit.findtext("CNPJ", "")
+
+        # VALOR TOTAL
+        valor_total_nota = 0
+
+        if total is not None:
+
+            valor_total_nota = float(
+                total.findtext("vNF", "0")
+            )
 
         conn = conectar()
 
         cursor = conn.cursor()
 
         produtos_importados = []
+        
+        # =========================
+        # VERIFICAR NF DUPLICADA
+        # =========================
+        cursor.execute("""
+            SELECT id
+            FROM notas_fiscais
+            WHERE chave_nfe = ?
+        """, (chave_nfe,))
+
+        nota_existente = cursor.fetchone()
+
+        if nota_existente:
+
+            conn.close()
+
+            return jsonify({
+                "erro": "Esta NF-e já foi importada"
+            }), 400
+
+        # =========================
+        # SALVAR NF
+        # =========================
+        cursor.execute("""
+            INSERT INTO notas_fiscais (
+                numero_nota,
+                serie,
+                chave_nfe,
+                fornecedor,
+                cnpj,
+                data_emissao,
+                valor_total,
+                xml_original
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            numero_nota,
+            serie,
+            chave_nfe,
+            fornecedor,
+            cnpj,
+            data_emissao,
+            valor_total_nota,
+            arquivo.filename
+        ))
 
         # =========================
         # PRODUTOS DO XML
