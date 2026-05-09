@@ -6,3 +6,4 @@ matplotlib
 sendgrid
 schedule
 resend
+lxml
