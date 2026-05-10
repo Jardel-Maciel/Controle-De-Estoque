@@ -25,6 +25,7 @@ def auth_required(f):
         if not usuario:
             return jsonify({"erro": "Sessão expirada"}), 401
 
+        # 🔥 FIX IMPORTANTE
         g.usuario = usuario
 
         return f(*args, **kwargs)
