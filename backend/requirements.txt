@@ -8,3 +8,4 @@ schedule
 resend
 lxml
 bcrypt==4.1.2
+PyJWT
