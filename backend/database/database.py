@@ -136,6 +136,25 @@ def criar_tabelas():
         CREATE INDEX IF NOT EXISTS idx_nf_tenant
         ON notas_fiscais(tenant_id)
     """)
+    # =========================
+    # MIGRAÇÕES
+    # =========================
+
+    try:
+        cursor.execute("""
+            ALTER TABLE users
+            ADD COLUMN ativo INTEGER DEFAULT 1
+        """)
+    except:
+        pass
+
+    try:
+        cursor.execute("""
+            ALTER TABLE users
+            ADD COLUMN criado_em DATETIME
+        """)
+    except:
+        pass
 
     conn.commit()
     conn.close()
