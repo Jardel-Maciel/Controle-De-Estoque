@@ -11,6 +11,16 @@ def conectar():
 
 
 # =========================
+# MIGRAÇÃO SEGURA
+# =========================
+def adicionar_coluna_se_nao_existe(cursor, tabela, coluna, tipo):
+    try:
+        cursor.execute(f"ALTER TABLE {tabela} ADD COLUMN {coluna} {tipo}")
+    except:
+        pass
+
+
+# =========================
 # CRIAR TABELAS
 # =========================
 def criar_tabelas():
@@ -70,6 +80,8 @@ def criar_tabelas():
         )
     """)
 
+    adicionar_coluna_se_nao_existe(cursor, "produtos", "tenant_id", "INTEGER")
+
     cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_produtos_tenant
         ON produtos(tenant_id)
@@ -91,6 +103,8 @@ def criar_tabelas():
             FOREIGN KEY (tenant_id) REFERENCES tenants(id)
         )
     """)
+
+    adicionar_coluna_se_nao_existe(cursor, "movimentacoes", "tenant_id", "INTEGER")
 
     cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_mov_tenant
@@ -115,6 +129,8 @@ def criar_tabelas():
             FOREIGN KEY (tenant_id) REFERENCES tenants(id)
         )
     """)
+
+    adicionar_coluna_se_nao_existe(cursor, "notas_fiscais", "tenant_id", "INTEGER")
 
     cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_nf_tenant
