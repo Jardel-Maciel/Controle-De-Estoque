@@ -66,7 +66,7 @@ async function carregarLogo() {
 }
 
 // =========================
-// DASHBOARD (UI + GRÁFICOS)
+// DASHBOARD
 // =========================
 async function carregarDashboard() {
   try {
@@ -76,13 +76,9 @@ async function carregarDashboard() {
 
     const dados = await res.json();
 
-    if (!res.ok) {
-      alert(dados.erro || "Erro ao carregar dashboard");
-      return;
-    }
+    if (!res.ok) return alert(dados.erro || "Erro dashboard");
 
     dashboard = dados;
-
     produtosCache = (dados.produtos || []).map(normalizarProduto);
 
     document.getElementById("totalProdutos").textContent = dados.total_produtos || 0;
@@ -91,10 +87,8 @@ async function carregarDashboard() {
     document.getElementById("totalEstoque").textContent =
       `R$ ${(dados.valor_total || 0).toFixed(2)}`;
 
-    // =========================
-    // GRÁFICO QUANTIDADE
-    // =========================
     if (graficoQuantidade) graficoQuantidade.destroy();
+    if (graficoValor) graficoValor.destroy();
 
     graficoQuantidade = new Chart(document.getElementById("grafico"), {
       type: "bar",
@@ -109,17 +103,12 @@ async function carregarDashboard() {
       }
     });
 
-    // =========================
-    // GRÁFICO VALOR
-    // =========================
-    if (graficoValor) graficoValor.destroy();
-
     graficoValor = new Chart(document.getElementById("graficoValor"), {
       type: "bar",
       data: {
         labels: produtosCache.map(p => p.nome),
         datasets: [{
-          label: "Valor Total",
+          label: "Valor",
           data: produtosCache.map(p => p.valor),
           backgroundColor: "rgba(16,185,129,0.7)",
           borderRadius: 10
@@ -133,7 +122,7 @@ async function carregarDashboard() {
 }
 
 // =========================
-// CARREGA MOVIMENTAÇÕES (CACHE)
+// MOVIMENTAÇÕES CACHE
 // =========================
 async function carregarMovimentacoes() {
   try {
@@ -155,7 +144,7 @@ async function carregarMovimentacoes() {
 }
 
 // =========================
-// PDF PROFISSIONAL
+// PDF PREMIUM NOTION / SAAS
 // =========================
 window.addEventListener("DOMContentLoaded", () => {
 
@@ -166,7 +155,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     try {
       await carregarLogo();
-      await carregarMovimentacoes(); // usa cache separado
+      await carregarMovimentacoes();
 
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF("p", "mm", "a4");
@@ -174,47 +163,66 @@ window.addEventListener("DOMContentLoaded", () => {
       const primary = [15, 23, 42];
 
       // =========================
-      // CAPA PROFISSIONAL
+      // CAPA CLEAN (NOTION STYLE)
       // =========================
       pdf.setFillColor(255, 255, 255);
       pdf.rect(0, 0, 210, 297, "F");
 
-      pdf.setTextColor(...primary);
+      pdf.setFillColor(248, 250, 252);
+      pdf.rect(0, 0, 210, 20, "F");
+
       pdf.setFontSize(22);
-      pdf.text("RELATÓRIO DE ESTOQUE", 15, 35);
+      pdf.setTextColor(...primary);
+      pdf.text("Relatório de Estoque", 15, 38);
 
       pdf.setFontSize(10);
       pdf.setTextColor(120);
-      pdf.text("Sistema de gestão inteligente", 15, 42);
+      pdf.text("Dashboard inteligente • visão analítica", 15, 46);
+
+      pdf.setFontSize(9);
+      pdf.setTextColor(160);
+      pdf.text(`Gerado em: ${new Date().toLocaleString("pt-BR")}`, 15, 54);
 
       if (logoBase64) {
         try {
-          pdf.addImage(logoBase64, "PNG", 170, 10, 25, 0);
+          pdf.addImage(logoBase64, "PNG", 172, 8, 18, 0);
         } catch {}
       }
 
       // =========================
-      // CARDS
+      // CARDS PREMIUM
       // =========================
       const d = dashboard;
 
-      function card(x, y, label, value) {
+      function card(x, y, label, value, color) {
         pdf.setFillColor(245, 247, 250);
-        pdf.roundedRect(x, y, 45, 22, 3, 3, "F");
+        pdf.roundedRect(x, y, 45, 24, 4, 4, "F");
 
-        pdf.setTextColor(120);
+        pdf.setDrawColor(235, 235, 235);
+        pdf.roundedRect(x, y, 45, 24, 4, 4, "S");
+
         pdf.setFontSize(8);
-        pdf.text(label, x + 3, y + 8);
+        pdf.setTextColor(120);
+        pdf.text(label, x + 4, y + 9);
 
-        pdf.setTextColor(...primary);
-        pdf.setFontSize(11);
-        pdf.text(String(value), x + 3, y + 16);
+        pdf.setFontSize(12);
+
+        if (Array.isArray(color)) {
+          pdf.setTextColor(color[0], color[1], color[2]);
+        } else {
+          pdf.setTextColor(...primary);
+        }
+
+        pdf.text(String(value), x + 4, y + 18);
       }
 
-      card(15, 90, "Produtos", d.total_produtos || 0);
-      card(65, 90, "Itens", d.total_itens || 0);
-      card(115, 90, "Baixo", d.baixo_estoque || 0);
-      card(165, 90, "Valor", `R$ ${(d.valor_total || 0).toFixed(2)}`);
+      card(15, 75, "Produtos", d.total_produtos || 0, primary);
+      card(65, 75, "Itens", d.total_itens || 0, primary);
+      card(115, 75, "Baixo estoque", d.baixo_estoque || 0, [220, 53, 69]);
+      card(165, 75, "Valor total", `R$ ${(d.valor_total || 0).toFixed(2)}`, [34, 197, 94]);
+
+      pdf.setDrawColor(240, 240, 240);
+      pdf.line(15, 105, 195, 105);
 
       // =========================
       // PRODUTOS
@@ -223,11 +231,11 @@ window.addEventListener("DOMContentLoaded", () => {
 
       pdf.setFontSize(14);
       pdf.setTextColor(...primary);
-      pdf.text("PRODUTOS", 14, 18);
+      pdf.text("Produtos", 14, 18);
 
       let y = 30;
 
-      function header() {
+      const header = () => {
         pdf.setFillColor(...primary);
         pdf.setTextColor(255);
         pdf.rect(10, y - 6, 190, 10, "F");
@@ -238,7 +246,7 @@ window.addEventListener("DOMContentLoaded", () => {
         pdf.text("Status", 165, y);
 
         y += 10;
-      }
+      };
 
       header();
 
@@ -250,8 +258,8 @@ window.addEventListener("DOMContentLoaded", () => {
           header();
         }
 
-        pdf.setTextColor(20);
         pdf.setFontSize(9);
+        pdf.setTextColor(20);
 
         pdf.text((p.nome || "-").substring(0, 35), 14, y);
         pdf.text(`R$ ${p.valor.toFixed(2)}`, 95, y);
@@ -273,13 +281,13 @@ window.addEventListener("DOMContentLoaded", () => {
       // =========================
       pdf.addPage();
 
-      pdf.setFontSize(14);
+      pdf.setFontSize(12);
       pdf.setTextColor(...primary);
-      pdf.text("MOVIMENTAÇÕES", 14, 18);
+      pdf.text("Movimentações", 14, 18);
 
       let yM = 30;
 
-      function headerMov() {
+      const headerMov = () => {
         pdf.setFillColor(...primary);
         pdf.setTextColor(255);
         pdf.rect(10, yM - 6, 190, 10, "F");
@@ -292,7 +300,7 @@ window.addEventListener("DOMContentLoaded", () => {
         pdf.text("Data", 175, yM);
 
         yM += 10;
-      }
+      };
 
       headerMov();
 
@@ -304,19 +312,10 @@ window.addEventListener("DOMContentLoaded", () => {
           headerMov();
         }
 
-        const tipoRaw = (m.tipo || "").toLowerCase();
+        const tipo = (m.tipo || "").includes("saida") ? "SAÍDA" :
+                     (m.tipo || "").includes("entrada") ? "ENTRADA" : "-";
 
-        const tipo =
-          tipoRaw.includes("entrada") ? "ENTRADA" :
-          tipoRaw.includes("saida") ? "SAÍDA" : "-";
-
-        const data = m.data
-          ? new Date(m.data).toLocaleString("pt-BR")
-          : "-";
-
-        pdf.setFontSize(9);
         pdf.setTextColor(20);
-
         pdf.text(m.produto || "-", 14, yM);
         pdf.text(String(m.quantidade || 0), 55, yM);
 
@@ -329,10 +328,13 @@ window.addEventListener("DOMContentLoaded", () => {
         pdf.setTextColor(20);
         pdf.text(m.responsavel || "-", 110, yM);
 
-        const motivo = (m.motivo || "-").substring(0, 18);
-        pdf.text(motivo, 140, yM);
+        pdf.text((m.motivo || "-").substring(0, 18), 140, yM);
 
-        pdf.text(data, 175, yM);
+        pdf.text(
+          m.data ? new Date(m.data).toLocaleString("pt-BR") : "-",
+          175,
+          yM
+        );
 
         yM += 8;
       });
@@ -340,7 +342,7 @@ window.addEventListener("DOMContentLoaded", () => {
       pdf.save("relatorio-estoque.pdf");
 
     } catch (err) {
-      console.error(err);
+      console.error("Erro PDF:", err);
       alert("Erro ao gerar PDF");
     }
   });
