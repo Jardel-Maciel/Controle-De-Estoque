@@ -8,7 +8,7 @@ from routes.auth_routes import auth_bp
 from routes.produtos_routes import produtos_bp
 from routes.movimentacoes_routes import movimentacoes_bp
 from routes.dashboard_routes import dashboard_bp
-from routes.xml_routes import xml_bp
+from routes.xml_importador import xml_bp
 
 app = Flask(__name__)
 
