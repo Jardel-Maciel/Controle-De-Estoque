@@ -46,11 +46,20 @@ def login():
         # =========================
         senha_db = usuario["senha"]
 
-        if isinstance(senha_db, str):
-            senha_db = senha_db.encode()
+        # converter corretamente
+        if isinstance(senha_db, memoryview):
+            senha_db = senha_db.tobytes()
 
-        if not bcrypt.checkpw(senha.encode(), senha_db):
-            return jsonify({"erro": "Senha inválida"}), 401
+        elif isinstance(senha_db, str):
+            senha_db = senha_db.encode("utf-8")
+
+        if not bcrypt.checkpw(
+            senha.encode("utf-8"),
+            senha_db
+        ):
+            return jsonify({
+                "erro": "Senha inválida"
+            }), 401
 
         # =========================
         # GERAR JWT
