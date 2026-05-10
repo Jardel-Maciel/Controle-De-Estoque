@@ -6,10 +6,7 @@ import sqlite3
 def conectar():
     conn = sqlite3.connect("banco.db")
     conn.row_factory = sqlite3.Row
-
-    # 🔥 IMPORTANTE PARA FOREIGN KEYS
     conn.execute("PRAGMA foreign_keys = ON")
-
     return conn
 
 
@@ -57,7 +54,7 @@ def criar_tabelas():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS produtos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            tenant_id INTEGER NOT NULL,
+            tenant_id INTEGER,
             produto TEXT,
             quantidade INTEGER DEFAULT 0,
             valor REAL DEFAULT 0,
@@ -73,7 +70,6 @@ def criar_tabelas():
         )
     """)
 
-    # INDEX (MUITO IMPORTANTE)
     cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_produtos_tenant
         ON produtos(tenant_id)
@@ -85,7 +81,7 @@ def criar_tabelas():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS movimentacoes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            tenant_id INTEGER NOT NULL,
+            tenant_id INTEGER,
             produto TEXT,
             tipo TEXT,
             quantidade INTEGER,
@@ -107,7 +103,7 @@ def criar_tabelas():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS notas_fiscais (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            tenant_id INTEGER NOT NULL,
+            tenant_id INTEGER,
             numero_nota TEXT,
             serie TEXT,
             chave_nfe TEXT UNIQUE,
