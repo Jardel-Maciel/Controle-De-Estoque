@@ -8,6 +8,9 @@ from routes.produtos_routes import produtos_bp
 from routes.dashboard_routes import dashboard_bp
 from routes.movimentacoes_routes import movimentacoes_bp
 
+# 🔥 FORÇA IMPORT (IMPORTANTE PARA RELOAD NO RENDER)
+import routes.auth_routes
+
 app = Flask(__name__)
 
 CORS(app)
@@ -33,6 +36,10 @@ def home():
     return {
         "status": "API ONLINE"
     }
+    
+@app.route("/health")
+def health():
+    return {"status": "ok"}
 
 # =========================
 # START
