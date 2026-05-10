@@ -2,6 +2,7 @@ const API = "https://backend-estoque-fnfc.onrender.com";
 
 const token = localStorage.getItem("token");
 
+console.log("TOKEN SALVO:", token);
 // =========================
 // SEM TOKEN
 // =========================
