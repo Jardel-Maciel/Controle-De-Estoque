@@ -5,6 +5,11 @@ from utils.jwt import gerar_token
 
 auth_bp = Blueprint("auth", __name__)
 
+# =========================
+# EMAIL DO DONO DO SISTEMA
+# =========================
+SUPERADMIN_EMAIL = "jardel.maciel22@gmail.com"
+
 
 @auth_bp.route("/login", methods=["POST"])
 def login():
@@ -41,16 +46,21 @@ def login():
         if not bcrypt.checkpw(senha.encode(), senha_db):
             return jsonify({"erro": "Senha inválida"}), 401
 
+        if not usuario.get("ativo", 1):
+            return jsonify({"erro": "Usuário inativo"}), 403
+
         token = gerar_token(usuario)
 
         return jsonify({
             "token": token,
             "user": {
-                "id": usuario["id"],
-                "nome": usuario["nome"],
-                "email": usuario["email"],
-                "role": usuario.get("role", "admin"),
-                "tenant_id": usuario.get("tenant_id", 1)
+                "id":        usuario["id"],
+                "nome":      usuario["nome"],
+                "email":     usuario["email"],
+                "role":      usuario.get("role", "admin"),
+                "tenant_id": usuario.get("tenant_id", 1),
+                # superadmin só se for o dono
+                "superadmin": email == SUPERADMIN_EMAIL
             }
         }), 200
 
@@ -66,17 +76,17 @@ def criar_admin():
         cursor = conn.cursor()
 
         # =========================
-        # VERIFICA SE ADMIN JÁ EXISTE
+        # VERIFICA SE JÁ EXISTE
         # =========================
-        cursor.execute("SELECT id FROM users WHERE email = ?", ("admin@teste.com",))
+        cursor.execute("SELECT id FROM users WHERE email = ?", (SUPERADMIN_EMAIL,))
         if cursor.fetchone():
             conn.close()
-            return jsonify({"msg": "Admin já existe"}), 200
+            return jsonify({"msg": "Superadmin já existe"}), 200
 
         # =========================
-        # GARANTE QUE O TENANT EXISTE
+        # GARANTE TENANT
         # =========================
-        cursor.execute("SELECT id FROM tenants WHERE codigo = ?", ("empresa_teste",))
+        cursor.execute("SELECT id FROM tenants WHERE codigo = ?", ("superadmin",))
         tenant = cursor.fetchone()
 
         if tenant:
@@ -84,29 +94,24 @@ def criar_admin():
         else:
             cursor.execute("""
                 INSERT INTO tenants (nome, codigo, ativo)
-                VALUES (?, ?, ?)
-            """, ("Empresa Teste", "empresa_teste", 1))
+                VALUES (?, ?, 1)
+            """, ("Sistema", "superadmin"))
             tenant_id = cursor.lastrowid
 
         # =========================
-        # CRIA ADMIN
+        # CRIA SUPERADMIN
         # =========================
-        senha_hash = bcrypt.hashpw("123456".encode(), bcrypt.gensalt()).decode("utf-8")
+        senha_hash = "$2b$12$uWS8Po4Z1NtuixpYTsl5P.2C9cdk2nAKBjprEHG0KF.mpbPJv1TcW"
 
         cursor.execute("""
             INSERT INTO users (nome, email, senha, role, tenant_id, ativo)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, ("Administrador", "admin@teste.com", senha_hash, "admin", tenant_id, 1))
+            VALUES (?, ?, ?, ?, ?, 1)
+        """, ("Jardel", SUPERADMIN_EMAIL, senha_hash, "admin", tenant_id))
 
         conn.commit()
         conn.close()
 
-        return jsonify({
-            "msg": "Admin criado com sucesso",
-            "email": "admin@teste.com",
-            "senha": "123456",
-            "tenant_id": tenant_id
-        }), 201
+        return jsonify({"msg": "Superadmin criado com sucesso"}), 201
 
     except Exception as e:
         return jsonify({"erro": str(e)}), 500

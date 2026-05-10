@@ -373,7 +373,7 @@ const user  = JSON.parse(localStorage.getItem("user") || "{}");
 // =========================
 // PROTEÇÃO
 // =========================
-if (!token || user.role !== "admin") {
+if (!token || user.superadmin !== true) {
   alert("Acesso restrito a administradores.");
   window.location.href = "login.html";
 }

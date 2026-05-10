@@ -5,30 +5,32 @@ from utils.auth_middleware import auth_required
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
+# =========================
+# ÚNICO EMAIL COM ACESSO AO PAINEL ADMIN
+# =========================
+SUPERADMIN_EMAIL = "jardel.maciel22@gmail.com"
 
-def apenas_admin(f):
+
+def apenas_superadmin(f):
     from functools import wraps
     @wraps(f)
     def decorated(*args, **kwargs):
-        if g.usuario.get("role") != "admin":
+        if g.usuario.get("email") != SUPERADMIN_EMAIL:
             return jsonify({"erro": "Acesso negado"}), 403
         return f(*args, **kwargs)
     return decorated
 
 
-# =========================
-# LISTAR USUÁRIOS
-# =========================
 @admin_bp.route("/usuarios", methods=["GET"])
 @auth_required
-@apenas_admin
+@apenas_superadmin
 def listar_usuarios():
     try:
         conn = conectar()
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT u.id, u.nome, u.email, u.role, u.ativo,
-                   u.criado_em, t.nome as tenant_nome, t.codigo as tenant_codigo
+            SELECT u.id, u.nome, u.email, u.role, u.ativo, u.criado_em,
+                   t.nome as tenant_nome, t.codigo as tenant_codigo
             FROM users u
             LEFT JOIN tenants t ON u.tenant_id = t.id
             ORDER BY u.id DESC
@@ -40,21 +42,18 @@ def listar_usuarios():
         return jsonify({"erro": str(e)}), 500
 
 
-# =========================
-# CRIAR USUÁRIO + TENANT
-# =========================
 @admin_bp.route("/usuarios", methods=["POST"])
 @auth_required
-@apenas_admin
+@apenas_superadmin
 def criar_usuario():
     try:
         dados = request.get_json()
-        nome        = dados.get("nome", "").strip()
-        email       = dados.get("email", "").strip().lower()
-        senha       = dados.get("senha", "").strip()
-        role        = dados.get("role", "admin")
-        empresa     = dados.get("empresa", nome).strip()
-        codigo      = dados.get("codigo", email.split("@")[0]).strip()
+        nome    = dados.get("nome", "").strip()
+        email   = dados.get("email", "").strip().lower()
+        senha   = dados.get("senha", "").strip()
+        role    = dados.get("role", "admin")
+        empresa = dados.get("empresa", nome).strip()
+        codigo  = dados.get("codigo", email.split("@")[0]).strip()
 
         if not nome or not email or not senha:
             return jsonify({"erro": "Nome, email e senha são obrigatórios"}), 400
@@ -62,25 +61,21 @@ def criar_usuario():
         conn = conectar()
         cursor = conn.cursor()
 
-        # Verifica email duplicado
         cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
         if cursor.fetchone():
             conn.close()
             return jsonify({"erro": "Email já cadastrado"}), 400
 
-        # Cria tenant
         cursor.execute("SELECT id FROM tenants WHERE codigo = ?", (codigo,))
         tenant = cursor.fetchone()
         if tenant:
             tenant_id = tenant["id"]
         else:
             cursor.execute("""
-                INSERT INTO tenants (nome, codigo, ativo)
-                VALUES (?, ?, 1)
+                INSERT INTO tenants (nome, codigo, ativo) VALUES (?, ?, 1)
             """, (empresa, codigo))
             tenant_id = cursor.lastrowid
 
-        # Cria usuário
         senha_hash = bcrypt.hashpw(senha.encode(), bcrypt.gensalt()).decode("utf-8")
         cursor.execute("""
             INSERT INTO users (nome, email, senha, role, tenant_id, ativo)
@@ -95,36 +90,33 @@ def criar_usuario():
         return jsonify({"erro": str(e)}), 500
 
 
-# =========================
-# ATIVAR / DESATIVAR
-# =========================
 @admin_bp.route("/usuarios/<int:user_id>/toggle", methods=["PATCH"])
 @auth_required
-@apenas_admin
+@apenas_superadmin
 def toggle_usuario(user_id):
     try:
         conn = conectar()
         cursor = conn.cursor()
-        cursor.execute("SELECT id, ativo FROM users WHERE id = ?", (user_id,))
+        cursor.execute("SELECT id, ativo, email FROM users WHERE id = ?", (user_id,))
         user = cursor.fetchone()
         if not user:
             conn.close()
             return jsonify({"erro": "Usuário não encontrado"}), 404
-        novo_status = 0 if user["ativo"] else 1
-        cursor.execute("UPDATE users SET ativo = ? WHERE id = ?", (novo_status, user_id))
+        if user["email"] == SUPERADMIN_EMAIL:
+            conn.close()
+            return jsonify({"erro": "Não é possível desativar o superadmin"}), 403
+        novo = 0 if user["ativo"] else 1
+        cursor.execute("UPDATE users SET ativo = ? WHERE id = ?", (novo, user_id))
         conn.commit()
         conn.close()
-        return jsonify({"msg": "Status atualizado", "ativo": novo_status})
+        return jsonify({"msg": "Status atualizado", "ativo": novo})
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
 
 
-# =========================
-# RESETAR SENHA
-# =========================
 @admin_bp.route("/usuarios/<int:user_id>/senha", methods=["PATCH"])
 @auth_required
-@apenas_admin
+@apenas_superadmin
 def resetar_senha(user_id):
     try:
         dados = request.get_json()
@@ -142,12 +134,9 @@ def resetar_senha(user_id):
         return jsonify({"erro": str(e)}), 500
 
 
-# =========================
-# LISTAR TENANTS
-# =========================
 @admin_bp.route("/tenants", methods=["GET"])
 @auth_required
-@apenas_admin
+@apenas_superadmin
 def listar_tenants():
     try:
         conn = conectar()
