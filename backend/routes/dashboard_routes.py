@@ -1,64 +1,71 @@
-from flask import Blueprint, jsonify, request
-from utils.auth_middleware import auth_required
+from flask import Blueprint, jsonify
 from database.database import conectar
+from utils.auth_middleware import auth_required
 
 dashboard_bp = Blueprint("dashboard", __name__)
 
 # =========================
-# DASHBOARD MULTI-TENANT
+# DASHBOARD
 # =========================
-@dashboard_bp.route("/dashboard", methods=["GET", "OPTIONS"])
+@dashboard_bp.route("/dashboard", methods=["GET"])
 @auth_required
-def dashboard():
-
-    if request.method == "OPTIONS":
-        return jsonify({}), 200
+def dashboard(usuario):
 
     try:
-        tenant_id = request.user["tenant_id"]
 
         conn = conectar()
         cursor = conn.cursor()
 
+        tenant_id = usuario["tenant_id"]
+
+        # =========================
+        # TOTAL PRODUTOS
+        # =========================
         cursor.execute("""
-            SELECT *
+            SELECT COUNT(*) as total
             FROM produtos
             WHERE tenant_id = ?
-            ORDER BY quantidade DESC
         """, (tenant_id,))
 
-        produtos = cursor.fetchall()
+        total_produtos = cursor.fetchone()["total"]
 
-        total_produtos = len(produtos)
+        # =========================
+        # TOTAL ESTOQUE
+        # =========================
+        cursor.execute("""
+            SELECT SUM(quantidade) as total
+            FROM produtos
+            WHERE tenant_id = ?
+        """, (tenant_id,))
 
-        total_itens = sum(p["quantidade"] for p in produtos)
+        total_estoque = cursor.fetchone()["total"] or 0
 
-        baixo_estoque = len([p for p in produtos if p["quantidade"] <= 5])
+        # =========================
+        # VALOR ESTOQUE
+        # =========================
+        cursor.execute("""
+            SELECT SUM(
+                quantidade * valor
+            ) as total
+            FROM produtos
+            WHERE tenant_id = ?
+        """, (tenant_id,))
 
-        valor_total = sum(p["quantidade"] * p["valor"] for p in produtos)
-
-        lista_produtos = []
-
-        for p in produtos:
-
-            lista_produtos.append({
-                "id": p["id"],
-                "produto": p["produto"],
-                "quantidade": p["quantidade"],
-                "valor": p["valor"],
-                "valor_total": round(p["quantidade"] * p["valor"], 2),
-                "status": "BAIXO" if p["quantidade"] <= 5 else "OK"
-            })
+        valor_estoque = cursor.fetchone()["total"] or 0
 
         conn.close()
 
         return jsonify({
+
             "total_produtos": total_produtos,
-            "total_itens": total_itens,
-            "baixo_estoque": baixo_estoque,
-            "valor_total": round(valor_total, 2),
-            "produtos": lista_produtos
+
+            "total_estoque": total_estoque,
+
+            "valor_estoque": valor_estoque
         })
 
     except Exception as e:
-        return jsonify({"erro": str(e)}), 500
+
+        return jsonify({
+            "erro": str(e)
+        }), 500
