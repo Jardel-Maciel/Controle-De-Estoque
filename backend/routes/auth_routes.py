@@ -12,7 +12,9 @@ auth_bp = Blueprint("auth", __name__)
 @auth_bp.route("/login", methods=["POST", "OPTIONS"])
 def login():
 
-    # CORS PRE-FLIGHT
+    # =========================
+    # CORS
+    # =========================
     if request.method == "OPTIONS":
         return jsonify({}), 200
 
@@ -80,9 +82,38 @@ def login():
             }), 404
 
         # =========================
+        # PEGAR CAMPOS COM SEGURANÇA
+        # =========================
+        usuario_keys = usuario.keys()
+
+        ativo = (
+            usuario["ativo"]
+            if "ativo" in usuario_keys
+            else 1
+        )
+
+        role = (
+            usuario["role"]
+            if "role" in usuario_keys
+            else "admin"
+        )
+
+        tenant_id = (
+            usuario["tenant_id"]
+            if "tenant_id" in usuario_keys
+            else 1
+        )
+
+        nome = (
+            usuario["nome"]
+            if "nome" in usuario_keys
+            else "Usuário"
+        )
+
+        # =========================
         # USUÁRIO INATIVO
         # =========================
-        if usuario["ativo"] == 0:
+        if ativo == 0:
 
             return jsonify({
                 "erro": "Usuário desativado"
@@ -120,9 +151,14 @@ def login():
             }), 401
 
         # =========================
-        # GERAR JWT
+        # GERAR TOKEN
         # =========================
-        token = gerar_token(usuario)
+        token = gerar_token({
+            "id": usuario["id"],
+            "email": usuario["email"],
+            "role": role,
+            "tenant_id": tenant_id
+        })
 
         # =========================
         # SUCESSO
@@ -135,14 +171,15 @@ def login():
 
                 "id": usuario["id"],
 
-                "nome": usuario["nome"],
+                "nome": nome,
 
                 "email": usuario["email"],
 
-                "role": usuario["role"],
+                "role": role,
 
-                "tenant_id": usuario["tenant_id"]
+                "tenant_id": tenant_id
             }
+
         }), 200
 
     except Exception as e:
@@ -228,7 +265,9 @@ def definir_senha():
         return jsonify({
             "erro": str(e)
         }), 500
-        # =========================
+
+
+# =========================
 # CRIAR ADMIN INICIAL
 # =========================
 @auth_bp.route("/criar-admin", methods=["GET"])
@@ -237,13 +276,15 @@ def criar_admin():
     try:
 
         conn = conectar()
+
         cursor = conn.cursor()
 
         # =========================
         # VERIFICAR TENANT
         # =========================
         cursor.execute("""
-            SELECT * FROM tenants
+            SELECT *
+            FROM tenants
             WHERE codigo = ?
         """, ("admin",))
 
@@ -277,7 +318,8 @@ def criar_admin():
         # VERIFICAR ADMIN
         # =========================
         cursor.execute("""
-            SELECT * FROM users
+            SELECT *
+            FROM users
             WHERE email = ?
         """, ("admin@teste.com",))
 
@@ -308,15 +350,17 @@ def criar_admin():
                 email,
                 senha,
                 role,
-                tenant_id
+                tenant_id,
+                ativo
             )
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?)
         """, (
             "Administrador",
             "admin@teste.com",
             senha_hash,
             "admin",
-            tenant_id
+            tenant_id,
+            1
         ))
 
         conn.commit()
