@@ -9,51 +9,61 @@ auth_bp = Blueprint("auth", __name__)
 @auth_bp.route("/login", methods=["POST"])
 def login():
 
-    if not request.is_json:
-        return jsonify({"erro": "Content-Type deve ser application/json"}), 400
+    try:
+        if not request.is_json:
+            return jsonify({"erro": "Content-Type deve ser application/json"}), 400
 
-    dados = request.get_json()
+        dados = request.get_json()
 
-    email = dados.get("email", "").strip().lower()
-    senha = dados.get("senha", "").strip()
+        email = dados.get("email", "").strip().lower()
+        senha = dados.get("senha", "").strip()
 
-    if not email or not senha:
-        return jsonify({"erro": "Email e senha obrigatórios"}), 400
+        if not email or not senha:
+            return jsonify({"erro": "Email e senha obrigatórios"}), 400
 
-    conn = conectar()
-    cursor = conn.cursor()
+        conn = conectar()
+        cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
-    usuario = cursor.fetchone()
+        cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+        row = cursor.fetchone()
+        conn.close()
 
-    conn.close()
+        if not row:
+            return jsonify({"erro": "Usuário não encontrado"}), 404
 
-    if not usuario:
-        return jsonify({"erro": "Usuário não encontrado"}), 404
+        # =========================
+        # CONVERTE Row → dict
+        # =========================
+        usuario = dict(row)
 
-    if usuario["senha"] is None:
-        return jsonify({"erro": "primeiro_acesso"}), 403
+        if not usuario.get("senha"):
+            return jsonify({"erro": "primeiro_acesso"}), 403
 
-    senha_db = usuario["senha"]
+        senha_db = usuario["senha"]
 
-    if isinstance(senha_db, str):
-        senha_db = senha_db.encode()
+        if isinstance(senha_db, str):
+            senha_db = senha_db.encode()
 
-    if not bcrypt.checkpw(senha.encode(), senha_db):
-        return jsonify({"erro": "Senha inválida"}), 401
+        if not bcrypt.checkpw(senha.encode(), senha_db):
+            return jsonify({"erro": "Senha inválida"}), 401
 
-    token = gerar_token(usuario)
+        token = gerar_token(usuario)
 
-    return jsonify({
-        "token": token,
-        "user": {
-            "id": usuario["id"],
-            "nome": usuario["nome"],
-            "email": usuario["email"],
-            "role": usuario.get("role", "admin"),
-            "tenant_id": usuario.get("tenant_id", 1)
-        }
-    }), 200
+        return jsonify({
+            "token": token,
+            "user": {
+                "id": usuario["id"],
+                "nome": usuario["nome"],
+                "email": usuario["email"],
+                "role": usuario.get("role", "admin"),
+                "tenant_id": usuario.get("tenant_id", 1)
+            }
+        }), 200
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"erro": str(e)}), 500
 
 
 @auth_bp.route("/criar-admin", methods=["GET"])
@@ -63,22 +73,16 @@ def criar_admin():
         conn = conectar()
         cursor = conn.cursor()
 
-        # =========================
-        # VERIFICA SE ADMIN JÁ EXISTE
-        # =========================
         cursor.execute("SELECT * FROM users WHERE email = ?", ("admin@teste.com",))
         if cursor.fetchone():
             conn.close()
             return jsonify({"msg": "Admin já existe"}), 200
 
-        # =========================
-        # CRIA TENANT SE NÃO EXISTIR
-        # =========================
         cursor.execute("SELECT id FROM tenants WHERE codigo = ?", ("empresa_teste",))
         tenant = cursor.fetchone()
 
         if tenant:
-            tenant_id = tenant["id"]
+            tenant_id = dict(tenant)["id"]
         else:
             cursor.execute("""
                 INSERT INTO tenants (nome, codigo)
@@ -86,14 +90,8 @@ def criar_admin():
             """, ("Empresa Teste", "empresa_teste"))
             tenant_id = cursor.lastrowid
 
-        # =========================
-        # SENHA COMO STRING (não bytes)
-        # =========================
         senha_hash = bcrypt.hashpw("123456".encode(), bcrypt.gensalt()).decode("utf-8")
 
-        # =========================
-        # CRIA ADMIN
-        # =========================
         cursor.execute("""
             INSERT INTO users (nome, email, senha, role, tenant_id, ativo)
             VALUES (?, ?, ?, ?, ?, ?)
@@ -105,4 +103,6 @@ def criar_admin():
         return jsonify({"msg": "Admin criado com sucesso", "email": "admin@teste.com", "senha": "123456"}), 201
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({"erro": str(e)}), 500
