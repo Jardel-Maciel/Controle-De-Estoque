@@ -95,7 +95,7 @@ document
 
           headers: {
             "Content-Type": "application/json",
-            Authorization: token
+            Authorization: `Bearer ${token}`
           },
 
           body: JSON.stringify({
@@ -147,7 +147,7 @@ async function carregar() {
       `${API}/produtos`,
       {
         headers: {
-          Authorization: token
+          Authorization: `Bearer ${token}`
         }
       }
     );
@@ -292,7 +292,7 @@ document
 
           headers: {
             "Content-Type": "application/json",
-            Authorization: token
+            Authorization: `Bearer ${token}`
           },
 
           body: JSON.stringify({
@@ -359,7 +359,7 @@ window.remover = async (id) => {
         method: "DELETE",
 
         headers: {
-          Authorization: token
+          Authorization: `Bearer ${token}`
         }
       }
     );
@@ -385,7 +385,7 @@ async function carregarHistorico() {
       `${API}/movimentacoes`,
       {
         headers: {
-          Authorization: token
+          Authorization: `Bearer ${token}`
         }
       }
     );
@@ -601,7 +601,7 @@ inputXML.addEventListener("change", async (e) => {
         method: "POST",
 
         headers: {
-          Authorization: token
+          Authorization: `Bearer ${token}`
         },
 
         body: formData

@@ -21,7 +21,7 @@ async function carregarHistorico() {
       `${API}/movimentacoes`,
       {
         headers: {
-          Authorization: token
+          Authorization: `Bearer ${token}`
         }
       }
     );
@@ -247,7 +247,7 @@ document
       `${API}/movimentacoes`,
       {
         headers:{
-          Authorization:token
+          Authorization: `Bearer ${token}`
         }
       }
     );
