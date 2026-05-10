@@ -1,11 +1,7 @@
 from functools import wraps
 from flask import request, jsonify
-
 from utils.jwt import verificar_token
 
-# =========================
-# AUTH MIDDLEWARE
-# =========================
 def auth_required(f):
 
     @wraps(f)
@@ -14,28 +10,25 @@ def auth_required(f):
         auth_header = request.headers.get("Authorization")
 
         if not auth_header:
+            return jsonify({"erro": "Token não enviado"}), 401
 
-            return jsonify({
-                "erro": "Token não enviado"
-            }), 401
+        # =========================
+        # EXTRAÇÃO SEGURA DO TOKEN
+        # =========================
+        parts = auth_header.split()
 
-        try:
+        if len(parts) != 2:
+            return jsonify({"erro": "Token inválido"}), 401
 
-            token = auth_header.split(" ")[1]
+        prefix, token = parts
 
-        except:
-
-            return jsonify({
-                "erro": "Token inválido"
-            }), 401
+        if prefix.lower() != "bearer":
+            return jsonify({"erro": "Token inválido"}), 401
 
         usuario = verificar_token(token)
 
         if not usuario:
-
-            return jsonify({
-                "erro": "Sessão expirada"
-            }), 401
+            return jsonify({"erro": "Sessão expirada"}), 401
 
         request.usuario = usuario
 
