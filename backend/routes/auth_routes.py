@@ -54,27 +54,28 @@ def login():
             "tenant_id": usuario.get("tenant_id", 1)
         }
     }), 200
-    
-    @auth_bp.route("/criar-admin", methods=["GET"])
-    def criar_admin():
-        from database.database import conectar
-        import bcrypt
 
-        conn = conectar()
-        cursor = conn.cursor()
 
-        cursor.execute("SELECT * FROM users WHERE email = ?", ("admin@teste.com",))
-        if cursor.fetchone():
-            return {"msg": "Admin já existe"}
+@auth_bp.route("/criar-admin", methods=["GET"])
+def criar_admin():
 
-        senha = bcrypt.hashpw("123456".encode(), bcrypt.gensalt())
+    conn = conectar()
+    cursor = conn.cursor()
 
-        cursor.execute("""
-            INSERT INTO users (nome, email, senha, role, tenant_id, ativo)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, ("Admin", "admin@teste.com", senha, "admin", 1, 1))
+    cursor.execute("SELECT * FROM users WHERE email = ?", ("admin@teste.com",))
 
-        conn.commit()
+    if cursor.fetchone():
         conn.close()
+        return jsonify({"msg": "Admin já existe"}), 200
 
-        return {"msg": "Admin criado"}
+    senha = bcrypt.hashpw("123456".encode(), bcrypt.gensalt())
+
+    cursor.execute("""
+        INSERT INTO users (nome, email, senha, role, tenant_id, ativo)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, ("Admin", "admin@teste.com", senha, "admin", 1, 1))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"msg": "Admin criado"}), 201
