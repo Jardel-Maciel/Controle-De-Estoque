@@ -116,20 +116,56 @@ def criar_admin():
         conn = conectar()
         cursor = conn.cursor()
 
-        # tenant
+        # =========================
+        # VERIFICAR TENANT
+        # =========================
         cursor.execute("""
-            INSERT INTO tenants (
-                nome,
-                codigo
-            )
-            VALUES (?, ?)
-        """, (
-            "Empresa Teste",
-            "empresa_teste"
-        ))
+            SELECT id
+            FROM tenants
+            WHERE codigo = ?
+        """, ("empresa_teste",))
 
-        tenant_id = cursor.lastrowid
+        tenant = cursor.fetchone()
 
+        if tenant:
+
+            tenant_id = tenant["id"]
+
+        else:
+
+            cursor.execute("""
+                INSERT INTO tenants (
+                    nome,
+                    codigo
+                )
+                VALUES (?, ?)
+            """, (
+                "Empresa Teste",
+                "empresa_teste"
+            ))
+
+            tenant_id = cursor.lastrowid
+
+        # =========================
+        # VERIFICAR USER
+        # =========================
+        cursor.execute("""
+            SELECT id
+            FROM users
+            WHERE email = ?
+        """, ("admin@teste.com",))
+
+        usuario = cursor.fetchone()
+
+        if usuario:
+
+            return jsonify({
+                "msg": "Usuário já existe"
+            })
+
+        # =========================
+        # SENHA
+        # =========================
         senha = "123456"
 
         senha_hash = bcrypt.hashpw(
@@ -137,6 +173,9 @@ def criar_admin():
             bcrypt.gensalt()
         )
 
+        # =========================
+        # CRIAR ADMIN
+        # =========================
         cursor.execute("""
             INSERT INTO users (
                 nome,
