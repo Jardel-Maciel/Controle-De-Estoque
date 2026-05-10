@@ -1,8 +1,14 @@
 import jwt
-import datetime
+from datetime import datetime, timedelta
 
-SECRET_KEY = "segredo_super_sistema"
+# =========================
+# CHAVE SECRETA
+# =========================
+SECRET_KEY = "segredo_super_saas"
 
+# =========================
+# GERAR TOKEN
+# =========================
 def gerar_token(usuario):
 
     payload = {
@@ -11,11 +17,11 @@ def gerar_token(usuario):
 
         "email": usuario["email"],
 
-        "role": usuario.get("role", "admin"),
+        "role": usuario.get("role", "cliente"),
 
         "tenant_id": usuario.get("tenant_id", 1),
 
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(days=1)
+        "exp": datetime.utcnow() + timedelta(days=7)
     }
 
     token = jwt.encode(
@@ -25,3 +31,23 @@ def gerar_token(usuario):
     )
 
     return token
+
+
+# =========================
+# VERIFICAR TOKEN
+# =========================
+def verificar_token(token):
+
+    try:
+
+        dados = jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=["HS256"]
+        )
+
+        return dados
+
+    except Exception:
+
+        return None
