@@ -1,56 +1,132 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const API = "https://backend-estoque-fnfc.onrender.com";
+const API = "https://backend-estoque-fnfc.onrender.com";
 
-  const emailInput = document.getElementById("email");
-  const senhaInput = document.getElementById("senha");
-  const btnLogin = document.getElementById("btnLogin");
+// =========================
+// LOGIN
+// =========================
+document
+  .getElementById("loginForm")
+  .addEventListener("submit", async (e) => {
 
-  if (!btnLogin) {
-    console.error("Botão de login não encontrado");
-    return;
-  }
+    e.preventDefault();
 
-  btnLogin.addEventListener("click", async () => {
-    const email = emailInput.value.trim();
-    const senha = senhaInput.value.trim();
+    const email =
+      document
+        .getElementById("email")
+        .value
+        .trim()
+        .toLowerCase();
 
-    // 🔒 Validação básica
-    if (!email || !senha) {
-      alert("Preencha email e senha");
-      return;
-    }
+    const senha =
+      document
+        .getElementById("senha")
+        .value
+        .trim();
 
     try {
-      btnLogin.disabled = true;
-      btnLogin.textContent = "Entrando...";
 
-      const res = await fetch(`${API}/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ email, senha })
-      });
+      const res = await fetch(
+        `${API}/login`,
+        {
 
-      const data = await res.json();
+          method: "POST",
 
-      if (!res.ok) {
-        alert(data.erro || "Erro no login");
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body: JSON.stringify({
+            email,
+            senha
+          })
+        }
+      );
+
+      const texto =
+        await res.text();
+
+      let dados = {};
+
+      try {
+
+        dados = JSON.parse(
+          texto
+        );
+
+      } catch {
+
+        console.error(
+          "Resposta inválida:",
+          texto
+        );
+
+        alert(
+          "Erro interno do servidor"
+        );
+
         return;
       }
 
-      // ✅ salva token
-      localStorage.setItem("token", data.token);
+      // =========================
+      // ERRO LOGIN
+      // =========================
+      if (!res.ok) {
 
-      // 🚀 redireciona
-      window.location.href = "index.html";
+        alert(
+          dados.erro ||
+          "Erro ao fazer login"
+        );
+
+        return;
+      }
+
+      // =========================
+      // TOKEN
+      // =========================
+      if (!dados.token) {
+
+        alert(
+          "Token não recebido"
+        );
+
+        return;
+      }
+
+      // =========================
+      // SALVAR TOKEN
+      // =========================
+      localStorage.setItem(
+        "token",
+        dados.token
+      );
+
+      localStorage.setItem(
+        "user",
+        JSON.stringify(
+          dados.user || {}
+        )
+      );
+
+      console.log(
+        "TOKEN SALVO:",
+        dados.token
+      );
+
+      // =========================
+      // REDIRECIONAR
+      // =========================
+      window.location.href =
+        "dashboard.html";
 
     } catch (err) {
-      console.error("Erro:", err);
-      alert("Erro ao conectar com o servidor (pode estar iniciando no Render)");
-    } finally {
-      btnLogin.disabled = false;
-      btnLogin.textContent = "Entrar";
+
+      console.error(
+        "Erro login:",
+        err
+      );
+
+      alert(
+        "Erro ao conectar com backend"
+      );
     }
   });
-});
