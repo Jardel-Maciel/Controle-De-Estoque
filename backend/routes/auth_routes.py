@@ -104,3 +104,67 @@ def definir_senha():
 
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
+    
+    # =========================
+# CRIAR ADMIN TEMPORÁRIO
+# =========================
+@auth_bp.route("/criar-admin")
+def criar_admin():
+
+    try:
+
+        conn = conectar()
+        cursor = conn.cursor()
+
+        # tenant
+        cursor.execute("""
+            INSERT INTO tenants (
+                nome,
+                codigo
+            )
+            VALUES (?, ?)
+        """, (
+            "Empresa Teste",
+            "empresa_teste"
+        ))
+
+        tenant_id = cursor.lastrowid
+
+        senha = "123456"
+
+        senha_hash = bcrypt.hashpw(
+            senha.encode(),
+            bcrypt.gensalt()
+        )
+
+        cursor.execute("""
+            INSERT INTO users (
+                nome,
+                email,
+                senha,
+                role,
+                tenant_id
+            )
+            VALUES (?, ?, ?, ?, ?)
+        """, (
+            "Administrador",
+            "admin@teste.com",
+            senha_hash,
+            "admin",
+            tenant_id
+        ))
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({
+            "msg": "Admin criado",
+            "email": "admin@teste.com",
+            "senha": "123456"
+        })
+
+    except Exception as e:
+
+        return jsonify({
+            "erro": str(e)
+        }), 500
