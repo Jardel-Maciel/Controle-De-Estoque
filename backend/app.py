@@ -8,14 +8,12 @@ from routes.produtos_routes import produtos_bp
 from routes.dashboard_routes import dashboard_bp
 from routes.movimentacoes_routes import movimentacoes_bp
 from routes.xml_importador import xml_bp
+from routes.admin_routes import admin_bp
 
 import routes.auth_routes
 
 app = Flask(__name__)
 
-# =========================
-# CORS — libera todas as origens
-# =========================
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=False)
 
 # =========================
@@ -31,6 +29,7 @@ app.register_blueprint(produtos_bp)
 app.register_blueprint(dashboard_bp)
 app.register_blueprint(movimentacoes_bp)
 app.register_blueprint(xml_bp)
+app.register_blueprint(admin_bp)
 
 # =========================
 # TESTE API

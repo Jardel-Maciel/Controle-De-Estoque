@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Controle de Estoque</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:       #020617;
+      --surface:  #0f172a;
+      --card:     #1e293b;
+      --border:   rgba(148,163,184,0.1);
+      --blue:     #38bdf8;
+      --indigo:   #6366f1;
+      --green:    #22c55e;
+      --red:      #ef4444;
+      --yellow:   #facc15;
+      --text:     #e2e8f0;
+      --muted:    #94a3b8;
+      --dimmed:   #64748b;
+    }
+
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+
+    /* ===================== SIDEBAR ===================== */
+    .sidebar {
+      width: 240px; min-height: 100vh; background: var(--surface);
+      border-right: 1px solid var(--border); display: flex; flex-direction: column;
+      padding: 24px 16px; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+    }
+    .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 0 8px 28px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+    .sidebar-logo span { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+    .sidebar-logo em { font-size: 1.4rem; }
+    .nav-label { font-size: 0.65rem; font-weight: 600; color: var(--dimmed); text-transform: uppercase; letter-spacing: .08em; padding: 0 8px; margin: 16px 0 6px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; color: var(--muted); font-size: 0.875rem; cursor: pointer; transition: .18s; border: none; background: none; width: 100%; text-align: left; text-decoration: none; }
+    .nav-item:hover { background: var(--card); color: var(--text); }
+    .nav-item.active { background: rgba(56,189,248,.12); color: var(--blue); font-weight: 600; }
+    .nav-item .icon { font-size: 1rem; width: 20px; text-align: center; }
+    .sidebar-bottom { margin-top: auto; border-top: 1px solid var(--border); padding-top: 16px; }
+
+    /* ===================== MAIN ===================== */
+    .main { margin-left: 240px; flex: 1; padding: 28px 32px; }
+
+    /* ===================== TOPBAR ===================== */
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+    .topbar-left h1 { font-size: 1.4rem; font-weight: 700; }
+    .topbar-left p { color: var(--muted); font-size: 0.85rem; margin-top: 3px; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--indigo), var(--blue)); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem; }
+    .btn { padding: 8px 16px; border-radius: 8px; border: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: .18s; font-family: inherit; }
+    .btn-ghost { background: var(--card); color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { color: var(--text); border-color: var(--blue); }
+    .btn-primary { background: var(--blue); color: var(--bg); }
+    .btn-primary:hover { opacity: .88; transform: translateY(-1px); }
+
+    /* ===================== SECÇÕES ===================== */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* ===================== KPI GRID ===================== */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .kpi-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; transition: .2s; position: relative; overflow: hidden; }
+    .kpi-card:hover { border-color: rgba(56,189,248,.35); transform: translateY(-3px); }
+    .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 14px 14px 0 0; }
+    .kpi-blue::before  { background: var(--blue); }
+    .kpi-indigo::before{ background: var(--indigo); }
+    .kpi-green::before { background: var(--green); }
+    .kpi-yellow::before{ background: var(--yellow); }
+    .kpi-label { font-size: 0.72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+    .kpi-value { font-size: 1.8rem; font-weight: 700; color: var(--text); line-height: 1; }
+    .kpi-sub { font-size: 0.72rem; color: var(--dimmed); margin-top: 6px; }
+
+    /* ===================== CHARTS ROW ===================== */
+    .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .charts-row.three { grid-template-columns: 2fr 1fr; }
+    .chart-box { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+    .chart-box h3 { font-size: 0.875rem; font-weight: 600; margin-bottom: 16px; color: var(--text); }
+    .chart-box canvas { max-height: 220px; }
+
+    /* ===================== TABLE ===================== */
+    .table-box { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 24px; }
+    .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .table-header h3 { font-size: 0.875rem; font-weight: 600; }
+    .table-search { padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 0.8rem; font-family: inherit; outline: none; width: 220px; }
+    .table-search:focus { border-color: var(--blue); }
+    table { width: 100%; border-collapse: collapse; }
+    th { font-size: 0.72rem; font-weight: 600; color: var(--blue); text-transform: uppercase; letter-spacing: .06em; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+    td { padding: 12px 14px; font-size: 0.82rem; color: var(--text); border-bottom: 1px solid rgba(148,163,184,0.06); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(56,189,248,.04); }
+    .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; font-size: 0.7rem; font-weight: 600; }
+    .b-blue   { background: rgba(56,189,248,.15);  color: var(--blue); }
+    .b-indigo { background: rgba(99,102,241,.15);  color: var(--indigo); }
+    .b-green  { background: rgba(34,197,94,.15);   color: var(--green); }
+    .b-red    { background: rgba(239,68,68,.15);   color: var(--red); }
+    .b-yellow { background: rgba(250,204,21,.15);  color: var(--yellow); }
+    .b-gray   { background: rgba(100,116,139,.15); color: var(--dimmed); }
+    .action-btn { padding: 4px 10px; border-radius: 6px; border: none; font-size: 0.7rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: .15s; }
+    .action-btn:hover { opacity: .8; }
+
+    /* ===================== FORM CARD ===================== */
+    .form-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 24px; }
+    .form-card h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 0.75rem; font-weight: 600; color: var(--muted); }
+    .form-group input, .form-group select { padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 0.85rem; font-family: inherit; outline: none; transition: .15s; }
+    .form-group input:focus, .form-group select:focus { border-color: var(--blue); }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-actions { margin-top: 16px; display: flex; justify-content: flex-end; gap: 10px; }
+
+    /* ===================== MODAL ===================== */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 200; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 400px; }
+    .modal-box h3 { font-size: 1rem; font-weight: 600; margin-bottom: 20px; }
+    .modal-box input { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-family: inherit; font-size: 0.875rem; outline: none; margin-bottom: 16px; }
+    .modal-box input:focus { border-color: var(--blue); }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+    /* ===================== EMPTY ===================== */
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--dimmed); font-size: 0.875rem; }
+
+    /* ===================== LOADING ===================== */
+    .pulse { animation: pulse 1.5s ease infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    /* ===================== RESPONSIVE ===================== */
+    @media (max-width: 1200px) { .kpi-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 900px) {
+      .sidebar { width: 60px; }
+      .sidebar-logo span, .nav-label, .nav-item span { display: none; }
+      .main { margin-left: 60px; padding: 20px; }
+      .kpi-grid, .charts-row, .form-grid { grid-template-columns: 1fr; }
+      .charts-row.three { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===================== SIDEBAR ===================== -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <em>📦</em>
+    <span>Admin Panel</span>
+  </div>
+
+  <div class="nav-label">Visão Geral</div>
+  <button class="nav-item active" onclick="navegarPara('dashboard', this)">
+    <span class="icon">📊</span><span>Dashboard</span>
+  </button>
+
+  <div class="nav-label">Gestão</div>
+  <button class="nav-item" onclick="navegarPara('usuarios', this)">
+    <span class="icon">👥</span><span>Usuários</span>
+  </button>
+  <button class="nav-item" onclick="navegarPara('empresas', this)">
+    <span class="icon">🏢</span><span>Empresas</span>
+  </button>
+  <button class="nav-item" onclick="navegarPara('criar', this)">
+    <span class="icon">➕</span><span>Novo Usuário</span>
+  </button>
+
+  <div class="nav-label">Sistema</div>
+  <a class="nav-item" href="index.html">
+    <span class="icon">📦</span><span>Ir ao Estoque</span>
+  </a>
+  <a class="nav-item" href="dashboard.html">
+    <span class="icon">📈</span><span>Ir ao Dashboard</span>
+  </a>
+
+  <div class="sidebar-bottom">
+    <button class="nav-item" onclick="logout()">
+      <span class="icon">🚪</span><span>Sair</span>
+    </button>
+  </div>
+</aside>
+
+<!-- ===================== MAIN ===================== -->
+<main class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1 id="pageTitle">Dashboard Administrativo</h1>
+      <p id="pageSubtitle">Visão geral consolidada de todos os clientes</p>
+    </div>
+    <div class="topbar-right">
+      <span id="adminName" class="btn btn-ghost">—</span>
+      <div class="avatar" id="adminAvatar">A</div>
+    </div>
+  </div>
+
+  <!-- ============= SEÇÃO DASHBOARD ============= -->
+  <section class="section active" id="sec-dashboard">
+
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi-card kpi-blue">
+        <div class="kpi-label">Total de Empresas</div>
+        <div class="kpi-value" id="kpi-empresas">—</div>
+        <div class="kpi-sub">tenants ativos</div>
+      </div>
+      <div class="kpi-card kpi-indigo">
+        <div class="kpi-label">Total de Usuários</div>
+        <div class="kpi-value" id="kpi-usuarios">—</div>
+        <div class="kpi-sub">contas cadastradas</div>
+      </div>
+      <div class="kpi-card kpi-green">
+        <div class="kpi-label">Usuários Ativos</div>
+        <div class="kpi-value" id="kpi-ativos">—</div>
+        <div class="kpi-sub">com acesso habilitado</div>
+      </div>
+      <div class="kpi-card kpi-yellow">
+        <div class="kpi-label">Inativos</div>
+        <div class="kpi-value" id="kpi-inativos">—</div>
+        <div class="kpi-sub">acesso desabilitado</div>
+      </div>
+    </div>
+
+    <!-- GRÁFICOS -->
+    <div class="charts-row three">
+      <div class="chart-box">
+        <h3>Usuários por Empresa</h3>
+        <canvas id="chartEmpresasUsuarios"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>Status dos Usuários</h3>
+        <canvas id="chartStatus"></canvas>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-box">
+        <h3>Distribuição de Roles</h3>
+        <canvas id="chartRoles"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>Empresas — Usuários Ativos vs Inativos</h3>
+        <canvas id="chartAtivosPorEmpresa"></canvas>
+      </div>
+    </div>
+
+    <!-- TABELA RESUMO CLIENTES -->
+    <div class="table-box">
+      <div class="table-header">
+        <h3>Resumo por Cliente</h3>
+        <input class="table-search" type="text" id="dashSearch" placeholder="🔎 Filtrar empresa..." oninput="filtrarDashTable()" />
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Empresa</th>
+            <th>Código</th>
+            <th>Usuários</th>
+            <th>Ativos</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="dashTableBody"></tbody>
+      </table>
+    </div>
+
+  </section>
+
+  <!-- ============= SEÇÃO USUÁRIOS ============= -->
+  <section class="section" id="sec-usuarios">
+    <div class="table-box">
+      <div class="table-header">
+        <h3>Todos os Usuários</h3>
+        <input class="table-search" type="text" id="userSearch" placeholder="🔎 Filtrar..." oninput="filtrarUsuarios()" />
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Email</th>
+            <th>Empresa</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============= SEÇÃO EMPRESAS ============= -->
+  <section class="section" id="sec-empresas">
+    <div class="table-box">
+      <div class="table-header">
+        <h3>Empresas Cadastradas</h3>
+        <input class="table-search" type="text" id="empSearch" placeholder="🔎 Filtrar..." oninput="filtrarEmpresas()" />
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Código</th>
+            <th>Usuários</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="empTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============= SEÇÃO CRIAR ============= -->
+  <section class="section" id="sec-criar">
+    <div class="form-card">
+      <h3>➕ Cadastrar Novo Usuário</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nome completo</label>
+          <input type="text" id="fNome" placeholder="Ex: João Silva" />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="fEmail" placeholder="joao@empresa.com" />
+        </div>
+        <div class="form-group">
+          <label>Senha</label>
+          <input type="password" id="fSenha" placeholder="Mínimo 4 caracteres" />
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <select id="fRole">
+            <option value="admin">Admin</option>
+            <option value="cliente">Cliente</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Nome da empresa</label>
+          <input type="text" id="fEmpresa" placeholder="Ex: Empresa XYZ" />
+        </div>
+        <div class="form-group">
+          <label>Código da empresa</label>
+          <input type="text" id="fCodigo" placeholder="Ex: empresa_xyz (sem espaços)" />
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-ghost" onclick="limparForm()">Limpar</button>
+        <button class="btn btn-primary" onclick="criarUsuario()">Criar Usuário</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===================== MODAL SENHA ===================== -->
+<div class="modal-overlay" id="modalSenha">
+  <div class="modal-box">
+    <h3>🔑 Redefinir Senha</h3>
+    <input type="password" id="novaSenha" placeholder="Nova senha (mín. 4 caracteres)" />
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarSenha()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API   = "https://backend-estoque-fnfc.onrender.com";
+const token = localStorage.getItem("token");
+const user  = JSON.parse(localStorage.getItem("user") || "{}");
+
+// =========================
+// PROTEÇÃO
+// =========================
+if (!token || user.role !== "admin") {
+  alert("Acesso restrito a administradores.");
+  window.location.href = "login.html";
+}
+
+document.getElementById("adminName").textContent = user.nome || "Admin";
+document.getElementById("adminAvatar").textContent = (user.nome || "A")[0].toUpperCase();
+
+// =========================
+// DADOS GLOBAIS
+// =========================
+let todosUsuarios = [];
+let todostenants  = [];
+let charts        = {};
+let userIdSenha   = null;
+
+// =========================
+// NAVEGAÇÃO
+// =========================
+const titulos = {
+  dashboard: ["Dashboard Administrativo",    "Visão geral consolidada de todos os clientes"],
+  usuarios:  ["Usuários",                    "Gerencie todos os usuários do sistema"],
+  empresas:  ["Empresas",                    "Empresas e tenants cadastrados"],
+  criar:     ["Novo Usuário",                "Cadastre um novo usuário e empresa"],
+};
+
+function navegarPara(secao, btn) {
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  document.querySelectorAll(".nav-item").forEach(b => b.classList.remove("active"));
+  document.getElementById(`sec-${secao}`).classList.add("active");
+  btn.classList.add("active");
+  const [titulo, sub] = titulos[secao];
+  document.getElementById("pageTitle").textContent    = titulo;
+  document.getElementById("pageSubtitle").textContent = sub;
+}
+
+function logout() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  window.location.href = "login.html";
+}
+
+// =========================
+// FETCH HELPERS
+// =========================
+async function apiFetch(path) {
+  const res = await fetch(`${API}${path}`, {
+    headers: { "Authorization": `Bearer ${token}` }
+  });
+  if (res.status === 401) { logout(); }
+  return res.json();
+}
+
+async function apiPatch(path, body) {
+  const res = await fetch(`${API}${path}`, {
+    method: "PATCH",
+    headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  return res.json();
+}
+
+// =========================
+// CARREGAR TUDO
+// =========================
+async function init() {
+  const [usuarios, tenants] = await Promise.all([
+    apiFetch("/admin/usuarios"),
+    apiFetch("/admin/tenants")
+  ]);
+
+  todosUsuarios = Array.isArray(usuarios) ? usuarios : [];
+  todostenants  = Array.isArray(tenants)  ? tenants  : [];
+
+  renderKPIs();
+  renderCharts();
+  renderDashTable();
+  renderUserTable();
+  renderEmpTable();
+}
+
+// =========================
+// KPIs
+// =========================
+function renderKPIs() {
+  const ativos   = todosUsuarios.filter(u => u.ativo).length;
+  const inativos = todosUsuarios.length - ativos;
+
+  document.getElementById("kpi-empresas").textContent = todostenants.length;
+  document.getElementById("kpi-usuarios").textContent = todosUsuarios.length;
+  document.getElementById("kpi-ativos").textContent   = ativos;
+  document.getElementById("kpi-inativos").textContent = inativos;
+}
+
+// =========================
+// GRÁFICOS
+// =========================
+function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+const OPTS = {
+  responsive: true,
+  plugins: { legend: { labels: { color: "#94a3b8", font: { size: 11 } } } },
+  scales: {
+    x: { ticks: { color: "#94a3b8", font: { size: 10 } }, grid: { color: "rgba(148,163,184,.08)" } },
+    y: { ticks: { color: "#94a3b8", font: { size: 10 }, precision: 0 }, grid: { color: "rgba(148,163,184,.08)" }, beginAtZero: true }
+  }
+};
+
+function renderCharts() {
+  // Usuários por empresa
+  destroyChart("empUsr");
+  charts["empUsr"] = new Chart(document.getElementById("chartEmpresasUsuarios"), {
+    type: "bar",
+    data: {
+      labels: todostenants.map(t => t.nome),
+      datasets: [{
+        label: "Usuários",
+        data: todostenants.map(t => t.total_usuarios),
+        backgroundColor: "rgba(56,189,248,.7)",
+        borderColor: "#38bdf8",
+        borderWidth: 1,
+        borderRadius: 6
+      }]
+    },
+    options: { ...OPTS, plugins: { legend: { display: false } } }
+  });
+
+  // Status donut
+  destroyChart("status");
+  const ativos   = todosUsuarios.filter(u => u.ativo).length;
+  const inativos = todosUsuarios.length - ativos;
+  charts["status"] = new Chart(document.getElementById("chartStatus"), {
+    type: "doughnut",
+    data: {
+      labels: ["Ativos", "Inativos"],
+      datasets: [{ data: [ativos, inativos], backgroundColor: ["rgba(34,197,94,.8)", "rgba(239,68,68,.8)"], borderWidth: 0 }]
+    },
+    options: { responsive: true, plugins: { legend: { labels: { color: "#94a3b8" } } }, cutout: "65%" }
+  });
+
+  // Roles
+  destroyChart("roles");
+  const admins   = todosUsuarios.filter(u => u.role === "admin").length;
+  const clientes = todosUsuarios.filter(u => u.role !== "admin").length;
+  charts["roles"] = new Chart(document.getElementById("chartRoles"), {
+    type: "doughnut",
+    data: {
+      labels: ["Admin", "Cliente"],
+      datasets: [{ data: [admins, clientes], backgroundColor: ["rgba(99,102,241,.8)", "rgba(56,189,248,.8)"], borderWidth: 0 }]
+    },
+    options: { responsive: true, plugins: { legend: { labels: { color: "#94a3b8" } } }, cutout: "65%" }
+  });
+
+  // Ativos vs Inativos por empresa
+  destroyChart("ativoEmp");
+  const ativosPorEmp   = todostenants.map(t => todosUsuarios.filter(u => u.tenant_nome === t.nome && u.ativo).length);
+  const inativosPorEmp = todostenants.map(t => todosUsuarios.filter(u => u.tenant_nome === t.nome && !u.ativo).length);
+  charts["ativoEmp"] = new Chart(document.getElementById("chartAtivosPorEmpresa"), {
+    type: "bar",
+    data: {
+      labels: todostenants.map(t => t.nome),
+      datasets: [
+        { label: "Ativos",   data: ativosPorEmp,   backgroundColor: "rgba(34,197,94,.7)",  borderRadius: 6 },
+        { label: "Inativos", data: inativosPorEmp, backgroundColor: "rgba(239,68,68,.7)", borderRadius: 6 }
+      ]
+    },
+    options: { ...OPTS }
+  });
+}
+
+// =========================
+// TABELA DASHBOARD
+// =========================
+let dadosDashTable = [];
+
+function renderDashTable() {
+  dadosDashTable = todostenants.map(t => ({
+    ...t,
+    ativos: todosUsuarios.filter(u => u.tenant_nome === t.nome && u.ativo).length
+  }));
+  renderDashRows(dadosDashTable);
+}
+
+function renderDashRows(dados) {
+  document.getElementById("dashTableBody").innerHTML = dados.map(t => `
+    <tr>
+      <td><strong>${t.nome}</strong></td>
+      <td><span class="badge b-gray">${t.codigo}</span></td>
+      <td>${t.total_usuarios}</td>
+      <td>${t.ativos}</td>
+      <td><span class="badge ${t.ativo ? 'b-green' : 'b-red'}">${t.ativo ? 'Ativa' : 'Inativa'}</span></td>
+    </tr>
+  `).join("") || `<tr><td colspan="5" class="empty-state">Nenhuma empresa encontrada.</td></tr>`;
+}
+
+function filtrarDashTable() {
+  const q = document.getElementById("dashSearch").value.toLowerCase();
+  renderDashRows(dadosDashTable.filter(t => t.nome.toLowerCase().includes(q) || t.codigo.toLowerCase().includes(q)));
+}
+
+// =========================
+// TABELA USUÁRIOS
+// =========================
+function renderUserTable() {
+  renderUserRows(todosUsuarios);
+}
+
+function renderUserRows(lista) {
+  document.getElementById("userTableBody").innerHTML = lista.map(u => `
+    <tr>
+      <td><strong>${u.nome}</strong></td>
+      <td style="color:var(--muted)">${u.email}</td>
+      <td>${u.tenant_nome || "—"}</td>
+      <td><span class="badge ${u.role === 'admin' ? 'b-indigo' : 'b-blue'}">${u.role}</span></td>
+      <td><span class="badge ${u.ativo ? 'b-green' : 'b-red'}">${u.ativo ? 'Ativo' : 'Inativo'}</span></td>
+      <td style="display:flex;gap:6px">
+        <button class="action-btn" style="background:rgba(250,204,21,.15);color:#facc15"
+          onclick="abrirModal(${u.id})">🔑 Senha</button>
+        <button class="action-btn" style="background:${u.ativo ? 'rgba(239,68,68,.15)' : 'rgba(34,197,94,.15)'};color:${u.ativo ? '#ef4444' : '#22c55e'}"
+          onclick="toggleUser(${u.id})">
+          ${u.ativo ? 'Desativar' : 'Ativar'}
+        </button>
+      </td>
+    </tr>
+  `).join("") || `<tr><td colspan="6" class="empty-state">Nenhum usuário encontrado.</td></tr>`;
+}
+
+function filtrarUsuarios() {
+  const q = document.getElementById("userSearch").value.toLowerCase();
+  renderUserRows(todosUsuarios.filter(u =>
+    u.nome.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || (u.tenant_nome || "").toLowerCase().includes(q)
+  ));
+}
+
+// =========================
+// TABELA EMPRESAS
+// =========================
+function renderEmpTable() {
+  renderEmpRows(todostenants);
+}
+
+function renderEmpRows(lista) {
+  document.getElementById("empTableBody").innerHTML = lista.map(t => `
+    <tr>
+      <td><strong>${t.nome}</strong></td>
+      <td><span class="badge b-gray">${t.codigo}</span></td>
+      <td>${t.total_usuarios}</td>
+      <td><span class="badge ${t.ativo ? 'b-green' : 'b-red'}">${t.ativo ? 'Ativa' : 'Inativa'}</span></td>
+    </tr>
+  `).join("") || `<tr><td colspan="4" class="empty-state">Nenhuma empresa.</td></tr>`;
+}
+
+function filtrarEmpresas() {
+  const q = document.getElementById("empSearch").value.toLowerCase();
+  renderEmpRows(todostenants.filter(t => t.nome.toLowerCase().includes(q) || t.codigo.toLowerCase().includes(q)));
+}
+
+// =========================
+// TOGGLE USUÁRIO
+// =========================
+async function toggleUser(id) {
+  const dados = await apiPatch(`/admin/usuarios/${id}/toggle`, {});
+  if (dados.msg) { await init(); } else { alert(dados.erro || "Erro"); }
+}
+
+// =========================
+// MODAL SENHA
+// =========================
+function abrirModal(id) {
+  userIdSenha = id;
+  document.getElementById("novaSenha").value = "";
+  document.getElementById("modalSenha").classList.add("open");
+}
+
+function fecharModal() {
+  userIdSenha = null;
+  document.getElementById("modalSenha").classList.remove("open");
+}
+
+async function confirmarSenha() {
+  const senha = document.getElementById("novaSenha").value.trim();
+  if (!senha || senha.length < 4) { alert("Senha deve ter ao menos 4 caracteres."); return; }
+  const dados = await apiPatch(`/admin/usuarios/${userIdSenha}/senha`, { senha });
+  if (dados.msg) { alert("Senha redefinida!"); fecharModal(); }
+  else alert(dados.erro || "Erro");
+}
+
+// =========================
+// CRIAR USUÁRIO
+// =========================
+async function criarUsuario() {
+  const nome    = document.getElementById("fNome").value.trim();
+  const email   = document.getElementById("fEmail").value.trim();
+  const senha   = document.getElementById("fSenha").value.trim();
+  const empresa = document.getElementById("fEmpresa").value.trim();
+  const codigo  = document.getElementById("fCodigo").value.trim();
+  const role    = document.getElementById("fRole").value;
+
+  if (!nome || !email || !senha) { alert("Preencha nome, email e senha."); return; }
+
+  const res = await fetch(`${API}/admin/usuarios`, {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ nome, email, senha, empresa, codigo, role })
+  });
+
+  const dados = await res.json();
+  if (res.ok) {
+    alert("Usuário criado com sucesso!");
+    limparForm();
+    await init();
+  } else {
+    alert(dados.erro || "Erro ao criar usuário");
+  }
+}
+
+function limparForm() {
+  ["fNome","fEmail","fSenha","fEmpresa","fCodigo"].forEach(id => document.getElementById(id).value = "");
+}
+
+// Fechar modal clicando fora
+document.getElementById("modalSenha").addEventListener("click", e => {
+  if (e.target === e.currentTarget) fecharModal();
+});
+
+// =========================
+// INIT
+// =========================
+init();
+</script>
+</body>
+</html>
