@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, g
 import sqlite3
 from utils.auth_middleware import auth_required
 from database.database import conectar
@@ -13,7 +13,7 @@ produtos_bp = Blueprint("produtos", __name__)
 def listar_produtos():
 
     try:
-        tenant_id = request.user["tenant_id"]
+        tenant_id = g.usuario["tenant_id"]
 
         conn = conectar()
         cursor = conn.cursor()
@@ -57,7 +57,7 @@ def listar_produtos():
 def criar_produto():
 
     try:
-        tenant_id = request.user["tenant_id"]
+        tenant_id = g.usuario["tenant_id"]
 
         dados = request.get_json(force=True)
 
@@ -124,7 +124,7 @@ def criar_produto():
 def remover_produto(id):
 
     try:
-        tenant_id = request.user["tenant_id"]
+        tenant_id = g.usuario["tenant_id"]
 
         conn = conectar()
         cursor = conn.cursor()

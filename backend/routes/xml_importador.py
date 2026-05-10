@@ -6,14 +6,14 @@ from utils.auth_middleware import auth_required
 
 xml_bp = Blueprint("xml", __name__, url_prefix="/xml")
 
+# =========================
+# IMPORTAR XML (TENANT SAFE)
+# =========================
 @xml_bp.route("/importar", methods=["POST"])
 @auth_required
 def importar_xml():
 
     try:
-        # =========================
-        # CORRIGIDO: era request.user (não existe no Flask)
-        # =========================
         tenant_id = g.usuario["tenant_id"]
 
         arquivo = request.files.get("arquivo")
@@ -21,6 +21,9 @@ def importar_xml():
         if not arquivo:
             return jsonify({"erro": "Arquivo não enviado"}), 400
 
+        # =========================
+        # PARSE XML
+        # =========================
         tree = ET.parse(arquivo)
         root = tree.getroot()
 
@@ -47,28 +50,53 @@ def importar_xml():
         conn = conectar()
         cursor = conn.cursor()
 
+        # =========================
+        # VERIFICA DUPLICIDADE POR TENANT
+        # =========================
         cursor.execute("""
-            SELECT id FROM notas_fiscais
-            WHERE chave_nfe = ? AND tenant_id = ?
+            SELECT id
+            FROM notas_fiscais
+            WHERE chave_nfe = ?
+            AND tenant_id = ?
         """, (chave_nfe, tenant_id))
 
         if cursor.fetchone():
             conn.close()
             return jsonify({"erro": "NF-e já importada"}), 400
 
+        # =========================
+        # SALVAR NOTA (TENANT)
+        # =========================
         cursor.execute("""
             INSERT INTO notas_fiscais (
-                tenant_id, numero_nota, serie, chave_nfe,
-                fornecedor, cnpj, data_emissao, valor_total, xml_original
+                tenant_id,
+                numero_nota,
+                serie,
+                chave_nfe,
+                fornecedor,
+                cnpj,
+                data_emissao,
+                valor_total,
+                xml_original
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
-            tenant_id, numero_nota, serie, chave_nfe,
-            fornecedor, cnpj, data_emissao, valor_total_nota, arquivo.filename
+            tenant_id,
+            numero_nota,
+            serie,
+            chave_nfe,
+            fornecedor,
+            cnpj,
+            data_emissao,
+            valor_total_nota,
+            arquivo.filename
         ))
 
         produtos_importados = []
 
+        # =========================
+        # PRODUTOS DO XML
+        # =========================
         for det in root.findall(".//nfe:det", ns):
 
             prod = det.find("nfe:prod", ns)
@@ -82,34 +110,70 @@ def importar_xml():
             if not nome:
                 continue
 
+            # =========================
+            # BUSCA PRODUTO DO TENANT
+            # =========================
             cursor.execute("""
-                SELECT id, quantidade FROM produtos
-                WHERE produto = ? AND tenant_id = ?
+                SELECT id, quantidade
+                FROM produtos
+                WHERE produto = ?
+                AND tenant_id = ?
             """, (nome, tenant_id))
 
             existente = cursor.fetchone()
 
             if existente:
+
                 nova_qtd = existente["quantidade"] + quantidade
+
                 cursor.execute("""
                     UPDATE produtos
-                    SET quantidade = ?, valor = ?, fornecedor = ?,
-                        contato = ?, cnpj = ?, numero_nota = ?, data_emissao = ?
-                    WHERE produto = ? AND tenant_id = ?
+                    SET quantidade = ?,
+                        valor = ?,
+                        fornecedor = ?,
+                        contato = ?,
+                        cnpj = ?,
+                        numero_nota = ?,
+                        data_emissao = ?
+                    WHERE produto = ?
+                    AND tenant_id = ?
                 """, (
-                    nova_qtd, valor, fornecedor, cnpj, cnpj,
-                    numero_nota, data_emissao, nome, tenant_id
+                    nova_qtd,
+                    valor,
+                    fornecedor,
+                    cnpj,
+                    cnpj,
+                    numero_nota,
+                    data_emissao,
+                    nome,
+                    tenant_id
                 ))
+
             else:
+
                 cursor.execute("""
                     INSERT INTO produtos (
-                        tenant_id, produto, quantidade, valor,
-                        fornecedor, contato, cnpj, numero_nota, data_emissao
+                        tenant_id,
+                        produto,
+                        quantidade,
+                        valor,
+                        fornecedor,
+                        contato,
+                        cnpj,
+                        numero_nota,
+                        data_emissao
                     )
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
-                    tenant_id, nome, quantidade, valor,
-                    fornecedor, cnpj, cnpj, numero_nota, data_emissao
+                    tenant_id,
+                    nome,
+                    quantidade,
+                    valor,
+                    fornecedor,
+                    cnpj,
+                    cnpj,
+                    numero_nota,
+                    data_emissao
                 ))
 
             produtos_importados.append(nome)
@@ -123,6 +187,4 @@ def importar_xml():
         })
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()
         return jsonify({"erro": str(e)}), 500
