@@ -1,9 +1,8 @@
 import jwt
-
 from datetime import datetime, timedelta
 
 # =========================
-# CHAVE SECRETA
+# CHAVE JWT
 # =========================
 SECRET_KEY = "super_secret_key_123"
 
@@ -14,16 +13,15 @@ def gerar_token(usuario):
 
     payload = {
 
-        "id": usuario["id"],
+        "id": usuario.get("id"),
 
-        "email": usuario["email"],
+        "email": usuario.get("email"),
 
         "role": usuario.get("role", "admin"),
 
         "tenant_id": usuario.get("tenant_id", 1),
 
-        # TOKEN VÁLIDO POR 30 DIAS
-        "exp": datetime.utcnow() + timedelta(days=30)
+        "exp": datetime.utcnow() + timedelta(days=7)
     }
 
     token = jwt.encode(
