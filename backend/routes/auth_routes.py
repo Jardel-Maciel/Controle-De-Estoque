@@ -14,7 +14,6 @@ def login():
             return jsonify({"erro": "Content-Type deve ser application/json"}), 400
 
         dados = request.get_json()
-
         email = dados.get("email", "").strip().lower()
         senha = dados.get("senha", "").strip()
 
@@ -23,7 +22,6 @@ def login():
 
         conn = conectar()
         cursor = conn.cursor()
-
         cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
         row = cursor.fetchone()
         conn.close()
@@ -31,16 +29,12 @@ def login():
         if not row:
             return jsonify({"erro": "Usuário não encontrado"}), 404
 
-        # =========================
-        # CONVERTE Row → dict
-        # =========================
         usuario = dict(row)
 
         if not usuario.get("senha"):
             return jsonify({"erro": "primeiro_acesso"}), 403
 
         senha_db = usuario["senha"]
-
         if isinstance(senha_db, str):
             senha_db = senha_db.encode()
 
@@ -61,8 +55,6 @@ def login():
         }), 200
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()
         return jsonify({"erro": str(e)}), 500
 
 
@@ -73,23 +65,32 @@ def criar_admin():
         conn = conectar()
         cursor = conn.cursor()
 
-        cursor.execute("SELECT * FROM users WHERE email = ?", ("admin@teste.com",))
+        # =========================
+        # VERIFICA SE ADMIN JÁ EXISTE
+        # =========================
+        cursor.execute("SELECT id FROM users WHERE email = ?", ("admin@teste.com",))
         if cursor.fetchone():
             conn.close()
             return jsonify({"msg": "Admin já existe"}), 200
 
+        # =========================
+        # GARANTE QUE O TENANT EXISTE
+        # =========================
         cursor.execute("SELECT id FROM tenants WHERE codigo = ?", ("empresa_teste",))
         tenant = cursor.fetchone()
 
         if tenant:
-            tenant_id = dict(tenant)["id"]
+            tenant_id = tenant["id"]
         else:
             cursor.execute("""
-                INSERT INTO tenants (nome, codigo)
-                VALUES (?, ?)
-            """, ("Empresa Teste", "empresa_teste"))
+                INSERT INTO tenants (nome, codigo, ativo)
+                VALUES (?, ?, ?)
+            """, ("Empresa Teste", "empresa_teste", 1))
             tenant_id = cursor.lastrowid
 
+        # =========================
+        # CRIA ADMIN
+        # =========================
         senha_hash = bcrypt.hashpw("123456".encode(), bcrypt.gensalt()).decode("utf-8")
 
         cursor.execute("""
@@ -100,9 +101,12 @@ def criar_admin():
         conn.commit()
         conn.close()
 
-        return jsonify({"msg": "Admin criado com sucesso", "email": "admin@teste.com", "senha": "123456"}), 201
+        return jsonify({
+            "msg": "Admin criado com sucesso",
+            "email": "admin@teste.com",
+            "senha": "123456",
+            "tenant_id": tenant_id
+        }), 201
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()
         return jsonify({"erro": str(e)}), 500
