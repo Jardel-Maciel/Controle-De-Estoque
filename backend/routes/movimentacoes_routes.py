@@ -1,36 +1,29 @@
 from flask import Blueprint, jsonify, request
 import datetime
-
+from utils.auth_middleware import auth_required
 from database.database import conectar
-from utils.auth import autenticar
 
 movimentacoes_bp = Blueprint("movimentacoes", __name__)
 
 # =========================
-# LISTAR
+# LISTAR MOVIMENTAÇÕES
 # =========================
-@movimentacoes_bp.route("/movimentacoes", methods=["GET", "OPTIONS"])
+@movimentacoes_bp.route("/movimentacoes", methods=["GET"])
+@auth_required
 def listar_movimentacoes():
 
-    if request.method == "OPTIONS":
-        return jsonify({}), 200
-
-    if not autenticar():
-        return jsonify({
-            "erro": "Não autorizado"
-        }), 401
-
     try:
+        tenant_id = request.user["tenant_id"]
 
         conn = conectar()
-
         cursor = conn.cursor()
 
         cursor.execute("""
             SELECT *
             FROM movimentacoes
+            WHERE tenant_id = ?
             ORDER BY id DESC
-        """)
+        """, (tenant_id,))
 
         dados = cursor.fetchall()
 
@@ -49,100 +42,86 @@ def listar_movimentacoes():
         ])
 
     except Exception as e:
-
-        return jsonify({
-            "erro": str(e)
-        }), 500
+        return jsonify({"erro": str(e)}), 500
 
 
 # =========================
-# CRIAR
+# CRIAR MOVIMENTAÇÃO
 # =========================
-@movimentacoes_bp.route("/movimentacoes", methods=["POST", "OPTIONS"])
+@movimentacoes_bp.route("/movimentacoes", methods=["POST"])
+@auth_required
 def criar_movimentacao():
 
-    if request.method == "OPTIONS":
-        return jsonify({}), 200
-
-    if not autenticar():
-        return jsonify({
-            "erro": "Não autorizado"
-        }), 401
-
     try:
+        tenant_id = request.user["tenant_id"]
 
         dados = request.get_json(force=True)
 
         produto_id = dados.get("produto_id")
 
-        tipo = str(
-            dados.get("tipo", "")
-        ).lower().strip()
+        tipo = str(dados.get("tipo", "")).lower().strip()
 
-        quantidade = int(
-            dados.get("quantidade", 0)
-        )
+        quantidade = int(dados.get("quantidade", 0))
 
         comentario = dados.get("comentario", "")
 
-        responsavel = dados.get(
-            "responsavel",
-            "Sistema"
-        )
+        responsavel = dados.get("responsavel", "Sistema")
 
         data = datetime.datetime.now().isoformat()
 
         conn = conectar()
-
         cursor = conn.cursor()
 
+        # =========================
+        # BUSCA PRODUTO DO TENANT
+        # =========================
         cursor.execute("""
-            SELECT produto, quantidade
+            SELECT id, produto, quantidade
             FROM produtos
             WHERE id = ?
-        """, (produto_id,))
+            AND tenant_id = ?
+        """, (produto_id, tenant_id))
 
         row = cursor.fetchone()
 
         if not row:
-
             conn.close()
-
-            return jsonify({
-                "erro": "Produto não encontrado"
-            }), 404
+            return jsonify({"erro": "Produto não encontrado"}), 404
 
         produto = row["produto"]
-
         estoque_atual = row["quantidade"]
 
-        if (
-            tipo == "saida"
-            and quantidade > estoque_atual
-        ):
-
+        # =========================
+        # VALIDAÇÃO ESTOQUE
+        # =========================
+        if tipo == "saida" and quantidade > estoque_atual:
             conn.close()
+            return jsonify({"erro": "Estoque insuficiente"}), 400
 
-            return jsonify({
-                "erro": "Estoque insuficiente"
-            }), 400
-
+        # =========================
+        # NOVO ESTOQUE
+        # =========================
         if tipo == "entrada":
             novo_estoque = estoque_atual + quantidade
         else:
             novo_estoque = estoque_atual - quantidade
 
+        # =========================
+        # ATUALIZA PRODUTO (TENANT SAFE)
+        # =========================
         cursor.execute("""
             UPDATE produtos
             SET quantidade = ?
             WHERE id = ?
-        """, (
-            novo_estoque,
-            produto_id
-        ))
+            AND tenant_id = ?
+        """, (novo_estoque, produto_id, tenant_id))
 
+        # =========================
+        # REGISTRA MOVIMENTAÇÃO
+        # =========================
         cursor.execute("""
             INSERT INTO movimentacoes (
+                tenant_id,
                 produto,
                 tipo,
                 quantidade,
@@ -150,8 +129,9 @@ def criar_movimentacao():
                 responsavel,
                 data
             )
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (
+            tenant_id,
             produto,
             tipo,
             quantidade,
@@ -161,7 +141,6 @@ def criar_movimentacao():
         ))
 
         conn.commit()
-
         conn.close()
 
         return jsonify({
@@ -169,7 +148,4 @@ def criar_movimentacao():
         })
 
     except Exception as e:
-
-        return jsonify({
-            "erro": str(e)
-        }), 500
+        return jsonify({"erro": str(e)}), 500

@@ -1,12 +1,13 @@
 from flask import Blueprint, request, jsonify
-import uuid
+from database.database import conectar
+import bcrypt
 
-from utils.auth import usuarios
+from utils.jwt import gerar_token
 
 auth_bp = Blueprint("auth", __name__)
 
 # =========================
-# LOGIN
+# LOGIN REAL (JWT + SQLITE)
 # =========================
 @auth_bp.route("/login", methods=["POST", "OPTIONS"])
 def login():
@@ -15,29 +16,91 @@ def login():
         return jsonify({}), 200
 
     try:
-
         dados = request.get_json(force=True)
 
         email = dados.get("email")
         senha = dados.get("senha")
 
-        for usuario in usuarios:
+        conn = conectar()
+        cursor = conn.cursor()
 
-            if (
-                usuario["email"] == email
-                and usuario["senha"] == senha
-            ):
+        cursor.execute("""
+            SELECT * FROM users WHERE email = ?
+        """, (email,))
 
-                return jsonify({
-                    "token": str(uuid.uuid4())
-                })
+        usuario = cursor.fetchone()
+
+        conn.close()
+
+        if not usuario:
+            return jsonify({"erro": "Usuário não encontrado"}), 404
+
+        # =========================
+        # PRIMEIRO ACESSO
+        # =========================
+        if usuario["senha"] is None:
+            return jsonify({"erro": "primeiro_acesso"}), 403
+
+        # =========================
+        # VALIDAR SENHA (bcrypt correto)
+        # =========================
+        senha_db = usuario["senha"]
+
+        if isinstance(senha_db, str):
+            senha_db = senha_db.encode()
+
+        if not bcrypt.checkpw(senha.encode(), senha_db):
+            return jsonify({"erro": "Senha inválida"}), 401
+
+        # =========================
+        # GERAR JWT
+        # =========================
+        token = gerar_token(usuario)
 
         return jsonify({
-            "erro": "Credenciais inválidas"
-        }), 401
+            "token": token,
+            "user": {
+                "id": usuario["id"],
+                "email": usuario["email"],
+                "role": usuario["role"],
+                "tenant_id": usuario["tenant_id"]
+            }
+        })
 
     except Exception as e:
+        return jsonify({"erro": str(e)}), 500
 
-        return jsonify({
-            "erro": str(e)
-        }), 500
+
+# =========================
+# DEFINIR SENHA (1º ACESSO)
+# =========================
+@auth_bp.route("/definir-senha", methods=["POST"])
+def definir_senha():
+
+    try:
+        dados = request.json
+
+        email = dados.get("email")
+        senha = dados.get("senha")
+
+        senha_hash = bcrypt.hashpw(
+            senha.encode(),
+            bcrypt.gensalt()
+        )
+
+        conn = conectar()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            UPDATE users
+            SET senha = ?
+            WHERE email = ?
+        """, (senha_hash, email))
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({"ok": True})
+
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
