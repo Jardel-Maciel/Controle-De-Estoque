@@ -7,56 +7,114 @@ from utils.jwt import gerar_token
 auth_bp = Blueprint("auth", __name__)
 
 # =========================
-# LOGIN REAL (JWT + SQLITE)
+# LOGIN
 # =========================
 @auth_bp.route("/login", methods=["POST", "OPTIONS"])
 def login():
 
+    # CORS PRE-FLIGHT
     if request.method == "OPTIONS":
         return jsonify({}), 200
 
     try:
-        dados = request.get_json(force=True)
 
-        email = dados.get("email")
-        senha = dados.get("senha")
+        # =========================
+        # VALIDAR JSON
+        # =========================
+        if not request.is_json:
 
+            return jsonify({
+                "erro": "Content-Type deve ser application/json"
+            }), 400
+
+        dados = request.get_json()
+
+        if not dados:
+
+            return jsonify({
+                "erro": "JSON inválido"
+            }), 400
+
+        email = str(
+            dados.get("email", "")
+        ).strip().lower()
+
+        senha = str(
+            dados.get("senha", "")
+        ).strip()
+
+        # =========================
+        # CAMPOS OBRIGATÓRIOS
+        # =========================
+        if not email or not senha:
+
+            return jsonify({
+                "erro": "Email e senha obrigatórios"
+            }), 400
+
+        # =========================
+        # BANCO
+        # =========================
         conn = conectar()
+
         cursor = conn.cursor()
 
         cursor.execute("""
-            SELECT * FROM users WHERE email = ?
+            SELECT *
+            FROM users
+            WHERE email = ?
+            LIMIT 1
         """, (email,))
 
         usuario = cursor.fetchone()
 
         conn.close()
 
+        # =========================
+        # USUÁRIO NÃO ENCONTRADO
+        # =========================
         if not usuario:
-            return jsonify({"erro": "Usuário não encontrado"}), 404
+
+            return jsonify({
+                "erro": "Usuário não encontrado"
+            }), 404
+
+        # =========================
+        # USUÁRIO INATIVO
+        # =========================
+        if usuario["ativo"] == 0:
+
+            return jsonify({
+                "erro": "Usuário desativado"
+            }), 403
 
         # =========================
         # PRIMEIRO ACESSO
         # =========================
         if usuario["senha"] is None:
-            return jsonify({"erro": "primeiro_acesso"}), 403
+
+            return jsonify({
+                "erro": "primeiro_acesso"
+            }), 403
 
         # =========================
-        # VALIDAR SENHA (bcrypt correto)
+        # SENHA HASH
         # =========================
         senha_db = usuario["senha"]
 
-        # converter corretamente
-        if isinstance(senha_db, memoryview):
-            senha_db = senha_db.tobytes()
+        if isinstance(senha_db, str):
+            senha_db = senha_db.encode()
 
-        elif isinstance(senha_db, str):
-            senha_db = senha_db.encode("utf-8")
-
-        if not bcrypt.checkpw(
-            senha.encode("utf-8"),
+        # =========================
+        # VALIDAR SENHA
+        # =========================
+        senha_ok = bcrypt.checkpw(
+            senha.encode(),
             senha_db
-        ):
+        )
+
+        if not senha_ok:
+
             return jsonify({
                 "erro": "Senha inválida"
             }), 401
@@ -66,31 +124,68 @@ def login():
         # =========================
         token = gerar_token(usuario)
 
+        # =========================
+        # SUCESSO
+        # =========================
         return jsonify({
+
             "token": token,
+
             "user": {
+
                 "id": usuario["id"],
+
+                "nome": usuario["nome"],
+
                 "email": usuario["email"],
+
                 "role": usuario["role"],
+
                 "tenant_id": usuario["tenant_id"]
             }
-        })
+        }), 200
 
     except Exception as e:
-        return jsonify({"erro": str(e)}), 500
+
+        print("ERRO LOGIN:", str(e))
+
+        return jsonify({
+            "erro": str(e)
+        }), 500
 
 
 # =========================
-# DEFINIR SENHA (1º ACESSO)
+# DEFINIR SENHA
 # =========================
-@auth_bp.route("/definir-senha", methods=["POST"])
+@auth_bp.route("/definir-senha", methods=["POST", "OPTIONS"])
 def definir_senha():
 
-    try:
-        dados = request.json
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
 
-        email = dados.get("email")
-        senha = dados.get("senha")
+    try:
+
+        if not request.is_json:
+
+            return jsonify({
+                "erro": "Content-Type deve ser application/json"
+            }), 400
+
+        dados = request.get_json()
+
+        email = str(
+            dados.get("email", "")
+        ).strip().lower()
+
+        senha = str(
+            dados.get("senha", "")
+        ).strip()
+
+        if not email or not senha:
+
+            return jsonify({
+                "erro": "Email e senha obrigatórios"
+            }), 400
 
         senha_hash = bcrypt.hashpw(
             senha.encode(),
@@ -98,120 +193,37 @@ def definir_senha():
         )
 
         conn = conectar()
+
         cursor = conn.cursor()
 
         cursor.execute("""
             UPDATE users
             SET senha = ?
             WHERE email = ?
-        """, (senha_hash, email))
-
-        conn.commit()
-        conn.close()
-
-        return jsonify({"ok": True})
-
-    except Exception as e:
-        return jsonify({"erro": str(e)}), 500
-    
-    # =========================
-# CRIAR ADMIN TEMPORÁRIO
-# =========================
-@auth_bp.route("/criar-admin")
-def criar_admin():
-
-    try:
-
-        conn = conectar()
-        cursor = conn.cursor()
-
-        # =========================
-        # VERIFICAR TENANT
-        # =========================
-        cursor.execute("""
-            SELECT id
-            FROM tenants
-            WHERE codigo = ?
-        """, ("empresa_teste",))
-
-        tenant = cursor.fetchone()
-
-        if tenant:
-
-            tenant_id = tenant["id"]
-
-        else:
-
-            cursor.execute("""
-                INSERT INTO tenants (
-                    nome,
-                    codigo
-                )
-                VALUES (?, ?)
-            """, (
-                "Empresa Teste",
-                "empresa_teste"
-            ))
-
-            tenant_id = cursor.lastrowid
-
-        # =========================
-        # VERIFICAR USER
-        # =========================
-        cursor.execute("""
-            SELECT id
-            FROM users
-            WHERE email = ?
-        """, ("admin@teste.com",))
-
-        usuario = cursor.fetchone()
-
-        if usuario:
-
-            return jsonify({
-                "msg": "Usuário já existe"
-            })
-
-        # =========================
-        # SENHA
-        # =========================
-        senha = "123456"
-
-        senha_hash = bcrypt.hashpw(
-            senha.encode(),
-            bcrypt.gensalt()
-        )
-
-        # =========================
-        # CRIAR ADMIN
-        # =========================
-        cursor.execute("""
-            INSERT INTO users (
-                nome,
-                email,
-                senha,
-                role,
-                tenant_id
-            )
-            VALUES (?, ?, ?, ?, ?)
         """, (
-            "Administrador",
-            "admin@teste.com",
             senha_hash,
-            "admin",
-            tenant_id
+            email
         ))
 
         conn.commit()
+
+        atualizado = cursor.rowcount
+
         conn.close()
 
+        if atualizado == 0:
+
+            return jsonify({
+                "erro": "Usuário não encontrado"
+            }), 404
+
         return jsonify({
-            "msg": "Admin criado",
-            "email": "admin@teste.com",
-            "senha": "123456"
+            "msg": "Senha definida com sucesso"
         })
 
     except Exception as e:
+
+        print("ERRO DEFINIR SENHA:", str(e))
 
         return jsonify({
             "erro": str(e)
