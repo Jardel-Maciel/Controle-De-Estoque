@@ -228,3 +228,109 @@ def definir_senha():
         return jsonify({
             "erro": str(e)
         }), 500
+        # =========================
+# CRIAR ADMIN INICIAL
+# =========================
+@auth_bp.route("/criar-admin", methods=["GET"])
+def criar_admin():
+
+    try:
+
+        conn = conectar()
+        cursor = conn.cursor()
+
+        # =========================
+        # VERIFICAR TENANT
+        # =========================
+        cursor.execute("""
+            SELECT * FROM tenants
+            WHERE codigo = ?
+        """, ("admin",))
+
+        tenant = cursor.fetchone()
+
+        # =========================
+        # CRIAR TENANT
+        # =========================
+        if not tenant:
+
+            cursor.execute("""
+                INSERT INTO tenants (
+                    nome,
+                    codigo
+                )
+                VALUES (?, ?)
+            """, (
+                "Administrador",
+                "admin"
+            ))
+
+            conn.commit()
+
+            tenant_id = cursor.lastrowid
+
+        else:
+
+            tenant_id = tenant["id"]
+
+        # =========================
+        # VERIFICAR ADMIN
+        # =========================
+        cursor.execute("""
+            SELECT * FROM users
+            WHERE email = ?
+        """, ("admin@teste.com",))
+
+        admin = cursor.fetchone()
+
+        if admin:
+
+            conn.close()
+
+            return jsonify({
+                "msg": "Usuário já existe"
+            })
+
+        # =========================
+        # SENHA HASH
+        # =========================
+        senha_hash = bcrypt.hashpw(
+            "123456".encode(),
+            bcrypt.gensalt()
+        )
+
+        # =========================
+        # CRIAR ADMIN
+        # =========================
+        cursor.execute("""
+            INSERT INTO users (
+                nome,
+                email,
+                senha,
+                role,
+                tenant_id
+            )
+            VALUES (?, ?, ?, ?, ?)
+        """, (
+            "Administrador",
+            "admin@teste.com",
+            senha_hash,
+            "admin",
+            tenant_id
+        ))
+
+        conn.commit()
+
+        conn.close()
+
+        return jsonify({
+            "msg": "Admin criado com sucesso",
+            "email": "admin@teste.com",
+            "senha": "123456"
+        })
+
+    except Exception as e:
+
+        return jsonify({
+            "erro": str(e)
+        }), 500
