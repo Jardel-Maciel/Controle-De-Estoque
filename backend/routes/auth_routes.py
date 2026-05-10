@@ -115,3 +115,66 @@ def criar_admin():
 
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
+
+
+# =========================
+# VERIFICAR EMAIL (reset)
+# =========================
+@auth_bp.route("/auth/verificar-email", methods=["POST"])
+def verificar_email():
+    try:
+        dados = request.get_json()
+        email = dados.get("email", "").strip().lower()
+
+        if not email:
+            return jsonify({"erro": "Email obrigatório"}), 400
+
+        conn = conectar()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM users WHERE email = ? AND ativo = 1", (email,))
+        user = cursor.fetchone()
+        conn.close()
+
+        if not user:
+            return jsonify({"erro": "Email não encontrado ou conta inativa"}), 404
+
+        return jsonify({"msg": "Email verificado"}), 200
+
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+
+# =========================
+# REDEFINIR SENHA (reset)
+# =========================
+@auth_bp.route("/auth/redefinir-senha", methods=["POST"])
+def redefinir_senha():
+    try:
+        dados = request.get_json()
+        email     = dados.get("email", "").strip().lower()
+        nova_senha = dados.get("nova_senha", "").strip()
+
+        if not email or not nova_senha:
+            return jsonify({"erro": "Email e nova senha obrigatórios"}), 400
+
+        if len(nova_senha) < 6:
+            return jsonify({"erro": "Senha deve ter pelo menos 6 caracteres"}), 400
+
+        conn = conectar()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM users WHERE email = ? AND ativo = 1", (email,))
+        user = cursor.fetchone()
+
+        if not user:
+            conn.close()
+            return jsonify({"erro": "Email não encontrado"}), 404
+
+        senha_hash = bcrypt.hashpw(nova_senha.encode(), bcrypt.gensalt()).decode("utf-8")
+        cursor.execute("UPDATE users SET senha = ? WHERE email = ?", (senha_hash, email))
+        conn.commit()
+        conn.close()
+
+        return jsonify({"msg": "Senha redefinida com sucesso"}), 200
+
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500

@@ -1,21 +1,414 @@
 <!doctype html>
 <html lang="pt-br">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="css/login.css" />
-    <title>Login</title>
-  </head>
-  <body>
-    <h2>Login</h2>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login — Controle de Estoque</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-    <input type="email" id="email" placeholder="Email" />
-    <input type="password" id="senha" placeholder="Senha" />
+    body {
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      background: #020617;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
 
-    <button id="btnLogin">Entrar</button>
+    /* === FUNDO ANIMADO === */
+    .bg-glow {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    }
+    .glow-1 {
+      position: absolute; width: 600px; height: 600px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(56,189,248,.12) 0%, transparent 70%);
+      top: -150px; left: -150px; animation: drift1 12s ease-in-out infinite;
+    }
+    .glow-2 {
+      position: absolute; width: 500px; height: 500px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(99,102,241,.1) 0%, transparent 70%);
+      bottom: -100px; right: -100px; animation: drift2 15s ease-in-out infinite;
+    }
+    .glow-3 {
+      position: absolute; width: 300px; height: 300px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(34,197,94,.07) 0%, transparent 70%);
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      animation: drift1 10s ease-in-out infinite reverse;
+    }
+    @keyframes drift1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(30px,20px)} }
+    @keyframes drift2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-25px,-15px)} }
 
-   
+    /* === CARD === */
+    .card {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 420px;
+      background: #0f172a;
+      border: 1px solid rgba(148,163,184,.12);
+      border-radius: 20px;
+      padding: 40px 36px;
+      box-shadow: 0 25px 60px rgba(0,0,0,.5), 0 0 0 1px rgba(56,189,248,.05);
+    }
 
-    <script src="js/login.js"></script>
-  </body>
+    /* === LOGO === */
+    .logo {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 32px;
+    }
+    .logo-icon {
+      width: 46px; height: 46px; border-radius: 12px;
+      background: linear-gradient(135deg, #38bdf8, #6366f1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+      box-shadow: 0 8px 20px rgba(56,189,248,.3);
+    }
+    .logo-text { display: flex; flex-direction: column; }
+    .logo-text strong { font-size: 1rem; font-weight: 700; color: #e2e8f0; }
+    .logo-text span { font-size: 0.72rem; color: #64748b; margin-top: 1px; }
+
+    /* === TÍTULOS === */
+    .card-title { font-size: 1.4rem; font-weight: 700; color: #e2e8f0; margin-bottom: 6px; }
+    .card-sub { font-size: 0.83rem; color: #64748b; margin-bottom: 28px; }
+
+    /* === FORM === */
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .form-group label { font-size: 0.78rem; font-weight: 600; color: #94a3b8; }
+    .input-wrap { position: relative; display: flex; align-items: center; }
+    .input-wrap input {
+      width: 100%; padding: 12px 44px 12px 14px;
+      background: #1e293b; border: 1px solid rgba(148,163,184,.15);
+      border-radius: 10px; color: #e2e8f0; font-size: 0.9rem; font-family: inherit;
+      outline: none; transition: .2s;
+    }
+    .input-wrap input:focus { border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56,189,248,.1); }
+    .input-wrap input::placeholder { color: #475569; }
+    .toggle-senha {
+      position: absolute; right: 13px; cursor: pointer;
+      color: #475569; font-size: 1rem; user-select: none;
+      transition: color .15s; background: none; border: none; padding: 0;
+    }
+    .toggle-senha:hover { color: #94a3b8; }
+
+    /* === ESQUECEU SENHA === */
+    .forgot-link {
+      display: block; text-align: right; font-size: 0.78rem;
+      color: #38bdf8; text-decoration: none; margin-top: -8px; margin-bottom: 22px;
+      transition: opacity .15s;
+    }
+    .forgot-link:hover { opacity: .75; }
+
+    /* === BOTÃO === */
+    .btn-login {
+      width: 100%; padding: 13px; border: none; border-radius: 10px;
+      background: linear-gradient(135deg, #38bdf8, #6366f1);
+      color: #fff; font-size: 0.9rem; font-weight: 700; font-family: inherit;
+      cursor: pointer; transition: .2s; letter-spacing: .02em;
+      box-shadow: 0 8px 20px rgba(56,189,248,.25);
+    }
+    .btn-login:hover { opacity: .9; transform: translateY(-1px); box-shadow: 0 12px 28px rgba(56,189,248,.35); }
+    .btn-login:active { transform: translateY(0); }
+    .btn-login:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+
+    /* === ERRO === */
+    .msg-erro {
+      display: none; margin-top: 14px; padding: 11px 14px;
+      background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.25);
+      border-radius: 8px; color: #f87171; font-size: 0.82rem; text-align: center;
+    }
+    .msg-erro.show { display: block; }
+    .msg-ok {
+      display: none; margin-top: 14px; padding: 11px 14px;
+      background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.25);
+      border-radius: 8px; color: #4ade80; font-size: 0.82rem; text-align: center;
+    }
+    .msg-ok.show { display: block; }
+
+    /* === DIVISOR === */
+    .divider { display: flex; align-items: center; gap: 12px; margin: 22px 0; }
+    .divider hr { flex: 1; border: none; border-top: 1px solid rgba(148,163,184,.1); }
+    .divider span { font-size: 0.72rem; color: #475569; }
+
+    /* === MODAL REDEFINIR === */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.7); z-index: 100;
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: #0f172a; border: 1px solid rgba(148,163,184,.15);
+      border-radius: 18px; padding: 32px; width: 100%; max-width: 380px;
+      box-shadow: 0 30px 60px rgba(0,0,0,.6);
+    }
+    .modal-box h3 { font-size: 1.1rem; font-weight: 700; color: #e2e8f0; margin-bottom: 6px; }
+    .modal-box p { font-size: 0.82rem; color: #64748b; margin-bottom: 22px; }
+    .modal-step { display: none; }
+    .modal-step.active { display: block; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+    .btn-outline {
+      flex: 1; padding: 11px; border-radius: 9px; border: 1px solid rgba(148,163,184,.2);
+      background: none; color: #94a3b8; font-size: 0.85rem; font-weight: 600;
+      cursor: pointer; font-family: inherit; transition: .15s;
+    }
+    .btn-outline:hover { border-color: #38bdf8; color: #38bdf8; }
+    .btn-confirm {
+      flex: 1; padding: 11px; border-radius: 9px; border: none;
+      background: linear-gradient(135deg, #38bdf8, #6366f1);
+      color: #fff; font-size: 0.85rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: .15s;
+    }
+    .btn-confirm:hover { opacity: .88; }
+    .modal-input {
+      width: 100%; padding: 11px 14px;
+      background: #1e293b; border: 1px solid rgba(148,163,184,.15);
+      border-radius: 9px; color: #e2e8f0; font-size: 0.875rem; font-family: inherit;
+      outline: none; transition: .2s; margin-bottom: 10px;
+    }
+    .modal-input:focus { border-color: #38bdf8; }
+    .modal-input::placeholder { color: #475569; }
+    .step-indicator {
+      display: flex; gap: 6px; margin-bottom: 20px;
+    }
+    .step-dot {
+      height: 3px; border-radius: 99px; transition: .3s;
+      flex: 1; background: rgba(148,163,184,.15);
+    }
+    .step-dot.done { background: #38bdf8; }
+
+    /* === RODAPÉ === */
+    .card-footer { margin-top: 24px; text-align: center; font-size: 0.75rem; color: #334155; }
+  </style>
+</head>
+<body>
+
+  <!-- FUNDO -->
+  <div class="bg-glow">
+    <div class="glow-1"></div>
+    <div class="glow-2"></div>
+    <div class="glow-3"></div>
+  </div>
+
+  <!-- CARD LOGIN -->
+  <div class="card">
+
+    <div class="logo">
+      <div class="logo-icon">📦</div>
+      <div class="logo-text">
+        <strong>Controle de Estoque</strong>
+        <span>Sistema de gestão</span>
+      </div>
+    </div>
+
+    <h1 class="card-title">Bem-vindo de volta</h1>
+    <p class="card-sub">Entre com suas credenciais para continuar</p>
+
+    <!-- EMAIL -->
+    <div class="form-group">
+      <label>Email</label>
+      <div class="input-wrap">
+        <input type="email" id="email" placeholder="seu@email.com" autocomplete="email" />
+      </div>
+    </div>
+
+    <!-- SENHA -->
+    <div class="form-group">
+      <label>Senha</label>
+      <div class="input-wrap">
+        <input type="password" id="senha" placeholder="••••••••" autocomplete="current-password" />
+        <button class="toggle-senha" id="toggleSenha" type="button" title="Mostrar/ocultar senha">👁</button>
+      </div>
+    </div>
+
+    <!-- ESQUECEU -->
+    <a class="forgot-link" href="#" onclick="abrirModal(); return false;">Esqueceu a senha?</a>
+
+    <!-- BOTÃO -->
+    <button class="btn-login" id="btnLogin">Entrar</button>
+
+    <!-- MENSAGENS -->
+    <div class="msg-erro" id="msgErro"></div>
+
+    <div class="card-footer">© 2026 Controle de Estoque · Todos os direitos reservados</div>
+  </div>
+
+  <!-- MODAL REDEFINIR SENHA -->
+  <div class="modal-overlay" id="modalReset">
+    <div class="modal-box">
+
+      <div class="step-indicator">
+        <div class="step-dot done" id="dot1"></div>
+        <div class="step-dot" id="dot2"></div>
+        <div class="step-dot" id="dot3"></div>
+      </div>
+
+      <!-- STEP 1 — EMAIL -->
+      <div class="modal-step active" id="step1">
+        <h3>Redefinir senha</h3>
+        <p>Informe o email da sua conta para continuar.</p>
+        <input class="modal-input" type="email" id="resetEmail" placeholder="seu@email.com" />
+        <div class="msg-erro" id="erroStep1"></div>
+        <div class="modal-actions">
+          <button class="btn-outline" onclick="fecharModal()">Cancelar</button>
+          <button class="btn-confirm" onclick="verificarEmail()">Continuar →</button>
+        </div>
+      </div>
+
+      <!-- STEP 2 — NOVA SENHA -->
+      <div class="modal-step" id="step2">
+        <h3>Nova senha</h3>
+        <p>Escolha uma senha segura para a conta.</p>
+        <div class="input-wrap" style="margin-bottom:10px">
+          <input class="modal-input" type="password" id="novaSenha" placeholder="Nova senha (mín. 6 caracteres)" style="margin:0;padding-right:44px" />
+          <button class="toggle-senha" onclick="toggleModalSenha('novaSenha', this)" type="button">👁</button>
+        </div>
+        <div class="input-wrap">
+          <input class="modal-input" type="password" id="confirmarSenha" placeholder="Confirmar nova senha" style="margin:0;padding-right:44px" />
+          <button class="toggle-senha" onclick="toggleModalSenha('confirmarSenha', this)" type="button">👁</button>
+        </div>
+        <div class="msg-erro" id="erroStep2" style="margin-top:10px"></div>
+        <div class="modal-actions">
+          <button class="btn-outline" onclick="voltarStep1()">← Voltar</button>
+          <button class="btn-confirm" onclick="redefinirSenha()">Redefinir</button>
+        </div>
+      </div>
+
+      <!-- STEP 3 — SUCESSO -->
+      <div class="modal-step" id="step3">
+        <h3 style="color:#4ade80">✅ Senha redefinida!</h3>
+        <p style="margin-bottom:0">Sua senha foi atualizada com sucesso. Você já pode fazer login com a nova senha.</p>
+        <div class="modal-actions">
+          <button class="btn-confirm" style="flex:none;width:100%" onclick="fecharModal()">Ir para o login</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="js/login.js"></script>
+  <script>
+    const API = "https://backend-estoque-fnfc.onrender.com";
+
+    // =========================
+    // VISUALIZAR SENHA LOGIN
+    // =========================
+    const senhaInput   = document.getElementById("senha");
+    const toggleBtn    = document.getElementById("toggleSenha");
+    let senhaVisivel   = false;
+
+    toggleBtn.addEventListener("click", () => {
+      senhaVisivel = !senhaVisivel;
+      senhaInput.type  = senhaVisivel ? "text" : "password";
+      toggleBtn.textContent = senhaVisivel ? "🙈" : "👁";
+    });
+
+    function toggleModalSenha(inputId, btn) {
+      const inp = document.getElementById(inputId);
+      const vis = inp.type === "password";
+      inp.type = vis ? "text" : "password";
+      btn.textContent = vis ? "🙈" : "👁";
+    }
+
+    // =========================
+    // ENTER
+    // =========================
+    document.getElementById("email").addEventListener("keypress", e => { if (e.key === "Enter") fazerLogin(); });
+    senhaInput.addEventListener("keypress", e => { if (e.key === "Enter") fazerLogin(); });
+
+    function mostrarErro(msg) {
+      const el = document.getElementById("msgErro");
+      el.textContent = msg;
+      el.classList.add("show");
+    }
+    function limparErro() {
+      document.getElementById("msgErro").classList.remove("show");
+    }
+
+    // =========================
+    // MODAL RESET
+    // =========================
+    let emailVerificado = "";
+
+    function abrirModal() {
+      document.getElementById("modalReset").classList.add("open");
+      irStep(1);
+    }
+
+    function fecharModal() {
+      document.getElementById("modalReset").classList.remove("open");
+      document.getElementById("resetEmail").value    = "";
+      document.getElementById("novaSenha").value     = "";
+      document.getElementById("confirmarSenha").value = "";
+      emailVerificado = "";
+      irStep(1);
+    }
+
+    function irStep(n) {
+      [1,2,3].forEach(i => {
+        document.getElementById(`step${i}`).classList.toggle("active", i === n);
+        document.getElementById(`dot${i}`).classList.toggle("done", i <= n);
+      });
+    }
+
+    function voltarStep1() { irStep(1); }
+
+    function erroStep(stepId, msg) {
+      const el = document.getElementById(stepId);
+      el.textContent = msg;
+      el.classList.add("show");
+      setTimeout(() => el.classList.remove("show"), 3500);
+    }
+
+    async function verificarEmail() {
+      const email = document.getElementById("resetEmail").value.trim().toLowerCase();
+      if (!email) { erroStep("erroStep1", "Informe o email."); return; }
+
+      try {
+        const res = await fetch(`${API}/auth/verificar-email`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email })
+        });
+        const dados = await res.json();
+        if (res.ok) {
+          emailVerificado = email;
+          irStep(2);
+        } else {
+          erroStep("erroStep1", dados.erro || "Email não encontrado.");
+        }
+      } catch {
+        erroStep("erroStep1", "Erro ao conectar com o servidor.");
+      }
+    }
+
+    async function redefinirSenha() {
+      const nova      = document.getElementById("novaSenha").value.trim();
+      const confirmar = document.getElementById("confirmarSenha").value.trim();
+
+      if (!nova || nova.length < 6) { erroStep("erroStep2", "Senha deve ter pelo menos 6 caracteres."); return; }
+      if (nova !== confirmar)        { erroStep("erroStep2", "As senhas não coincidem."); return; }
+
+      try {
+        const res = await fetch(`${API}/auth/redefinir-senha`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: emailVerificado, nova_senha: nova })
+        });
+        const dados = await res.json();
+        if (res.ok) { irStep(3); }
+        else { erroStep("erroStep2", dados.erro || "Erro ao redefinir senha."); }
+      } catch {
+        erroStep("erroStep2", "Erro ao conectar com o servidor.");
+      }
+    }
+
+    // Fechar modal clicando fora
+    document.getElementById("modalReset").addEventListener("click", e => {
+      if (e.target === e.currentTarget) fecharModal();
+    });
+  </script>
+</body>
 </html>

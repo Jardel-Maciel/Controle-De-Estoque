@@ -27,7 +27,7 @@ async function fazerLogin() {
     // VALIDAÇÃO
     // =========================
     if (!email || !senha) {
-      alert("Preencha email e senha");
+      mostrarErro("Preencha email e senha");
       return;
     }
 
@@ -63,7 +63,7 @@ async function fazerLogin() {
     // =========================
     if (!resposta.ok) {
 
-      alert(dados.erro || "Erro ao fazer login");
+      mostrarErro(dados.erro || "Email ou senha incorretos");
 
       btnLogin.disabled = false;
       btnLogin.textContent = "Entrar";
@@ -93,7 +93,7 @@ async function fazerLogin() {
 
     console.error("ERRO LOGIN:", erro);
 
-    alert("Erro ao conectar com servidor");
+    mostrarErro("Erro ao conectar com o servidor");
 
     btnLogin.disabled = false;
     btnLogin.textContent = "Entrar";
@@ -118,4 +118,11 @@ emailInput.addEventListener("keypress", (e) => {
   if (e.key === "Enter") {
     fazerLogin();
   }
+});
+// Limpa erro ao digitar
+document.getElementById("email")?.addEventListener("input", () => {
+  document.getElementById("msgErro")?.classList.remove("show");
+});
+document.getElementById("senha")?.addEventListener("input", () => {
+  document.getElementById("msgErro")?.classList.remove("show");
 });
