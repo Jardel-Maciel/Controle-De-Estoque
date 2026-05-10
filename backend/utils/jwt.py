@@ -1,8 +1,11 @@
 import jwt
 from datetime import datetime, timedelta
 
-SECRET_KEY = "super_secret_key_123"
+SECRET_KEY = "estoque_2026_super_seguro_v2"
 
+# =========================
+# GERAR TOKEN
+# =========================
 def gerar_token(usuario):
 
     payload = {
@@ -16,6 +19,9 @@ def gerar_token(usuario):
     return jwt.encode(payload, SECRET_KEY, algorithm="HS256")
 
 
+# =========================
+# VERIFICAR TOKEN
+# =========================
 def verificar_token(token):
 
     try:
