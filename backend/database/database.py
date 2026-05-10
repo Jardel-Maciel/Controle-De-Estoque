@@ -1,11 +1,15 @@
 import sqlite3
+import os
+
+DB_PATH = os.environ.get("DB_PATH", "banco.db")
 
 # =========================
 # CONEXÃO
 # =========================
 def conectar():
-    conn = sqlite3.connect("banco.db")
+    conn = sqlite3.connect(DB_PATH, timeout=30, check_same_thread=False)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")   # evita database is locked
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
@@ -28,9 +32,6 @@ def criar_tabelas():
     conn = conectar()
     cursor = conn.cursor()
 
-    # =========================
-    # TENANTS
-    # =========================
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS tenants (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,9 +42,6 @@ def criar_tabelas():
         )
     """)
 
-    # =========================
-    # USERS
-    # =========================
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -58,9 +56,6 @@ def criar_tabelas():
         )
     """)
 
-    # =========================
-    # PRODUTOS
-    # =========================
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS produtos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -87,9 +82,6 @@ def criar_tabelas():
         ON produtos(tenant_id)
     """)
 
-    # =========================
-    # MOVIMENTAÇÕES
-    # =========================
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS movimentacoes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -111,9 +103,6 @@ def criar_tabelas():
         ON movimentacoes(tenant_id)
     """)
 
-    # =========================
-    # NOTAS FISCAIS
-    # =========================
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS notas_fiscais (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -136,23 +125,14 @@ def criar_tabelas():
         CREATE INDEX IF NOT EXISTS idx_nf_tenant
         ON notas_fiscais(tenant_id)
     """)
-    # =========================
-    # MIGRAÇÕES
-    # =========================
 
     try:
-        cursor.execute("""
-            ALTER TABLE users
-            ADD COLUMN ativo INTEGER DEFAULT 1
-        """)
+        cursor.execute("ALTER TABLE users ADD COLUMN ativo INTEGER DEFAULT 1")
     except:
         pass
 
     try:
-        cursor.execute("""
-            ALTER TABLE users
-            ADD COLUMN criado_em DATETIME
-        """)
+        cursor.execute("ALTER TABLE users ADD COLUMN criado_em DATETIME")
     except:
         pass
 
