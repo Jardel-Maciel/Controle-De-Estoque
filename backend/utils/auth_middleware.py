@@ -9,23 +9,18 @@ def auth_required(f):
 
         auth_header = request.headers.get("Authorization")
 
+        print("AUTH HEADER:", auth_header)  # DEBUG
+
         if not auth_header:
             return jsonify({"erro": "Token não enviado"}), 401
 
-        # =========================
-        # EXTRAÇÃO SEGURA DO TOKEN
-        # =========================
-        parts = auth_header.split()
+        token = auth_header.replace("Bearer", "").strip()
 
-        if len(parts) != 2:
-            return jsonify({"erro": "Token inválido"}), 401
-
-        prefix, token = parts
-
-        if prefix.lower() != "bearer":
-            return jsonify({"erro": "Token inválido"}), 401
+        print("TOKEN LIMPO:", token)  # DEBUG
 
         usuario = verificar_token(token)
+
+        print("USUARIO DECODADO:", usuario)  # DEBUG
 
         if not usuario:
             return jsonify({"erro": "Sessão expirada"}), 401
