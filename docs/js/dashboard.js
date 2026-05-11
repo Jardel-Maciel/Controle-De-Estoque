@@ -1,7 +1,7 @@
 const API = "https://backend-estoque-fnfc.onrender.com";
 const token = localStorage.getItem("token");
 
-if (!token) window.location.href = "login.html";
+if (!token) window.location.href = "index.html";
 
 let graficoQtd   = null;
 let graficoValor = null;
@@ -41,7 +41,7 @@ async function carregarDashboard() {
 
     if (res.status === 401) {
       localStorage.removeItem("token");
-      window.location.href = "login.html";
+      window.location.href = "index.html";
       return;
     }
 

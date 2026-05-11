@@ -166,7 +166,7 @@
   </button>
 
   <div class="nav-label">Sistema</div>
-  <a class="nav-item" href="index.html">
+  <a class="nav-item" href="produtos.html">
     <span class="icon">📦</span><span>Ir ao Estoque</span>
   </a>
   <a class="nav-item" href="dashboard.html">
@@ -375,7 +375,7 @@ const user  = JSON.parse(localStorage.getItem("user") || "{}");
 // =========================
 if (!token || user.superadmin !== true) {
   alert("Acesso restrito a administradores.");
-  window.location.href = "login.html";
+  window.location.href = "index.html";
 }
 
 document.getElementById("adminName").textContent = user.nome || "Admin";
@@ -412,7 +412,7 @@ function navegarPara(secao, btn) {
 function logout() {
   localStorage.removeItem("token");
   localStorage.removeItem("user");
-  window.location.href = "login.html";
+  window.location.href = "index.html";
 }
 
 // =========================

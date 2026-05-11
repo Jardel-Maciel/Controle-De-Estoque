@@ -3,7 +3,7 @@ const API = "https://backend-estoque-fnfc.onrender.com";
 const token = localStorage.getItem("token");
 
 if (!token) {
-  window.location.href = "login.html";
+  window.location.href = "index.html";
 }
 
 let tipoMovimentacao = null;
@@ -565,7 +565,7 @@ document
     localStorage.removeItem("token");
 
     window.location.href =
-      "login.html";
+      "index.html";
   };
 
 // =========================
