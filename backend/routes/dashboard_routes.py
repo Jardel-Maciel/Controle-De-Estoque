@@ -15,17 +15,17 @@ def dashboard():
         conn = conectar()
         cursor = conn.cursor()
 
-        cursor.execute("SELECT COUNT(*) as total FROM produtos WHERE tenant_id = %s", (tenant_id,))
-        total_produtos = cursor.fetchone()["count"]
+        cursor.execute("SELECT COUNT(*) AS total FROM produtos WHERE tenant_id = %s", (tenant_id,))
+        total_produtos = cursor.fetchone()["total"]
 
-        cursor.execute("SELECT COALESCE(SUM(quantidade), 0) as total FROM produtos WHERE tenant_id = %s", (tenant_id,))
-        total_itens = cursor.fetchone()["coalesce"]
+        cursor.execute("SELECT COALESCE(SUM(quantidade), 0) AS total FROM produtos WHERE tenant_id = %s", (tenant_id,))
+        total_itens = cursor.fetchone()["total"]
 
-        cursor.execute("SELECT COUNT(*) as total FROM produtos WHERE tenant_id = %s AND quantidade <= 5", (tenant_id,))
-        baixo_estoque = cursor.fetchone()["count"]
+        cursor.execute("SELECT COUNT(*) AS total FROM produtos WHERE tenant_id = %s AND quantidade <= 5", (tenant_id,))
+        baixo_estoque = cursor.fetchone()["total"]
 
-        cursor.execute("SELECT COALESCE(SUM(valor * quantidade), 0) as total FROM produtos WHERE tenant_id = %s", (tenant_id,))
-        valor_total = cursor.fetchone()["coalesce"]
+        cursor.execute("SELECT COALESCE(SUM(valor * quantidade), 0) AS total FROM produtos WHERE tenant_id = %s", (tenant_id,))
+        valor_total = cursor.fetchone()["total"]
 
         cursor.execute("SELECT produto, quantidade, valor FROM produtos WHERE tenant_id = %s", (tenant_id,))
         produtos = cursor.fetchall()
