@@ -5,15 +5,14 @@ from utils.jwt import gerar_token
 
 auth_bp = Blueprint("auth", __name__)
 
-# =========================
-# EMAIL DO DONO DO SISTEMA
-# =========================
 SUPERADMIN_EMAIL = "jardel.maciel22@gmail.com"
 
 
+# =========================
+# LOGIN
+# =========================
 @auth_bp.route("/login", methods=["POST"])
 def login():
-
     try:
         if not request.is_json:
             return jsonify({"erro": "Content-Type deve ser application/json"}), 400
@@ -27,17 +26,18 @@ def login():
 
         conn = conectar()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
-        row = cursor.fetchone()
+        cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+        usuario = cursor.fetchone()
         conn.close()
 
-        if not row:
+        if not usuario:
             return jsonify({"erro": "Usuário não encontrado"}), 404
-
-        usuario = dict(row)
 
         if not usuario.get("senha"):
             return jsonify({"erro": "primeiro_acesso"}), 403
+
+        if not usuario.get("ativo", 1):
+            return jsonify({"erro": "Usuário inativo"}), 403
 
         senha_db = usuario["senha"]
         if isinstance(senha_db, str):
@@ -46,10 +46,7 @@ def login():
         if not bcrypt.checkpw(senha.encode(), senha_db):
             return jsonify({"erro": "Senha inválida"}), 401
 
-        if not usuario.get("ativo", 1):
-            return jsonify({"erro": "Usuário inativo"}), 403
-
-        token = gerar_token(usuario)
+        token = gerar_token(dict(usuario))
 
         return jsonify({
             "token": token,
@@ -59,66 +56,18 @@ def login():
                 "email":     usuario["email"],
                 "role":      usuario.get("role", "admin"),
                 "tenant_id": usuario.get("tenant_id", 1),
-                # superadmin só se for o dono
                 "superadmin": email == SUPERADMIN_EMAIL
             }
         }), 200
 
     except Exception as e:
-        return jsonify({"erro": str(e)}), 500
-
-
-@auth_bp.route("/criar-admin", methods=["GET"])
-def criar_admin():
-
-    try:
-        conn = conectar()
-        cursor = conn.cursor()
-
-        # =========================
-        # VERIFICA SE JÁ EXISTE
-        # =========================
-        cursor.execute("SELECT id FROM users WHERE email = ?", (SUPERADMIN_EMAIL,))
-        if cursor.fetchone():
-            conn.close()
-            return jsonify({"msg": "Superadmin já existe"}), 200
-
-        # =========================
-        # GARANTE TENANT
-        # =========================
-        cursor.execute("SELECT id FROM tenants WHERE codigo = ?", ("superadmin",))
-        tenant = cursor.fetchone()
-
-        if tenant:
-            tenant_id = tenant["id"]
-        else:
-            cursor.execute("""
-                INSERT INTO tenants (nome, codigo, ativo)
-                VALUES (?, ?, 1)
-            """, ("Sistema", "superadmin"))
-            tenant_id = cursor.lastrowid
-
-        # =========================
-        # CRIA SUPERADMIN
-        # =========================
-        senha_hash = "$2b$12$uWS8Po4Z1NtuixpYTsl5P.2C9cdk2nAKBjprEHG0KF.mpbPJv1TcW"
-
-        cursor.execute("""
-            INSERT INTO users (nome, email, senha, role, tenant_id, ativo)
-            VALUES (?, ?, ?, ?, ?, 1)
-        """, ("Jardel", SUPERADMIN_EMAIL, senha_hash, "admin", tenant_id))
-
-        conn.commit()
-        conn.close()
-
-        return jsonify({"msg": "Superadmin criado com sucesso"}), 201
-
-    except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({"erro": str(e)}), 500
 
 
 # =========================
-# VERIFICAR EMAIL (reset)
+# VERIFICAR EMAIL (reset senha)
 # =========================
 @auth_bp.route("/auth/verificar-email", methods=["POST"])
 def verificar_email():
@@ -131,7 +80,7 @@ def verificar_email():
 
         conn = conectar()
         cursor = conn.cursor()
-        cursor.execute("SELECT id FROM users WHERE email = ? AND ativo = 1", (email,))
+        cursor.execute("SELECT id FROM users WHERE email = %s AND ativo = 1", (email,))
         user = cursor.fetchone()
         conn.close()
 
@@ -145,13 +94,13 @@ def verificar_email():
 
 
 # =========================
-# REDEFINIR SENHA (reset)
+# REDEFINIR SENHA
 # =========================
 @auth_bp.route("/auth/redefinir-senha", methods=["POST"])
 def redefinir_senha():
     try:
         dados = request.get_json()
-        email     = dados.get("email", "").strip().lower()
+        email      = dados.get("email", "").strip().lower()
         nova_senha = dados.get("nova_senha", "").strip()
 
         if not email or not nova_senha:
@@ -162,7 +111,7 @@ def redefinir_senha():
 
         conn = conectar()
         cursor = conn.cursor()
-        cursor.execute("SELECT id FROM users WHERE email = ? AND ativo = 1", (email,))
+        cursor.execute("SELECT id FROM users WHERE email = %s AND ativo = 1", (email,))
         user = cursor.fetchone()
 
         if not user:
@@ -170,11 +119,51 @@ def redefinir_senha():
             return jsonify({"erro": "Email não encontrado"}), 404
 
         senha_hash = bcrypt.hashpw(nova_senha.encode(), bcrypt.gensalt()).decode("utf-8")
-        cursor.execute("UPDATE users SET senha = ? WHERE email = ?", (senha_hash, email))
+        cursor.execute("UPDATE users SET senha = %s WHERE email = %s", (senha_hash, email))
         conn.commit()
         conn.close()
 
         return jsonify({"msg": "Senha redefinida com sucesso"}), 200
+
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+
+# =========================
+# CRIAR ADMIN (legado — mantido por segurança)
+# =========================
+@auth_bp.route("/criar-admin", methods=["GET"])
+def criar_admin():
+    try:
+        conn = conectar()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT id FROM users WHERE email = %s", (SUPERADMIN_EMAIL,))
+        if cursor.fetchone():
+            conn.close()
+            return jsonify({"msg": "Superadmin já existe"}), 200
+
+        cursor.execute("SELECT id FROM tenants WHERE codigo = %s", ("superadmin",))
+        tenant = cursor.fetchone()
+
+        if tenant:
+            tenant_id = tenant["id"]
+        else:
+            cursor.execute("""
+                INSERT INTO tenants (nome, codigo, ativo)
+                VALUES (%s, %s, 1) RETURNING id
+            """, ("Sistema", "superadmin"))
+            tenant_id = cursor.fetchone()["id"]
+
+        senha_hash = "$2b$12$uWS8Po4Z1NtuixpYTsl5P.2C9cdk2nAKBjprEHG0KF.mpbPJv1TcW"
+        cursor.execute("""
+            INSERT INTO users (nome, email, senha, role, tenant_id, ativo)
+            VALUES (%s, %s, %s, %s, %s, 1)
+        """, ("Jardel", SUPERADMIN_EMAIL, senha_hash, "admin", tenant_id))
+
+        conn.commit()
+        conn.close()
+        return jsonify({"msg": "Superadmin criado"}), 201
 
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
