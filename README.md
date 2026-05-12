@@ -1,125 +1,322 @@
-# 🚀 Controle de Estoque SaaS
+# 📦 Controle de Estoque SaaS
 
-Sistema web completo de controle de estoque com autenticação, API REST e edição inline estilo Excel.
+Sistema web completo para gerenciamento de estoque, produtos, movimentações e relatórios empresariais.
 
----
-
-## 📸 Preview
-> ![preview](gifControle.gif)
+Desenvolvido com arquitetura SaaS utilizando Flask no backend e JavaScript no frontend.
 
 ---
 
-## 🔥 Destaques
+# 🚀 Demonstração
 
-* 🔐 Autenticação com token (login real)
-* 📦 CRUD completo com persistência no backend
-* ✏️ Edição inline da quantidade (estilo Excel)
-* 🌙 Dark Mode
-* ⚡ Integração frontend + backend
-* ☁️ Deploy em produção (Render)
+## Funcionalidades principais
 
----
-
-## 🧠 Sobre o projeto
-
-Este projeto começou como um CRUD simples com LocalStorage e evoluiu para uma aplicação fullstack completa, simulando um sistema SaaS real.
-
-Foco em:
-
-* Arquitetura cliente-servidor
-* Boas práticas de desenvolvimento
-* Experiência do usuário (UX)
-* Integração com API REST
+✅ Login com JWT
+✅ Dashboard administrativo
+✅ Cadastro de produtos
+✅ Controle de estoque
+✅ Entrada e saída de produtos
+✅ Histórico de movimentações
+✅ Importação XML de NF-e
+✅ Relatórios PDF
+✅ Painel Admin SaaS
+✅ Dashboard com gráficos
+✅ Sistema online
 
 ---
 
-## 🛠️ Tecnologias
+# 🖥️ Tecnologias Utilizadas
 
-### Frontend
-
-* HTML5
-* CSS3
-* JavaScript (Vanilla)
-
-### Backend
+## Backend
 
 * Python
 * Flask
 * Flask-CORS
-* Gunicorn
+* JWT Authentication
+* SQLAlchemy
+* PostgreSQL
+
+## Frontend
+
+* HTML5
+* CSS3
+* JavaScript
+* Chart.js
+* jsPDF
+
+## Deploy
+
+* Render
+* GitHub Pages
 
 ---
 
-## 🔗 API
+# 📁 Estrutura do Projeto
 
-### 🔐 Login
+```text
+Controle-De-Estoque/
+│
+├── backend/
+│   ├── app.py
+│   ├── routes/
+│   ├── database/
+│   ├── utils/
+│   └── requirements.txt
+│
+├── docs/
+│   ├── index.html
+│   ├── dashboard.html
+│   ├── css/
+│   ├── js/
+│   └── assets/
+│
+└── README.md
+```
 
+---
+
+# 🔐 Autenticação
+
+O sistema utiliza autenticação JWT para proteção das rotas.
+
+## Recursos
+
+* Login seguro
+* Controle de sessão
+* Proteção de rotas
+* Controle administrativo
+
+---
+
+# 📊 Dashboard
+
+O dashboard apresenta:
+
+* Quantidade total de produtos
+* Valor total do estoque
+* Produtos com baixo estoque
+* Gráficos estatísticos
+* Histórico de movimentações
+
+---
+
+# 📦 Gestão de Produtos
+
+## Funcionalidades
+
+* Cadastro de produtos
+* Edição
+* Exclusão
+* Pesquisa
+* Controle de quantidade
+* Controle de preço
+
+---
+
+# 🔄 Movimentações
+
+Controle completo de entradas e saídas.
+
+## Recursos
+
+* Entrada de produtos
+* Saída de produtos
+* Histórico detalhado
+* Registro automático
+
+---
+
+# 📄 Importação XML
+
+Importação automática de notas fiscais XML.
+
+## Recursos
+
+* Leitura de XML NF-e
+* Cadastro automático de produtos
+* Atualização de estoque
+* Extração automática de dados
+
+---
+
+# 🧾 Relatórios PDF
+
+Geração de relatórios profissionais.
+
+## Recursos
+
+* Relatório de estoque
+* Histórico de movimentações
+* Gráficos no PDF
+* Logo personalizada
+* Layout Premium SaaS
+
+---
+
+# 🌐 API REST
+
+## Principais rotas
+
+### Autenticação
+
+```http
 POST /login
+POST /register
+```
 
-### 📦 Produtos
+### Produtos
 
+```http
 GET /produtos
 POST /produtos
 PUT /produtos/:id
 DELETE /produtos/:id
+```
+
+### Movimentações
+
+```http
+GET /movimentacoes
+POST /movimentacoes
+```
+
+### Dashboard
+
+```http
+GET /dashboard
+```
+
+### XML
+
+```http
+POST /importar-xml
+```
 
 ---
 
-## 🔐 Autenticação
+# ⚙️ Instalação
 
-O sistema utiliza token armazenado no navegador e enviado no header:
-
-Authorization: TOKEN
-
----
-
-## 🚀 Como executar
-
-### Backend
+## 1. Clonar repositório
 
 ```bash
+git clone https://github.com/seuusuario/controle-de-estoque.git
+```
+
+---
+
+## 2. Backend
+
+```bash
+cd backend
 pip install -r requirements.txt
 python app.py
 ```
 
-### Frontend
+---
 
-Abra o arquivo:
+## 3. Frontend
 
-```bash
-index.html
+Abrir:
+
+```text
+/docs/index.html
 ```
 
 ---
 
-## 💡 Diferenciais do projeto
+# 🔧 Variáveis de Ambiente
 
-* Interface com comportamento de aplicação real (SaaS)
-* Edição inline sem uso de prompts
-* Comunicação com backend em produção
-* Estrutura organizada e escalável
-
----
-
-## 📈 Próximas melhorias
-
-* 👥 Sistema multiusuário
-* 🗄️ Banco de dados (SQLite ou PostgreSQL)
-* 📊 Dashboard com métricas
-* 🔒 Autenticação mais robusta (JWT)
+```env
+DATABASE_URL=
+JWT_SECRET_KEY=
+PORT=
+```
 
 ---
 
-## ⚠️ Licença
+# ☁️ Deploy
 
-Este projeto é destinado apenas para fins educacionais e de portfólio.
+## Backend
 
-🚫 Uso comercial, redistribuição ou cópia não são permitidos sem autorização do autor.
+Pode ser hospedado em:
+
+* Render
+* Railway
+* VPS
+* Heroku
+
+## Frontend
+
+Pode ser hospedado em:
+
+* GitHub Pages
+* Netlify
+* Vercel
 
 ---
 
-## 💼 Contato
+# 🔒 Segurança
 
-Interessado em utilizar este sistema ou contratar uma versão personalizada?
+## Implementado
 
-📩 [SEU EMAIL AQUI]
+* JWT Authentication
+* Proteção de rotas
+* Middleware de autenticação
+* Controle de acesso
+
+## Melhorias futuras
+
+* Rate limiting
+* Refresh token
+* Auditoria
+* Logs avançados
+* Controle multiempresa
+
+---
+
+# 📈 Futuras Melhorias
+
+* Multiempresa
+* Multiusuário
+* Controle financeiro
+* App mobile
+* API pública
+* Emissão fiscal
+* Backup automático
+* Notificações
+
+---
+
+# 💼 Projeto para Portfólio
+
+Este projeto demonstra conhecimentos em:
+
+* Desenvolvimento Full Stack
+* Backend com Flask
+* Frontend JavaScript
+* API REST
+* Banco de dados
+* JWT Authentication
+* Arquitetura SaaS
+* Relatórios PDF
+* Importação XML
+* Deploy Cloud
+
+---
+
+# 📌 Status do Projeto
+
+✅ Em desenvolvimento ativo
+✅ Estrutura SaaS funcional
+✅ Projeto pronto para expansão
+
+---
+
+# 👨‍💻 Autor
+
+Desenvolvido por Jardel Maciel.
+
+---
+
+# ⭐ Objetivo
+
+Criar um sistema profissional de gestão de estoque moderno, escalável e preparado para uso comercial.
