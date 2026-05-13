@@ -65,6 +65,10 @@ async function carregarDashboard() {
     document.getElementById("totalEstoque").textContent =
       `R$ ${valorTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
 
+    const valorMedio = parseFloat(data.valor_medio_geral || 0);
+    document.getElementById("valorMedioGeral").textContent =
+      `R$ ${valorMedio.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+
     // =========================
     // GRÁFICOS
     // =========================
@@ -280,9 +284,12 @@ document.getElementById("btnDownloadPDF")?.addEventListener("click", () => {
         y = 20;
       }
 
-      // zebra — linhas pares usam #1e293b, ímpares ficam transparentes
+      // zebra — linhas pares: fundo escuro + texto claro | ímpares: fundo branco + texto escuro
       if (idx % 2 === 0) {
-        doc.setFillColor(...COR.card);
+        doc.setFillColor(...COR.card);          // #1e293b escuro
+        doc.rect(14, y - 5, colW, 9, "F");
+      } else {
+        doc.setFillColor(245, 247, 250);        // cinza claro quase branco
         doc.rect(14, y - 5, colW, 9, "F");
       }
 
@@ -290,9 +297,12 @@ document.getElementById("btnDownloadPDF")?.addEventListener("click", () => {
       const valor = parseFloat(p.valor || 0);
       const total = qtd * valor;
 
+      // texto escuro nas linhas claras, claro nas linhas escuras
+      const corTexto = idx % 2 === 0 ? COR.textWhite : [15, 23, 42];
+
       doc.setFontSize(8);
       doc.setFont("helvetica", "normal");
-      doc.setTextColor(...COR.textWhite);
+      doc.setTextColor(...corTexto);
 
       doc.text(String(idx + 1), colX[0], y);
       doc.text(String(p.produto || "-").substring(0, 38), colX[1], y);
@@ -314,7 +324,7 @@ document.getElementById("btnDownloadPDF")?.addEventListener("click", () => {
         doc.setTextColor(...COR.surface);
         doc.text("⚠ baixo", colX[2] + 7.5, y - 0.5);
         doc.setFontSize(8);
-        doc.setTextColor(...COR.textWhite);
+        doc.setTextColor(...corTexto);
       }
 
       y += 9;
