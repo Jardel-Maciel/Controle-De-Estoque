@@ -81,7 +81,7 @@ document
 
     if (!quantidade || quantidade <= 0) {
 
-      alert("Quantidade inválida");
+      showToast("Quantidade inválida", "warning");
 
       return;
     }
@@ -112,7 +112,7 @@ document
 
       if (!res.ok) {
 
-        alert(data.erro);
+        showToast(data.erro || "Erro inesperado", "error");
 
         return;
       }
@@ -125,7 +125,7 @@ document
 
       console.error(err);
 
-      alert("Erro na movimentação");
+      showToast("Erro na movimentação", "error");
     }
   };
 
@@ -162,7 +162,7 @@ async function carregar() {
 
     console.error(err);
 
-    alert("Erro ao carregar produtos");
+    showToast("Erro ao carregar produtos", "error");
   }
 }
 
@@ -278,7 +278,7 @@ document
 
     if (!produto || !quantidade) {
 
-      alert("Preencha produto e quantidade");
+      showToast("Preencha produto e quantidade", "warning");
 
       return;
     }
@@ -309,7 +309,7 @@ document
 
       if (!res.ok) {
 
-        alert(data.erro);
+        showToast(data.erro || "Erro inesperado", "error");
 
         return;
       }
@@ -328,7 +328,7 @@ document
 
       console.error(err);
 
-      alert("Erro ao cadastrar");
+      showToast("Erro ao cadastrar", "error");
     }
   };
 
@@ -370,7 +370,7 @@ window.remover = async (id) => {
 
     console.error(err);
 
-    alert("Erro ao remover produto");
+    showToast("Erro ao remover produto", "error");
   }
 };
 
@@ -436,7 +436,7 @@ async function carregarHistorico() {
 
     console.error(err);
 
-    alert("Erro ao carregar histórico");
+    showToast("Erro ao carregar histórico", "error");
   }
 }
 
@@ -612,12 +612,12 @@ inputXML.addEventListener("change", async (e) => {
 
     if (!resposta.ok) {
 
-      alert(dados.erro || "Erro ao importar XML");
+      showToast(dados.erro || "Erro ao importar XML", "error");
 
       return;
     }
 
-    alert("XML importado com sucesso!");
+    showToast("XML importado com sucesso!", "success");
 
     carregar();
 
@@ -625,7 +625,7 @@ inputXML.addEventListener("change", async (e) => {
 
     console.error(erro);
 
-    alert("Erro ao importar XML");
+    showToast("Erro ao importar XML", "error");
   }
 
 });

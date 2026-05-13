@@ -1,0 +1,317 @@
+/* =========================
+   TOAST — Notificações flutuantes
+========================= */
+
+#toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: all;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px 14px 14px;
+  border-radius: 14px;
+  min-width: 280px;
+  max-width: 380px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  backdrop-filter: blur(12px);
+  position: relative;
+  overflow: hidden;
+  transform: translateX(120%);
+  opacity: 0;
+  transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease;
+}
+
+.toast-show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.toast-hide {
+  transform: translateX(120%);
+  opacity: 0;
+}
+
+/* Tipos */
+.toast-success {
+  background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
+  border: 1px solid rgba(16,185,129,0.35);
+  color: #d1fae5;
+}
+
+.toast-error {
+  background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%);
+  border: 1px solid rgba(239,68,68,0.35);
+  color: #fee2e2;
+}
+
+.toast-warning {
+  background: linear-gradient(135deg, #451a03 0%, #78350f 100%);
+  border: 1px solid rgba(245,158,11,0.35);
+  color: #fef3c7;
+}
+
+.toast-info {
+  background: linear-gradient(135deg, #0c1a3a 0%, #1e3a5f 100%);
+  border: 1px solid rgba(37,99,235,0.35);
+  color: #dbeafe;
+}
+
+/* Ícone */
+.toast-icon {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+}
+
+.toast-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.toast-success .toast-icon { color: #34d399; }
+.toast-error   .toast-icon { color: #f87171; }
+.toast-warning .toast-icon { color: #fbbf24; }
+.toast-info    .toast-icon { color: #60a5fa; }
+
+/* Mensagem */
+.toast-msg {
+  flex: 1;
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* Botão fechar */
+.toast-close {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  opacity: 0.5;
+  padding: 2px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  transition: opacity 0.15s;
+  color: inherit;
+}
+
+.toast-close:hover { opacity: 1; }
+
+.toast-close svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Barra de progresso */
+.toast-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  border-radius: 0 0 14px 14px;
+  transform-origin: left;
+}
+
+.toast-success .toast-progress { background: #34d399; }
+.toast-error   .toast-progress { background: #f87171; }
+.toast-warning .toast-progress { background: #fbbf24; }
+.toast-info    .toast-progress { background: #60a5fa; }
+
+.toast-progress-run {
+  animation: toastBar linear forwards;
+}
+
+@keyframes toastBar {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+
+/* Dark mode ajuste */
+body.dark .toast {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+
+
+/* =========================
+   CONFIRM — Modal de confirmação
+========================= */
+
+#confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 99998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+#confirm-overlay.confirm-show {
+  opacity: 1;
+}
+
+#confirm-overlay.confirm-show .confirm-box {
+  transform: scale(1) translateY(0);
+}
+
+.confirm-box {
+  background: var(--card, #fff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 20px;
+  padding: 36px 32px 28px;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.22);
+  text-align: center;
+  transform: scale(0.92) translateY(16px);
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+/* Ícone central */
+.confirm-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.confirm-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.confirm-icon-danger {
+  background: rgba(239,68,68,0.12);
+  color: #ef4444;
+  border: 2px solid rgba(239,68,68,0.25);
+}
+
+.confirm-icon-warning {
+  background: rgba(245,158,11,0.12);
+  color: #f59e0b;
+  border: 2px solid rgba(245,158,11,0.25);
+}
+
+.confirm-icon-primary {
+  background: rgba(37,99,235,0.1);
+  color: #2563eb;
+  border: 2px solid rgba(37,99,235,0.2);
+}
+
+/* Textos */
+.confirm-titulo {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text, #0f172a);
+  margin-bottom: 10px;
+}
+
+.confirm-msg {
+  font-size: 0.9rem;
+  color: var(--muted, #64748b);
+  line-height: 1.55;
+  margin-bottom: 28px;
+}
+
+/* Botões */
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.confirm-btn-cancel,
+.confirm-btn-ok {
+  flex: 1;
+  padding: 11px 20px;
+  border-radius: 11px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.15s, opacity 0.15s, box-shadow 0.15s;
+}
+
+.confirm-btn-cancel:hover,
+.confirm-btn-ok:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.confirm-btn-cancel:active,
+.confirm-btn-ok:active {
+  transform: translateY(0);
+}
+
+.confirm-btn-cancel {
+  background: var(--border, #e2e8f0);
+  color: var(--text, #0f172a);
+}
+
+body.dark .confirm-btn-cancel {
+  background: #1e293b;
+  color: #f1f5f9;
+}
+
+.confirm-btn-danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(239,68,68,0.35);
+}
+
+.confirm-btn-warning {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(245,158,11,0.35);
+}
+
+.confirm-btn-primary {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(37,99,235,0.35);
+}
+
+.confirm-btn-ok:focus {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* Responsivo */
+@media (max-width: 480px) {
+  .confirm-actions {
+    flex-direction: column-reverse;
+  }
+
+  .toast {
+    min-width: 0;
+    max-width: calc(100vw - 32px);
+  }
+
+  #toast-container {
+    right: 16px;
+    left: 16px;
+    top: 16px;
+  }
+}

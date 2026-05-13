@@ -29,7 +29,7 @@ async function carregarHistorico() {
     const dados = await res.json();
 
     if (!res.ok) {
-      alert(dados.erro || "Erro");
+      showToast(dados.erro || "Erro ao carregar histórico", "error");
       return;
     }
 
@@ -43,7 +43,7 @@ async function carregarHistorico() {
 
     console.error(err);
 
-    alert("Erro ao carregar histórico");
+    showToast("Erro ao carregar histórico", "error");
   }
 }
 
