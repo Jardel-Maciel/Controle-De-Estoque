@@ -153,9 +153,6 @@ def excluir_usuario(user_id):
             conn.close()
             return jsonify({"erro": "Não é possível excluir o superadmin"}), 403
 
-        # Exclui movimentações do usuário
-        cursor.execute("DELETE FROM movimentacoes WHERE user_id = %s", (user_id,))
-
         # Exclui o usuário
         cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
 
