@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin — Controle de Estoque</title>
-  <link rel="stylesheet" href="css/toast.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -140,6 +139,7 @@
       .charts-row.three { grid-template-columns: 1fr; }
     }
   </style>
+  <link rel="stylesheet" href="css/toast.css">
 </head>
 <body>
 
@@ -366,6 +366,7 @@
   </div>
 </div>
 
+<script src="js/toast.js"></script>
 <script>
 const API   = "https://backend-estoque-fnfc.onrender.com";
 const token = localStorage.getItem("token");
@@ -375,7 +376,6 @@ const user  = JSON.parse(localStorage.getItem("user") || "{}");
 // PROTEÇÃO
 // =========================
 if (!token || user.superadmin !== true) {
-  alert("Acesso restrito a administradores.");
   window.location.href = "index.html";
 }
 
@@ -636,7 +636,7 @@ function filtrarEmpresas() {
 // =========================
 async function toggleUser(id) {
   const dados = await apiPatch(`/admin/usuarios/${id}/toggle`, {});
-  if (dados.msg) { await init(); } else { alert(dados.erro || "Erro"); }
+  if (dados.msg) { showToast("Status atualizado!", "success"); await init(); } else { showToast(dados.erro || "Erro", "error"); }
 }
 
 // =========================
@@ -655,10 +655,10 @@ function fecharModal() {
 
 async function confirmarSenha() {
   const senha = document.getElementById("novaSenha").value.trim();
-  if (!senha || senha.length < 4) { alert("Senha deve ter ao menos 4 caracteres."); return; }
+  if (!senha || senha.length < 4) { showToast("Senha deve ter ao menos 4 caracteres.", "warning"); return; }
   const dados = await apiPatch(`/admin/usuarios/${userIdSenha}/senha`, { senha });
-  if (dados.msg) { alert("Senha redefinida!"); fecharModal(); }
-  else alert(dados.erro || "Erro");
+  if (dados.msg) { showToast("Senha redefinida!", "success"); fecharModal(); }
+  else { showToast(dados.erro || "Erro", "error"); }
 }
 
 // =========================
@@ -672,7 +672,7 @@ async function criarUsuario() {
   const codigo  = document.getElementById("fCodigo").value.trim();
   const role    = document.getElementById("fRole").value;
 
-  if (!nome || !email || !senha) { alert("Preencha nome, email e senha."); return; }
+  if (!nome || !email || !senha) { showToast("Preencha nome, email e senha.", "warning"); return; }
 
   const res = await fetch(`${API}/admin/usuarios`, {
     method: "POST",
@@ -682,11 +682,11 @@ async function criarUsuario() {
 
   const dados = await res.json();
   if (res.ok) {
-    alert("Usuário criado com sucesso!");
+    showToast("Usuário criado com sucesso!", "success");
     limparForm();
     await init();
   } else {
-    alert(dados.erro || "Erro ao criar usuário");
+    showToast(dados.erro || "Erro ao criar usuário", "error");
   }
 }
 
@@ -704,6 +704,5 @@ document.getElementById("modalSenha").addEventListener("click", e => {
 // =========================
 init();
 </script>
-<script src="js/toast.js"></script>
 </body>
 </html>
