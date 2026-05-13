@@ -343,35 +343,55 @@ window.saida = (id) => {
   abrirModal("saida", id);
 };
 
-window.remover = async (id) => {
+// =========================
+// MODAL CONFIRMAÇÃO EXCLUSÃO
+// =========================
+let _idParaExcluir = null;
 
-  const confirmar = confirm(
-    "Deseja realmente excluir este produto?"
-  );
+const modalExclusao      = document.getElementById("modalConfirmacaoExclusao");
+const btnConfirmarExcluir = document.getElementById("confirmarExclusao");
+const btnCancelarExcluir  = document.getElementById("cancelarExclusao");
 
-  if (!confirmar) return;
+btnCancelarExcluir.addEventListener("click", () => {
+  _idParaExcluir = null;
+  modalExclusao.classList.add("hidden");
+});
+
+modalExclusao.addEventListener("click", (e) => {
+  if (e.target === modalExclusao) {
+    _idParaExcluir = null;
+    modalExclusao.classList.add("hidden");
+  }
+});
+
+btnConfirmarExcluir.addEventListener("click", async () => {
+  if (!_idParaExcluir) return;
+
+  modalExclusao.classList.add("hidden");
 
   try {
-
     await fetch(
-      `${API}/produtos/${id}`,
+      `${API}/produtos/${_idParaExcluir}`,
       {
         method: "DELETE",
-
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        headers: { Authorization: `Bearer ${token}` }
       }
     );
 
     carregar();
+    showToast("Produto excluído com sucesso", "success");
 
   } catch (err) {
-
     console.error(err);
-
     showToast("Erro ao remover produto", "error");
+  } finally {
+    _idParaExcluir = null;
   }
+});
+
+window.remover = (id) => {
+  _idParaExcluir = id;
+  modalExclusao.classList.remove("hidden");
 };
 
 // =========================

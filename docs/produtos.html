@@ -35,10 +35,12 @@
         </div>
 
         <div class="topo-direita">
+          <button id="btnImportarXML">📄 Importar XML</button>
+
+          <button id="btnAdmin" style="display:none">⚙️ Admin</button>
+
           <button id="btnLogout">Sair</button>
         </div>
-
-        <button id="btnImportarXML">📄 Importar XML</button>
 
         <input type="file" id="inputXML" accept=".xml" style="display: none" />
       </div>
@@ -91,6 +93,21 @@
         </table>
       </div>
     </section>
+
+    <!-- MODAL CONFIRMAÇÃO EXCLUSÃO -->
+    <div id="modalConfirmacaoExclusao" class="modal hidden">
+      <div class="modal-content modal-exclusao">
+        <div class="exclusao-icone">🗑️</div>
+        <h3>Excluir produto?</h3>
+        <p class="exclusao-descricao">
+          Esta ação é <strong>irreversível</strong>. O produto será removido permanentemente do estoque.
+        </p>
+        <div class="modal-actions">
+          <button id="confirmarExclusao" class="btn-danger">Excluir</button>
+          <button id="cancelarExclusao" class="btn-cancel">Cancelar</button>
+        </div>
+      </div>
+    </div>
 
     <!-- MODAL MOVIMENTAÇÃO -->
     <div id="modal" class="modal hidden">
