@@ -134,6 +134,37 @@ def resetar_senha(user_id):
         return jsonify({"erro": str(e)}), 500
 
 
+
+@admin_bp.route("/usuarios/<int:user_id>", methods=["DELETE"])
+@auth_required
+@apenas_superadmin
+def excluir_usuario(user_id):
+    try:
+        conn = conectar()
+        cursor = conn.cursor()
+
+        # Impede excluir o superadmin
+        cursor.execute("SELECT email FROM users WHERE id = %s", (user_id,))
+        user = cursor.fetchone()
+        if not user:
+            conn.close()
+            return jsonify({"erro": "Usuário não encontrado"}), 404
+        if user["email"] == SUPERADMIN_EMAIL:
+            conn.close()
+            return jsonify({"erro": "Não é possível excluir o superadmin"}), 403
+
+        # Exclui movimentações do usuário
+        cursor.execute("DELETE FROM movimentacoes WHERE user_id = %s", (user_id,))
+
+        # Exclui o usuário
+        cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
+
+        conn.commit()
+        conn.close()
+        return jsonify({"msg": "Usuário excluído com sucesso"})
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
 @admin_bp.route("/tenants", methods=["GET"])
 @auth_required
 @apenas_superadmin
