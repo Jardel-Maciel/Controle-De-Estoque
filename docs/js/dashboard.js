@@ -66,8 +66,11 @@ async function carregarDashboard() {
       `R$ ${valorTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
 
     const valorMedio = parseFloat(data.valor_medio_geral || 0);
-    document.getElementById("valorMedioGeral").textContent =
-      `R$ ${valorMedio.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+    const elValorMedio = document.getElementById("valorMedioGeral");
+    if (elValorMedio) {
+      elValorMedio.textContent =
+        `R$ ${valorMedio.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+    }
 
     // =========================
     // GRÁFICOS
