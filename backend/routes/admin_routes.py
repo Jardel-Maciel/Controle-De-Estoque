@@ -61,25 +61,25 @@ def criar_usuario():
         conn = conectar()
         cursor = conn.cursor()
 
-        cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+        cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
         if cursor.fetchone():
             conn.close()
             return jsonify({"erro": "Email já cadastrado"}), 400
 
-        cursor.execute("SELECT id FROM tenants WHERE codigo = ?", (codigo,))
+        cursor.execute("SELECT id FROM tenants WHERE codigo = %s", (codigo,))
         tenant = cursor.fetchone()
         if tenant:
             tenant_id = tenant["id"]
         else:
             cursor.execute("""
-                INSERT INTO tenants (nome, codigo, ativo) VALUES (?, ?, 1)
+                INSERT INTO tenants (nome, codigo, ativo) VALUES (%s, %s, 1) RETURNING id
             """, (empresa, codigo))
-            tenant_id = cursor.lastrowid
+            tenant_id = cursor.fetchone()["id"]
 
         senha_hash = bcrypt.hashpw(senha.encode(), bcrypt.gensalt()).decode("utf-8")
         cursor.execute("""
             INSERT INTO users (nome, email, senha, role, tenant_id, ativo)
-            VALUES (?, ?, ?, ?, ?, 1)
+            VALUES (%s, %s, %s, %s, %s, 1)
         """, (nome, email, senha_hash, role, tenant_id))
 
         conn.commit()
@@ -97,7 +97,7 @@ def toggle_usuario(user_id):
     try:
         conn = conectar()
         cursor = conn.cursor()
-        cursor.execute("SELECT id, ativo, email FROM users WHERE id = ?", (user_id,))
+        cursor.execute("SELECT id, ativo, email FROM users WHERE id = %s", (user_id,))
         user = cursor.fetchone()
         if not user:
             conn.close()
@@ -106,7 +106,7 @@ def toggle_usuario(user_id):
             conn.close()
             return jsonify({"erro": "Não é possível desativar o superadmin"}), 403
         novo = 0 if user["ativo"] else 1
-        cursor.execute("UPDATE users SET ativo = ? WHERE id = ?", (novo, user_id))
+        cursor.execute("UPDATE users SET ativo = %s WHERE id = %s", (novo, user_id))
         conn.commit()
         conn.close()
         return jsonify({"msg": "Status atualizado", "ativo": novo})
@@ -126,7 +126,7 @@ def resetar_senha(user_id):
         senha_hash = bcrypt.hashpw(nova_senha.encode(), bcrypt.gensalt()).decode("utf-8")
         conn = conectar()
         cursor = conn.cursor()
-        cursor.execute("UPDATE users SET senha = ? WHERE id = ?", (senha_hash, user_id))
+        cursor.execute("UPDATE users SET senha = %s WHERE id = %s", (senha_hash, user_id))
         conn.commit()
         conn.close()
         return jsonify({"msg": "Senha atualizada com sucesso"})
