@@ -74,11 +74,15 @@ def importar_xml():
             existente = cursor.fetchone()
 
             if existente:
-                nova_qtd = existente["quantidade"] + quantidade
+                qtd_atual   = float(existente["quantidade"])
+                valor_atual = float(existente["valor"] or 0)
+                nova_qtd    = qtd_atual + quantidade
+                # Preço médio ponderado
+                novo_valor  = ((qtd_atual * valor_atual) + (quantidade * valor)) / nova_qtd if nova_qtd > 0 else valor
                 cursor.execute("""
                     UPDATE produtos SET quantidade = %s, valor = %s, fornecedor = %s, contato = %s, cnpj = %s, numero_nota = %s, data_emissao = %s
                     WHERE produto = %s AND tenant_id = %s
-                """, (nova_qtd, valor, fornecedor, cnpj, cnpj, numero_nota, data_emissao, nome, tenant_id))
+                """, (nova_qtd, round(novo_valor, 4), fornecedor, cnpj, cnpj, numero_nota, data_emissao, nome, tenant_id))
             else:
                 cursor.execute("""
                     INSERT INTO produtos (tenant_id, produto, quantidade, valor, fornecedor, contato, cnpj, numero_nota, data_emissao)

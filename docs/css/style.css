@@ -709,3 +709,64 @@ MODAL EXCLUSÃO
   background: #dc2626;
   transform: translateY(-1px);
 }
+
+/* =========================
+MODAL CADASTRO CONFIRMAÇÃO
+========================= */
+
+.modal-cadastro-confirm {
+  max-width: 420px;
+  text-align: center;
+}
+
+.cadastro-icone {
+  font-size: 52px;
+  margin-bottom: 14px;
+  animation: bounceIn 0.4s ease;
+}
+
+@keyframes bounceIn {
+  0%   { transform: scale(0.7); opacity: 0; }
+  60%  { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+.modal-cadastro-confirm h3 {
+  font-size: 22px;
+  margin-bottom: 16px;
+}
+
+.cadastro-resumo {
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+  text-align: left;
+  font-size: 14px;
+  line-height: 2;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.cadastro-resumo span {
+  color: var(--muted);
+  margin-right: 6px;
+}
+
+.cadastro-resumo strong {
+  color: var(--text);
+}
+
+/* =========================
+VALOR MÉDIO
+========================= */
+
+.valor-medio {
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--primary);
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  white-space: nowrap;
+}

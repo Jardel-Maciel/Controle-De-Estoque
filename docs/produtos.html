@@ -80,6 +80,7 @@
               <th>Produto</th>
               <th>Quantidade</th>
               <th>Valor</th>
+              <th>Valor Médio</th>
               <th>Fornecedor</th>
               <th>CNPJ</th>
               <th>Nota</th>
@@ -93,6 +94,19 @@
         </table>
       </div>
     </section>
+
+    <!-- MODAL CONFIRMAÇÃO CADASTRO -->
+    <div id="modalConfirmacaoCadastro" class="modal hidden">
+      <div class="modal-content modal-cadastro-confirm">
+        <div class="cadastro-icone">📦</div>
+        <h3>Confirmar cadastro?</h3>
+        <div class="cadastro-resumo" id="resumoCadastro"></div>
+        <div class="modal-actions">
+          <button id="confirmarCadastro">Confirmar</button>
+          <button id="cancelarCadastro" class="btn-cancel">Voltar</button>
+        </div>
+      </div>
+    </div>
 
     <!-- MODAL CONFIRMAÇÃO EXCLUSÃO -->
     <div id="modalConfirmacaoExclusao" class="modal hidden">
@@ -115,6 +129,8 @@
         <h3 id="modalTitulo">Movimentação</h3>
 
         <input type="number" id="modalQuantidade" placeholder="Quantidade" />
+
+        <input type="number" id="modalValorUnitario" placeholder="Valor unitário (R$) — só para entrada" step="0.01" min="0" />
 
         <input type="text" id="modalResponsavel" placeholder="Responsável" />
 

@@ -43,6 +43,12 @@ function abrirModal(tipo, id) {
 
   inputQtd.value = "";
 
+  const inputValorUnitario = document.getElementById("modalValorUnitario");
+  if (inputValorUnitario) {
+    inputValorUnitario.value = "";
+    inputValorUnitario.style.display = tipo === "entrada" ? "block" : "none";
+  }
+
   if (inputResponsavel) {
     inputResponsavel.value = "";
   }
@@ -99,9 +105,10 @@ document
           },
 
           body: JSON.stringify({
-            produto_id: produtoIdAtual,
-            tipo: tipoMovimentacao,
+            produto_id:     produtoIdAtual,
+            tipo:           tipoMovimentacao,
             quantidade,
+            valor_unitario: document.getElementById("modalValorUnitario")?.value || null,
             comentario,
             responsavel
           })
@@ -195,6 +202,12 @@ function renderizarProdutos(produtos) {
         R$ ${Number(item.valor || 0).toFixed(2)}
       </td>
 
+      <td>
+        <span class="valor-medio">
+          R$ ${Number(item.valor || 0).toFixed(2)}
+        </span>
+      </td>
+
       <td style="text-transform: capitalize;">
         ${item.fornecedor || "-"}
       </td>
@@ -242,94 +255,97 @@ function renderizarProdutos(produtos) {
 // =========================
 // CADASTRAR PRODUTO
 // =========================
-document
-  .getElementById("cadastrar")
-  .onclick = async () => {
+// MODAL CONFIRMAÇÃO CADASTRO
+// =========================
+let _dadosCadastro = null;
 
-    const inputProduto =
-      document.getElementById("inputProduto");
+const modalCadastro      = document.getElementById("modalConfirmacaoCadastro");
+const btnConfirmarCadastro = document.getElementById("confirmarCadastro");
+const btnCancelarCadastro  = document.getElementById("cancelarCadastro");
 
-    const inputQuantidade =
-      document.getElementById("quantidade");
+btnCancelarCadastro.addEventListener("click", () => {
+  _dadosCadastro = null;
+  modalCadastro.classList.add("hidden");
+});
 
-    const inputValor =
-      document.getElementById("valor");
+modalCadastro.addEventListener("click", (e) => {
+  if (e.target === modalCadastro) {
+    _dadosCadastro = null;
+    modalCadastro.classList.add("hidden");
+  }
+});
 
-    const inputFornecedor =
-      document.getElementById("fornecedor");
+btnConfirmarCadastro.addEventListener("click", async () => {
+  if (!_dadosCadastro) return;
 
-    const inputContato =
-      document.getElementById("contato");
+  modalCadastro.classList.add("hidden");
 
-    const produto =
-      inputProduto.value.trim();
+  try {
+    const res = await fetch(
+      `${API}/produtos`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(_dadosCadastro)
+      }
+    );
 
-    const quantidade =
-      inputQuantidade.value;
+    const data = await res.json();
 
-    const valor =
-      inputValor.value;
-
-    const fornecedor =
-      inputFornecedor.value.trim();
-
-    const contato =
-      inputContato.value.trim();
-
-    if (!produto || !quantidade) {
-
-      showToast("Preencha produto e quantidade", "warning");
-
+    if (!res.ok) {
+      showToast(data.erro || "Erro inesperado", "error");
       return;
     }
 
-    try {
+    document.getElementById("inputProduto").value = "";
+    document.getElementById("quantidade").value   = "";
+    document.getElementById("valor").value        = "";
+    document.getElementById("fornecedor").value   = "";
+    document.getElementById("contato").value      = "";
 
-      const res = await fetch(
-        `${API}/produtos`,
-        {
-          method: "POST",
+    document.getElementById("inputProduto").focus();
 
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
-          },
+    carregar();
+    showToast("Produto cadastrado com sucesso", "success");
 
-          body: JSON.stringify({
-            produto,
-            quantidade,
-            valor,
-            fornecedor,
-            contato
-          })
-        }
-      );
+  } catch (err) {
+    console.error(err);
+    showToast("Erro ao cadastrar", "error");
+  } finally {
+    _dadosCadastro = null;
+  }
+});
 
-      const data = await res.json();
+document
+  .getElementById("cadastrar")
+  .onclick = () => {
 
-      if (!res.ok) {
+    const produto    = document.getElementById("inputProduto").value.trim();
+    const quantidade = document.getElementById("quantidade").value;
+    const valor      = document.getElementById("valor").value;
+    const fornecedor = document.getElementById("fornecedor").value.trim();
+    const contato    = document.getElementById("contato").value.trim();
 
-        showToast(data.erro || "Erro inesperado", "error");
-
-        return;
-      }
-
-      inputProduto.value = "";
-      inputQuantidade.value = "";
-      inputValor.value = "";
-      inputFornecedor.value = "";
-      inputContato.value = "";
-
-      inputProduto.focus();
-
-      carregar();
-
-    } catch (err) {
-
-      console.error(err);
-
-      showToast("Erro ao cadastrar", "error");
+    if (!produto || !quantidade) {
+      showToast("Preencha produto e quantidade", "warning");
+      return;
     }
+
+    // Monta resumo no modal
+    const resumo = document.getElementById("resumoCadastro");
+    resumo.innerHTML = `
+      <div><span>Produto:</span> <strong>${produto}</strong></div>
+      <div><span>Quantidade:</span> <strong>${quantidade}</strong></div>
+      ${valor      ? `<div><span>Valor:</span> <strong>R$ ${parseFloat(valor).toFixed(2)}</strong></div>` : ""}
+      ${fornecedor ? `<div><span>Fornecedor:</span> <strong>${fornecedor}</strong></div>` : ""}
+      ${contato    ? `<div><span>Contato:</span> <strong>${contato}</strong></div>` : ""}
+    `;
+
+    _dadosCadastro = { produto, quantidade, valor, fornecedor, contato };
+    modalCadastro.classList.remove("hidden");
   };
 
 // =========================
