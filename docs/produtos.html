@@ -44,6 +44,10 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
         Importar XML
       </a>
+      <a href="#" class="nav-link" id="navImportarExcel">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><rect x="8" y="13" width="8" height="6" rx="1"/><line x1="10" y1="13" x2="10" y2="19"/><line x1="14" y1="13" x2="14" y2="19"/><line x1="8" y1="16" x2="16" y2="16"/></svg>
+        Importar Excel
+      </a>
     </div>
     <div class="sidebar-footer">
       <button class="nav-link" id="btnLogout" style="width:100%;border:none;background:none;cursor:pointer;text-align:left;font-family:inherit;font-size:13.5px;">
@@ -154,15 +158,15 @@
   </div>
 </div>
 
-<!-- Input XML -->
-<input type="file" id="inputXML" accept=".xml" style="display:none"/>
+<!-- Inputs ocultos -->
+<input type="file" id="inputXML"   accept=".xml"            style="display:none"/>
+<input type="file" id="inputExcel" accept=".xlsx,.xls,.ods" style="display:none"/>
 
 <script src="js/toast.js"></script>
 <script src="js/script.js"></script>
 <script src="js/admin-btn.js"></script>
 <script>
   // Compatibilidade: o script.js usa classe 'hidden' para esconder/mostrar o modal
-  // Adaptamos para o novo sistema de classes
   const modalEl = document.getElementById('modal');
   if(modalEl) {
     modalEl.classList.add('hidden');
@@ -175,6 +179,11 @@
   document.getElementById('navImportarXML').addEventListener('click', function(e){
     e.preventDefault();
     document.getElementById('inputXML').click();
+  });
+
+  document.getElementById('navImportarExcel').addEventListener('click', function(e){
+    e.preventDefault();
+    document.getElementById('inputExcel').click();
   });
 
   document.getElementById('btnLogout').addEventListener('click', function(){
