@@ -1,100 +1,181 @@
 <!doctype html>
 <html lang="pt-br">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <title>Dashboard</title>
-
-    <link rel="stylesheet" href="css/dashboard.css" />
-
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="css/toast.css">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard — Estoque Pro</title>
+  <link rel="stylesheet" href="css/design-system.css"/>
+  <link rel="stylesheet" href="css/toast.css"/>
 </head>
+<body>
+<div class="app">
 
-  <body>
-    <div class="layout">
-
-      <!-- SIDEBAR -->
-      <aside class="sidebar">
-        <h2>📦 Estoque</h2>
-
-        <nav>
-          <a href="#">Dashboard</a>
-          <a href="produtos.html">Produtos</a>
-          <a href="movimentacoes.html">Movimentações</a>
-          <a href="historico.html">Histórico</a>
-        </nav>
-      </aside>
-
-      <!-- MAIN -->
-      <main class="main">
-
-        <!-- TOPBAR -->
-        <div class="topbar">
-          <h1>Dashboard</h1>
-
-          <button id="btnDownloadPDF" class="btn-pdf">
-            📄 Baixar PDF
-          </button>
-        </div>
-
-        <!-- CARDS -->
-        <section class="cards">
-          <div class="card">
-            <h3>Total Produtos</h3>
-            <p id="totalProdutos">0</p>
-          </div>
-
-          <div class="card">
-            <h3>Total Itens</h3>
-            <p id="totalItens">0</p>
-          </div>
-
-          <div class="card warning">
-            <h3>Baixo Estoque</h3>
-            <p id="baixoEstoque">0</p>
-          </div>
-
-          <div class="card">
-            <h3>Custo Total</h3>
-            <p id="totalEstoque">R$ 0,00</p>
-          </div>
-
-          <div class="card accent">
-            <h3>Valor Médio / Unidade</h3>
-            <p id="valorMedioGeral">R$ 0,00</p>
-          </div>
-        </section>
-
-        <!-- GRÁFICO 1 -->
-        <section class="chart-container">
-          <h2>Quantidade</h2>
-          <canvas id="grafico"></canvas>
-        </section>
-
-        <!-- GRÁFICO 2 -->
-        <section class="chart-container">
-          <h2>Valor</h2>
-          <canvas id="graficoValor"></canvas>
-        </section>
-
-      </main>
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">📦</div>
+      <div>
+        <div class="logo-name">Estoque Pro</div>
+        <div class="logo-tag">SaaS</div>
+      </div>
     </div>
+    <div class="nav-section">
+      <div class="nav-label">Menu</div>
+      <a href="dashboard.html" class="nav-link active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        Dashboard
+      </a>
+      <a href="produtos.html" class="nav-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        Produtos
+      </a>
+      <a href="movimentacoes.html" class="nav-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        Movimentações
+      </a>
+      <a href="historico.html" class="nav-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Histórico
+      </a>
+    </div>
+    <div class="nav-section" style="margin-top:8px">
+      <div class="nav-label">Ferramentas</div>
+      <a href="#" class="nav-link" id="navImportarXML">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        Importar XML
+      </a>
+      <a href="#" class="nav-link" id="navRelatorio">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Relatório PDF
+      </a>
+    </div>
+    <div class="sidebar-footer">
+      <button class="nav-link" id="btnLogout" style="width:100%;border:none;background:none;cursor:pointer;text-align:left;font-family:inherit;font-size:13.5px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sair
+      </button>
+    </div>
+  </aside>
 
-  
-    <!-- SCRIPTS -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- MAIN -->
+  <div class="main">
 
-    <script src="js/toast.js"></script>
-    <script src="js/dashboard.js"></script>
-    <script src="js/admin-btn.js"></script>
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="page-title">Dashboard</span>
+        <span class="breadcrumb">/ Visão geral</span>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-primary btn-sm" id="btnDownloadPDF">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+          Baixar PDF
+        </button>
+        <div class="user-avatar" id="avatarUser" title="Perfil">?</div>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- STAT CARDS -->
+      <div class="stats-grid">
+        <div class="stat-card blue">
+          <div class="stat-icon blue">📦</div>
+          <div class="stat-label">Total de produtos</div>
+          <div class="stat-value" id="totalProdutos">—</div>
+        </div>
+        <div class="stat-card cyan">
+          <div class="stat-icon cyan">🔢</div>
+          <div class="stat-label">Total em estoque</div>
+          <div class="stat-value" id="totalItens">—</div>
+        </div>
+        <div class="stat-card amber">
+          <div class="stat-icon amber">⚠️</div>
+          <div class="stat-label">Baixo estoque</div>
+          <div class="stat-value" id="baixoEstoque">—</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon green">💰</div>
+          <div class="stat-label">Custo total</div>
+          <div class="stat-value" id="totalEstoque" style="font-size:18px">—</div>
+        </div>
+      </div>
+
+      <!-- GRÁFICOS -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Quantidade por produto</span>
+          </div>
+          <div class="card-body">
+            <div class="chart-wrap"><canvas id="grafico"></canvas></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Valor por produto</span>
+          </div>
+          <div class="card-body">
+            <div class="chart-wrap"><canvas id="graficoValor"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MOVIMENTAÇÕES RECENTES -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Movimentações recentes</span>
+          <a href="movimentacoes.html" class="btn btn-ghost btn-sm">Ver todas →</a>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Produto</th>
+                <th>Tipo</th>
+                <th>Quantidade</th>
+                <th>Responsável</th>
+                <th>Data</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaMovRecentes">
+              <tr><td colspan="5"><div class="empty-state"><p>Carregando...</p></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Input XML oculto -->
+<input type="file" id="inputXML" accept=".xml" style="display:none"/>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="js/toast.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/admin-btn.js"></script>
+<script>
+  // Avatar
+  (function(){
+    const nome = localStorage.getItem('nome') || '?';
+    document.getElementById('avatarUser').textContent = nome.charAt(0).toUpperCase();
+  })();
+
+  // Importar XML via sidebar
+  document.getElementById('navImportarXML').addEventListener('click', function(e){
+    e.preventDefault();
+    document.getElementById('inputXML').click();
+  });
+
+  // Logout
+  document.getElementById('btnLogout').addEventListener('click', function(){
+    localStorage.clear();
+    location.href = 'index.html';
+  });
+</script>
 </body>
 </html>

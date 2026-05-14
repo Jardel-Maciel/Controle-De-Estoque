@@ -1,294 +1,187 @@
 <!doctype html>
 <html lang="pt-br">
-
 <head>
-<meta charset="UTF-8">
-
-<meta
-  name="viewport"
-  content="width=device-width, initial-scale=1.0"
-/>
-
-<title>Movimentações</title>
-
-<link rel="stylesheet" href="css/dashboard.css">
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="css/toast.css">
-<link
-  rel="preconnect"
-  href="https://fonts.gstatic.com"
-  crossorigin
->
-
-<link
-  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-  rel="stylesheet"
->
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Movimentações — Estoque Pro</title>
+  <link rel="stylesheet" href="css/design-system.css"/>
+  <link rel="stylesheet" href="css/toast.css"/>
 </head>
-
 <body>
-
-<div class="layout">
+<div class="app">
 
   <!-- SIDEBAR -->
   <aside class="sidebar">
-
-    <h2>📦 Estoque</h2>
-
-    <nav>
-
-      <a href="dashboard.html">
+    <div class="sidebar-logo">
+      <div class="logo-mark">📦</div>
+      <div>
+        <div class="logo-name">Estoque Pro</div>
+        <div class="logo-tag">SaaS</div>
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Menu</div>
+      <a href="dashboard.html" class="nav-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
         Dashboard
       </a>
-
-      <a href="produtos.html">
+      <a href="produtos.html" class="nav-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
         Produtos
       </a>
-
-      <a
-        href="movimentacoes.html"
-        class="active"
-      >
+      <a href="movimentacoes.html" class="nav-link active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
         Movimentações
       </a>
-
-      <a href="historico.html">
+      <a href="historico.html" class="nav-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         Histórico
       </a>
-
-    </nav>
-
+    </div>
+    <div class="sidebar-footer">
+      <button class="nav-link" id="btnLogout" style="width:100%;border:none;background:none;cursor:pointer;text-align:left;font-family:inherit;font-size:13.5px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sair
+      </button>
+    </div>
   </aside>
 
   <!-- MAIN -->
-  <main class="main">
+  <div class="main">
 
-    <!-- TOPBAR -->
-    <div class="topbar">
-
-      <div>
-        <h1>Movimentações</h1>
-
-        <p class="subtitulo">
-          Controle completo de entradas e saídas
-        </p>
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="page-title">Movimentações</span>
+        <span class="breadcrumb">/ Entradas e saídas</span>
       </div>
+      <div class="topbar-right">
+        <div class="search-wrap">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="search-input" type="text" id="pesquisaProduto" placeholder="Pesquisar..."/>
+        </div>
+        <div class="user-avatar" id="avatarUser">?</div>
+      </div>
+    </header>
 
-      <!-- AÇÕES -->
-      <div
-        style="
-          display:flex;
-          align-items:center;
-          gap:12px;
-        "
-      >
+    <div class="content">
 
-        <!-- PESQUISA -->
-        <input
-          type="text"
-          id="pesquisaProduto"
-          placeholder="🔎 Pesquisar produto..."
-          style="
-            padding:12px 16px;
-            border:none;
-            border-radius:12px;
-            background:#1e293b;
-            color:white;
-            min-width:260px;
-            outline:none;
-            font-size:14px;
-          "
-        />
-
-        <!-- BOTÃO VOLTAR -->
-        <button
-          onclick="window.location.href='dashboard.html'"
-          id="btnAtualizar"
-        >
-          ← Voltar Para Dashboard
+      <!-- FILTERS -->
+      <div class="toolbar" style="margin-bottom:20px">
+        <button class="btn btn-secondary btn-sm filtro-btn active" data-filtro="todos">Todos</button>
+        <button class="btn btn-secondary btn-sm filtro-btn" data-filtro="entrada">
+          <span style="color:var(--success)">●</span> Entradas
         </button>
-
+        <button class="btn btn-secondary btn-sm filtro-btn" data-filtro="saida">
+          <span style="color:var(--danger)">●</span> Saídas
+        </button>
       </div>
+
+      <!-- LISTA MOVIMENTAÇÕES -->
+      <div id="lista" style="display:grid; gap:10px;">
+        <div class="empty-state">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          <p>Carregando movimentações...</p>
+        </div>
+      </div>
+
+      <div id="erro" style="color:var(--danger); padding:10px 0; font-size:13px;"></div>
 
     </div>
-
-    <!-- ERRO -->
-    <div
-      id="erro"
-      style="color:red; margin:10px 0;"
-    ></div>
-
-    <!-- LISTA -->
-    <div id="lista"></div>
-
-  </main>
-
+  </div>
 </div>
 
+<script src="js/toast.js"></script>
+<script src="js/admin-btn.js"></script>
 <script>
+  const API = "https://backend-estoque-fnfc.onrender.com";
+  const token = localStorage.getItem("token");
+  const nome = localStorage.getItem('nome') || '?';
+  document.getElementById('avatarUser').textContent = nome.charAt(0).toUpperCase();
 
-const API =
-  "https://backend-estoque-fnfc.onrender.com";
+  document.getElementById('btnLogout').addEventListener('click', function(){
+    localStorage.clear(); location.href = 'index.html';
+  });
 
-const token =
-  localStorage.getItem("token");
-
-if (!token) {
-
-  document.getElementById("erro")
-    .innerText =
-      "Usuário não autenticado. Faça login novamente.";
-}
-
-async function carregar() {
-
-  const lista =
-    document.getElementById("lista");
-
-  const erroDiv =
-    document.getElementById("erro");
-
-  try {
-
-    const res = await fetch(
-      `${API}/movimentacoes`,
-      {
-        method: "GET",
-
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      }
-    );
-
-    if (!res.ok) {
-
-      const text =
-        await res.text();
-
-      erroDiv.innerText =
-        "Erro ao carregar movimentações: " + text;
-
-      return;
-    }
-
-    const data =
-      await res.json();
-
-    if (
-      !Array.isArray(data)
-      || data.length === 0
-    ) {
-
-      lista.innerHTML =
-        "<p>Nenhuma movimentação encontrada.</p>";
-
-      return;
-    }
-
-    lista.innerHTML = "";
-
-    data.forEach(m => {
-
-      const dataFormatada =
-        m.data
-          ? new Date(m.data)
-              .toLocaleString("pt-BR")
-          : "Data não disponível";
-
-      lista.innerHTML += `
-        <div class="card">
-
-          <h3 style="text-transform: capitalize;">
-            ${m.produto}
-          </h3>
-
-          <span class="tipo ${m.tipo}">
-            ${m.tipo === "entrada"
-              ? "ENTRADA"
-              : "SAÍDA"}
-          </span>
-
-          <p>
-            <b>Quantidade:</b>
-            ${m.quantidade}
-          </p>
-
-          <p
-            class="comentario"
-            style="text-transform: capitalize;"
-          >
-            ${m.comentario
-              ? m.comentario
-              : "Sem observação"}
-          </p>
-
-          <p
-            class="responsavel"
-            style="text-transform: capitalize;"
-          >
-            👤 ${m.responsavel
-              ? m.responsavel
-              : "Não informado"}
-          </p>
-
-          <p class="data">
-            🕒 ${dataFormatada}
-          </p>
-
-        </div>
-      `;
-    });
-
-    // =========================
-    // PESQUISA
-    // =========================
-    document
-      .getElementById("pesquisaProduto")
-      .addEventListener(
-        "input",
-        function () {
-
-          const termo =
-            this.value.toLowerCase();
-
-          const cards =
-            document.querySelectorAll(".card");
-
-          cards.forEach((card) => {
-
-            const texto =
-              card.innerText.toLowerCase();
-
-            if (
-              texto.includes(termo)
-            ) {
-
-              card.style.display = "";
-
-            } else {
-
-              card.style.display = "none";
-            }
-          });
-        }
-      );
-
-  } catch (err) {
-
-    console.error(err);
-
-    erroDiv.innerText =
-      "Erro de conexão com o servidor.";
+  if (!token) {
+    document.getElementById("erro").innerText = "Usuário não autenticado. Faça login novamente.";
   }
-}
 
-carregar();
+  let todasMovimentacoes = [];
+  let filtroAtivo = 'todos';
 
+  function renderMovimentacoes(lista) {
+    const el = document.getElementById("lista");
+
+    if (!lista || lista.length === 0) {
+      el.innerHTML = `
+        <div class="empty-state">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          <p>Nenhuma movimentação encontrada</p>
+        </div>`;
+      return;
+    }
+
+    el.innerHTML = lista.map(m => {
+      const dataF = m.data ? new Date(m.data).toLocaleString("pt-BR") : "—";
+      const isEntrada = m.tipo === 'entrada';
+      return `
+        <div class="card mov-item" data-tipo="${m.tipo}" style="display:flex; align-items:center; gap:16px; padding:16px 20px;">
+          <div style="width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+            background:${isEntrada ? 'var(--success-dim)' : 'var(--danger-dim)'};
+            color:${isEntrada ? 'var(--success)' : 'var(--danger)'}; font-size:16px;">
+            ${isEntrada ? '↓' : '↑'}
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="font-weight:500; color:var(--text-primary); text-transform:capitalize; margin-bottom:2px;">${m.produto}</div>
+            <div style="font-size:12px; color:var(--text-muted);">${m.comentario || 'Sem observação'} · ${m.responsavel || 'Sem responsável'}</div>
+          </div>
+          <span class="badge ${isEntrada ? 'badge-success' : 'badge-danger'}">${isEntrada ? 'Entrada' : 'Saída'}</span>
+          <div style="text-align:right; flex-shrink:0;">
+            <div style="font-size:15px; font-weight:500; font-family:var(--font-mono); color:${isEntrada ? 'var(--success)' : 'var(--danger)'}">
+              ${isEntrada ? '+' : '-'}${m.quantidade}
+            </div>
+            <div style="font-size:11px; color:var(--text-muted)">${dataF}</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function aplicarFiltros() {
+    const termo = document.getElementById('pesquisaProduto').value.toLowerCase();
+    let filtradas = todasMovimentacoes;
+    if (filtroAtivo !== 'todos') filtradas = filtradas.filter(m => m.tipo === filtroAtivo);
+    if (termo) filtradas = filtradas.filter(m => (m.produto||'').toLowerCase().includes(termo) || (m.comentario||'').toLowerCase().includes(termo));
+    renderMovimentacoes(filtradas);
+  }
+
+  document.getElementById('pesquisaProduto').addEventListener('input', aplicarFiltros);
+
+  document.querySelectorAll('.filtro-btn').forEach(btn => {
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active','btn-primary'));
+      document.querySelectorAll('.filtro-btn').forEach(b => b.classList.add('btn-secondary'));
+      this.classList.remove('btn-secondary');
+      this.classList.add('active','btn-primary');
+      filtroAtivo = this.dataset.filtro;
+      aplicarFiltros();
+    });
+  });
+
+  async function carregar() {
+    if (!token) return;
+    try {
+      const res = await fetch(`${API}/movimentacoes`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (!res.ok) { document.getElementById("erro").innerText = "Erro ao carregar."; return; }
+      todasMovimentacoes = await res.json();
+      aplicarFiltros();
+    } catch(err) {
+      document.getElementById("erro").innerText = "Erro de conexão.";
+    }
+  }
+
+  carregar();
 </script>
-  <script src="js/toast.js"></script>
-  <script src="js/admin-btn.js"></script>
 </body>
 </html>
