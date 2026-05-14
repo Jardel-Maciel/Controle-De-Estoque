@@ -314,18 +314,29 @@ if (btnLogout) {
 // =========================
 // IMPORTAR XML
 // =========================
-const btnImportarXML = document.getElementById("btnImportarXML");
-const inputXML       = document.getElementById("inputXML");
+// FIX: o HTML usa id="navImportarXML" na sidebar, nao "btnImportarXML".
+// O listener de envio e registrado direto no inputXML, sem depender do botao.
+const inputXML = document.getElementById("inputXML");
 
-if (btnImportarXML && inputXML) {
-  btnImportarXML.addEventListener("click", () => inputXML.click());
+["btnImportarXML", "navImportarXML"].forEach(function(id) {
+  const btn = document.getElementById(id);
+  if (btn) {
+    btn.addEventListener("click", function(e) {
+      e.preventDefault();
+      if (inputXML) inputXML.click();
+    });
+  }
+});
 
-  inputXML.addEventListener("change", async (e) => {
+if (inputXML) {
+  inputXML.addEventListener("change", async function(e) {
     const arquivo = e.target.files[0];
     if (!arquivo) return;
 
     const formData = new FormData();
     formData.append("arquivo", arquivo);
+
+    showToast("Importando XML...", "info");
 
     try {
       const resposta = await fetch(`${API}/xml/importar`, {
@@ -335,11 +346,13 @@ if (btnImportarXML && inputXML) {
       });
       const dados = await resposta.json();
       if (!resposta.ok) { showToast(dados.erro || "Erro ao importar XML", "error"); return; }
-      showToast("XML importado com sucesso!", "success");
+      showToast(`XML importado! ${dados.total_produtos} produto(s) da nota ${dados.nota}`, "success");
       carregar();
     } catch (erro) {
       console.error(erro);
       showToast("Erro ao importar XML", "error");
+    } finally {
+      inputXML.value = "";
     }
   });
 }
