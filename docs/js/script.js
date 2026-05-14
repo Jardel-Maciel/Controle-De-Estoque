@@ -314,29 +314,18 @@ if (btnLogout) {
 // =========================
 // IMPORTAR XML
 // =========================
-// FIX: o HTML usa id="navImportarXML" na sidebar, nao "btnImportarXML".
-// O listener de envio e registrado direto no inputXML, sem depender do botao.
-const inputXML = document.getElementById("inputXML");
+const btnImportarXML = document.getElementById("btnImportarXML");
+const inputXML       = document.getElementById("inputXML");
 
-["btnImportarXML", "navImportarXML"].forEach(function(id) {
-  const btn = document.getElementById(id);
-  if (btn) {
-    btn.addEventListener("click", function(e) {
-      e.preventDefault();
-      if (inputXML) inputXML.click();
-    });
-  }
-});
+if (btnImportarXML && inputXML) {
+  btnImportarXML.addEventListener("click", () => inputXML.click());
 
-if (inputXML) {
-  inputXML.addEventListener("change", async function(e) {
+  inputXML.addEventListener("change", async (e) => {
     const arquivo = e.target.files[0];
     if (!arquivo) return;
 
     const formData = new FormData();
     formData.append("arquivo", arquivo);
-
-    showToast("Importando XML...", "info");
 
     try {
       const resposta = await fetch(`${API}/xml/importar`, {
@@ -346,13 +335,55 @@ if (inputXML) {
       });
       const dados = await resposta.json();
       if (!resposta.ok) { showToast(dados.erro || "Erro ao importar XML", "error"); return; }
-      showToast(`XML importado! ${dados.total_produtos} produto(s) da nota ${dados.nota}`, "success");
+      showToast("XML importado com sucesso!", "success");
       carregar();
     } catch (erro) {
       console.error(erro);
       showToast("Erro ao importar XML", "error");
+    }
+  });
+}
+
+// =========================
+// IMPORTAR EXCEL
+// =========================
+const inputExcel = document.getElementById("inputExcel");
+
+["btnImportarExcel", "navImportarExcel"].forEach(function(id) {
+  const btn = document.getElementById(id);
+  if (btn) {
+    btn.addEventListener("click", function(e) {
+      e.preventDefault();
+      if (inputExcel) inputExcel.click();
+    });
+  }
+});
+
+if (inputExcel) {
+  inputExcel.addEventListener("change", async function(e) {
+    const arquivo = e.target.files[0];
+    if (!arquivo) return;
+
+    const formData = new FormData();
+    formData.append("arquivo", arquivo);
+
+    showToast("Importando planilha...", "info");
+
+    try {
+      const resposta = await fetch(`${API}/excel/importar`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+      const dados = await resposta.json();
+      if (!resposta.ok) { showToast(dados.erro || "Erro ao importar planilha", "error"); return; }
+      showToast(`Planilha importada! ${dados.total_importados} produto(s) adicionados.`, "success");
+      carregar();
+    } catch (erro) {
+      console.error(erro);
+      showToast("Erro ao importar planilha", "error");
     } finally {
-      inputXML.value = "";
+      inputExcel.value = "";
     }
   });
 }
