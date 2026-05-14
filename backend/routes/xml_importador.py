@@ -28,9 +28,11 @@ def importar_xml():
         ns = {"nfe": "http://www.portalfiscal.inf.br/nfe"}
 
         infNFe = root.find(".//nfe:infNFe", ns)
-        ide    = root.find(".//nfe:ide",     ns)
-        emit   = root.find(".//nfe:emit",    ns)
-        total  = root.find(".//nfe:ICMSTot", ns)
+        ide    = root.find(".//nfe:ide",    ns)
+        emit   = root.find(".//nfe:emit",   ns)
+
+        # FIX #4: path correto para ICMSTot (dentro de <total>)
+        total  = root.find(".//nfe:total/nfe:ICMSTot", ns)
 
         numero_nota  = ide.findtext("nfe:nNF",   "", ns) if ide    is not None else ""
         serie        = ide.findtext("nfe:serie",  "", ns) if ide    is not None else ""
@@ -39,7 +41,17 @@ def importar_xml():
         fornecedor   = emit.findtext("nfe:xNome", "", ns) if emit   is not None else ""
         cnpj         = emit.findtext("nfe:CNPJ",  "", ns) if emit   is not None else ""
 
+        # Telefone do emitente (campo correto para contato)
+        telefone_emit = ""
+        if emit is not None:
+            enderEmit = emit.find("nfe:enderEmit", ns)
+            telefone_emit = emit.findtext("nfe:fone", "", ns)
+
         valor_total_nota = float(total.findtext("nfe:vNF", "0", ns) if total is not None else 0)
+
+        # Avisa se valor total não foi encontrado
+        if total is None:
+            print(f"[AVISO] Tag <ICMSTot> não encontrada no XML da nota {numero_nota}")
 
         conn = conectar()
         cursor = conn.cursor()
@@ -50,11 +62,14 @@ def importar_xml():
             conn.close()
             return jsonify({"erro": "NF-e já importada"}), 400
 
+        # FIX #2: salva o conteúdo XML, não apenas o nome do arquivo
+        xml_texto = conteudo.decode("utf-8", errors="replace")
+
         # Salva nota fiscal
         cursor.execute("""
             INSERT INTO notas_fiscais (tenant_id, numero_nota, serie, chave_nfe, fornecedor, cnpj, data_emissao, valor_total, xml_original)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """, (tenant_id, numero_nota, serie, chave_nfe, fornecedor, cnpj, data_emissao, valor_total_nota, arquivo.filename))
+        """, (tenant_id, numero_nota, serie, chave_nfe, fornecedor, cnpj, data_emissao, valor_total_nota, xml_texto))
 
         produtos_importados = []
 
@@ -70,7 +85,11 @@ def importar_xml():
             if not nome:
                 continue
 
-            cursor.execute("SELECT id, quantidade FROM produtos WHERE produto = %s AND tenant_id = %s", (nome, tenant_id))
+            # FIX #1: incluir "valor" no SELECT para poder calcular preço médio
+            cursor.execute(
+                "SELECT id, quantidade, valor FROM produtos WHERE produto = %s AND tenant_id = %s",
+                (nome, tenant_id)
+            )
             existente = cursor.fetchone()
 
             if existente:
@@ -80,14 +99,21 @@ def importar_xml():
                 # Preço médio ponderado
                 novo_valor  = ((qtd_atual * valor_atual) + (quantidade * valor)) / nova_qtd if nova_qtd > 0 else valor
                 cursor.execute("""
-                    UPDATE produtos SET quantidade = %s, valor = %s, fornecedor = %s, contato = %s, cnpj = %s, numero_nota = %s, data_emissao = %s
+                    UPDATE produtos
+                    SET quantidade = %s, valor = %s, fornecedor = %s,
+                        contato = %s, cnpj = %s, numero_nota = %s, data_emissao = %s
                     WHERE produto = %s AND tenant_id = %s
-                """, (nova_qtd, round(novo_valor, 4), fornecedor, cnpj, cnpj, numero_nota, data_emissao, nome, tenant_id))
+                """, (nova_qtd, round(novo_valor, 4), fornecedor,
+                      # FIX #3: contato recebe telefone, não o CNPJ
+                      telefone_emit, cnpj, numero_nota, data_emissao,
+                      nome, tenant_id))
             else:
                 cursor.execute("""
                     INSERT INTO produtos (tenant_id, produto, quantidade, valor, fornecedor, contato, cnpj, numero_nota, data_emissao)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """, (tenant_id, nome, quantidade, valor, fornecedor, cnpj, cnpj, numero_nota, data_emissao))
+                """, (tenant_id, nome, quantidade, valor, fornecedor,
+                      # FIX #3: contato recebe telefone, não o CNPJ
+                      telefone_emit, cnpj, numero_nota, data_emissao))
 
             produtos_importados.append(nome)
 
