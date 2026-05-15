@@ -75,44 +75,41 @@ def importar_jfl(wb, tenant_id):
     ws_prod = wb["PROD"]
     linhas_prod = list(ws_prod.iter_rows(values_only=True))
 
-    # Cabeçalho na linha 3 (índice 2), dados a partir da linha 4 (índice 3)
-    # col 1=ITEM, col 3=UNIDADE, col 4=ESTOQUE MÍNIMO, col 5=MÉDIA DE CUSTO, col 6=PREÇO UNITÁRIO
     for i, linha in enumerate(linhas_prod[3:], start=4):
         nome = str(linha[1] or "").strip() if len(linha) > 1 else ""
         if not nome:
             continue
 
         try:
-            estoque_min = float(str(linha[4] or 0).replace(",", ".") or 0) if len(linha) > 4 else 0.0
             valor = float(str(linha[5] or 0).replace(",", ".") or 0) if len(linha) > 5 else 0.0
         except (ValueError, TypeError):
-            estoque_min = 0.0
             valor = 0.0
 
-        # Produto já existe?
-        cursor.execute(
-            "SELECT id, quantidade, valor FROM produtos WHERE produto = %s AND tenant_id = %s",
-            (nome, tenant_id)
-        )
-        existente = cursor.fetchone()
+        try:
+            cursor.execute(
+                "SELECT id, quantidade, valor FROM produtos WHERE produto = %s AND tenant_id = %s",
+                (nome, tenant_id)
+            )
+            existente = cursor.fetchone()
 
-        if existente:
-            qtd_atual = float(existente["quantidade"] or 0)
-            valor_atual = float(existente["valor"] or 0)
-            novo_valor = valor if valor > 0 else valor_atual
-
-            cursor.execute("""
-                UPDATE produtos
-                SET valor = %s
-                WHERE produto = %s AND tenant_id = %s
-            """, (round(novo_valor, 4), nome, tenant_id))
-            importados.append(f"{nome} (atualizado)")
-        else:
-            cursor.execute("""
-                INSERT INTO produtos (tenant_id, produto, quantidade, valor)
-                VALUES (%s, %s, %s, %s)
-            """, (tenant_id, nome, 0, valor))
-            importados.append(nome)
+            if existente:
+                valor_atual = float(existente["valor"] or 0)
+                novo_valor = valor if valor > 0 else valor_atual
+                cursor.execute("""
+                    UPDATE produtos SET valor = %s
+                    WHERE produto = %s AND tenant_id = %s
+                """, (round(novo_valor, 4), nome, tenant_id))
+                importados.append(f"{nome} (atualizado)")
+            else:
+                cursor.execute("""
+                    INSERT INTO produtos (tenant_id, produto, quantidade, valor)
+                    VALUES (%s, %s, %s, %s)
+                """, (tenant_id, nome, 0, valor))
+                importados.append(nome)
+        except Exception as e:
+            conn.rollback()
+            ignorados.append(f"Linha {i} ({nome}): {str(e)}")
+            continue
 
     # ------- Entradas (aba ENTRADAS) -------
     ws_ent = wb["ENTRADAS"]
@@ -141,49 +138,51 @@ def importar_jfl(wb, tenant_id):
             entradas_ignoradas.append(f"Linha {i}: quantidade zero ou inválida")
             continue
 
-        # Busca produto
-        cursor.execute(
-            "SELECT id, quantidade, valor FROM produtos WHERE produto = %s AND tenant_id = %s",
-            (produto, tenant_id)
-        )
-        prod_row = cursor.fetchone()
-
-        if not prod_row:
-            # Cria produto se não existir
-            cursor.execute("""
-                INSERT INTO produtos (tenant_id, produto, quantidade, valor)
-                VALUES (%s, %s, %s, %s) RETURNING id, quantidade, valor
-            """, (tenant_id, produto, 0, custo_unit))
+        try:
+            cursor.execute(
+                "SELECT id, quantidade, valor FROM produtos WHERE produto = %s AND tenant_id = %s",
+                (produto, tenant_id)
+            )
             prod_row = cursor.fetchone()
 
-        produto_id = prod_row["id"]
-        qtd_atual = float(prod_row["quantidade"] or 0)
-        valor_atual = float(prod_row["valor"] or 0)
+            if not prod_row:
+                cursor.execute("""
+                    INSERT INTO produtos (tenant_id, produto, quantidade, valor)
+                    VALUES (%s, %s, %s, %s) RETURNING id, quantidade, valor
+                """, (tenant_id, produto, 0, custo_unit))
+                prod_row = cursor.fetchone()
 
-        # Atualiza quantidade e preço médio ponderado
-        nova_qtd = qtd_atual + quantidade
-        if nova_qtd > 0:
-            novo_valor = ((qtd_atual * valor_atual) + (quantidade * custo_unit)) / nova_qtd
-        else:
-            novo_valor = custo_unit
+            produto_id = prod_row["id"]
+            qtd_atual = float(prod_row["quantidade"] or 0)
+            valor_atual = float(prod_row["valor"] or 0)
 
-        cursor.execute("""
-            UPDATE produtos SET quantidade = %s, valor = %s,
-                fornecedor = CASE WHEN %s != '' THEN %s ELSE fornecedor END
-            WHERE id = %s AND tenant_id = %s
-        """, (nova_qtd, round(novo_valor, 4), fornecedor_nome, fornecedor_nome, produto_id, tenant_id))
+            nova_qtd = qtd_atual + quantidade
+            if nova_qtd > 0:
+                novo_valor = ((qtd_atual * valor_atual) + (quantidade * custo_unit)) / nova_qtd
+            else:
+                novo_valor = custo_unit
 
-        # Registra movimentação de entrada
-        try:
             cursor.execute("""
-                INSERT INTO movimentacoes
-                    (tenant_id, produto_id, tipo, quantidade, valor_unitario, data)
-                VALUES (%s, %s, 'entrada', %s, %s, %s)
-            """, (tenant_id, produto_id, quantidade, custo_unit, data_compra))
-        except Exception:
-            pass  # movimentação opcional, não bloqueia a importação
+                UPDATE produtos SET quantidade = %s, valor = %s,
+                    fornecedor = CASE WHEN %s != '' THEN %s ELSE fornecedor END
+                WHERE id = %s AND tenant_id = %s
+            """, (nova_qtd, round(novo_valor, 4), fornecedor_nome, fornecedor_nome, produto_id, tenant_id))
 
-        entradas_importadas.append(produto)
+            try:
+                cursor.execute("""
+                    INSERT INTO movimentacoes
+                        (tenant_id, produto_id, tipo, quantidade, valor_unitario, data)
+                    VALUES (%s, %s, 'entrada', %s, %s, %s)
+                """, (tenant_id, produto_id, quantidade, custo_unit, data_compra))
+            except Exception:
+                conn.rollback()  # movimentação falhou, faz rollback parcial e continua
+
+            entradas_importadas.append(produto)
+
+        except Exception as e:
+            conn.rollback()
+            entradas_ignoradas.append(f"Linha {i} ({produto}): {str(e)}")
+            continue
 
     conn.commit()
     conn.close()
