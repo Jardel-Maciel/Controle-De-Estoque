@@ -13,71 +13,67 @@ excel_bp = Blueprint("excel", __name__, url_prefix="/excel")
 # =========================================================
 
 MAPA_COLUNAS = {
+
     "produto": [
         "produto",
-        "product",
         "nome",
-        "name",
-        "descricao",
-        "descrição",
         "item",
-        "nome produto",
-        "produto descricao",
-        "descricao produto"
+        "descricao",
+        "descrição"
     ],
 
     "quantidade": [
         "quantidade",
         "qtd",
-        "qty",
-        "quantity",
-        "estoque",
         "qtde",
+        "estoque",
         "saldo",
-        "qtd estoque"
+        "quant",
+        "qtd estoque",
+        "quantidade estoque"
     ],
 
     "valor": [
         "valor",
-        "value",
+        "valor unit",
+        "valor unit.",
+        "valor unitario",
+        "valor unitário",
         "preco",
         "preço",
-        "price",
         "custo",
-        "cost",
-        "vl",
-        "vr",
-        "valor custo",
-        "custo unitario",
-        "custo unitário",
-        "media de custo",
-        "média de custo",
-        "preco unitario",
-        "preço unitário"
+        "price"
     ],
 
     "fornecedor": [
         "fornecedor",
-        "supplier",
-        "vendor",
-        "fabricante",
-        "empresa"
+        "empresa",
+        "fabricante"
     ],
 
     "contato": [
         "contato",
-        "contact",
         "telefone",
-        "tel",
         "fone",
-        "phone"
+        "tel"
     ],
 
-    "estoque_min": [
-        "estoque minimo",
-        "estoque mínimo",
-        "estoque_minimo",
-        "min"
+    "cnpj": [
+        "cnpj"
+    ],
+
+    "nota_fiscal": [
+        "nota fiscal",
+        "nf",
+        "nfe",
+        "nota"
+    ],
+
+    "emissao": [
+        "emissao",
+        "emissão",
+        "data",
+        "data emissao"
     ]
 }
 
@@ -134,140 +130,42 @@ def mapear_cabecalho(cabecalho):
 
 
 # =========================================================
-# DETECTAR PLANILHA JFL
-# =========================================================
-
-def detectar_planilha_jfl(wb):
-
-    abas = [normalizar(s) for s in wb.sheetnames]
-
-    return all(
-        aba in abas
-        for aba in ["prod", "entradas", "forn"]
-    )
-
-
-# =========================================================
-# IMPORTADOR JFL
-# =========================================================
-
-def importar_jfl(wb, tenant_id):
-
-    conn = conectar()
-    cursor = conn.cursor()
-
-    importados = []
-    ignorados = []
-
-    ws_prod = wb["PROD"]
-
-    linhas_prod = list(
-        ws_prod.iter_rows(values_only=True)
-    )
-
-    for i, linha in enumerate(linhas_prod[3:], start=4):
-
-        try:
-
-            nome = str(
-                linha[1] or ""
-            ).strip()
-
-            if not nome:
-                continue
-
-            try:
-                valor = float(
-                    str(
-                        linha[5] or 0
-                    ).replace(",", ".")
-                )
-            except:
-                valor = 0
-
-            cursor.execute("""
-                SELECT id, quantidade, valor
-                FROM produtos
-                WHERE LOWER(TRIM(produto)) =
-                      LOWER(TRIM(%s))
-                AND tenant_id = %s
-            """, (
-                nome,
-                tenant_id
-            ))
-
-            existente = cursor.fetchone()
-
-            if existente:
-
-                valor_atual = float(
-                    existente["valor"] or 0
-                )
-
-                novo_valor = (
-                    valor
-                    if valor > 0
-                    else valor_atual
-                )
-
-                cursor.execute("""
-                    UPDATE produtos
-                    SET valor = %s
-                    WHERE id = %s
-                """, (
-                    round(novo_valor, 4),
-                    existente["id"]
-                ))
-
-                importados.append(
-                    f"{nome} (atualizado)"
-                )
-
-            else:
-
-                cursor.execute("""
-                    INSERT INTO produtos (
-                        tenant_id,
-                        produto,
-                        quantidade,
-                        valor
-                    )
-                    VALUES (%s,%s,%s,%s)
-                """, (
-                    tenant_id,
-                    nome,
-                    0,
-                    valor
-                ))
-
-                importados.append(nome)
-
-        except Exception as e:
-
-            ignorados.append(
-                f"Linha {i}: {str(e)}"
-            )
-
-            continue
-
-    conn.commit()
-    conn.close()
-
-    return {
-        "msg": "Planilha JFL importada com sucesso",
-        "produtos_importados": len(importados),
-        "produtos": importados,
-        "ignorados": ignorados
-    }
-
-
-# =========================================================
 # IMPORTADOR GENÉRICO
 # =========================================================
 
 def importar_generica(wb, tenant_id):
 
-    ws = wb.active
+    # =====================================================
+    # PROCURA A ABA DE CONTROLE DE ESTOQUE
+    # =====================================================
+
+    ws = None
+
+    for sheet in wb.worksheets:
+
+        nome_aba = normalizar(sheet.title)
+
+        if (
+            "controle" in nome_aba
+            and "estoque" in nome_aba
+        ):
+
+            ws = sheet
+            break
+
+    # =====================================================
+    # SE NÃO ENCONTRAR
+    # =====================================================
+
+    if ws is None:
+
+        return None, (
+            "Aba 'Controle de Estoque' não encontrada."
+        )
+
+    # =====================================================
+    # LER LINHAS
+    # =====================================================
 
     linhas = list(
         ws.iter_rows(values_only=True)
@@ -276,8 +174,12 @@ def importar_generica(wb, tenant_id):
     if not linhas or len(linhas) < 2:
 
         return None, (
-            "Planilha vazia ou sem dados"
+            "Planilha vazia ou sem dados."
         )
+
+    # =====================================================
+    # CABEÇALHO
+    # =====================================================
 
     cabecalho = [
         str(c) if c is not None else ""
@@ -289,8 +191,12 @@ def importar_generica(wb, tenant_id):
     if "produto" not in mapa:
 
         return None, (
-            "Coluna produto não encontrada"
+            "Coluna PRODUTO não encontrada."
         )
+
+    # =====================================================
+    # CONEXÃO
+    # =====================================================
 
     conn = conectar()
     cursor = conn.cursor()
@@ -298,26 +204,9 @@ def importar_generica(wb, tenant_id):
     importados = []
     ignorados = []
 
-    colunas_ignoradas = []
-
-    for col in cabecalho:
-
-        col_norm = normalizar(col)
-
-        reconhecida = False
-
-        for variantes in MAPA_COLUNAS.values():
-
-            if any(
-                normalizar(v) in col_norm
-                or col_norm in normalizar(v)
-                for v in variantes
-            ):
-                reconhecida = True
-                break
-
-        if not reconhecida:
-            colunas_ignoradas.append(col)
+    # =====================================================
+    # IMPORTAÇÃO
+    # =====================================================
 
     for i, linha in enumerate(linhas[1:], start=2):
 
@@ -342,6 +231,10 @@ def importar_generica(wb, tenant_id):
                     else padrao
                 )
 
+            # =================================================
+            # PRODUTO
+            # =================================================
+
             nome = str(
                 cel("produto", "")
             ).strip()
@@ -354,23 +247,61 @@ def importar_generica(wb, tenant_id):
 
                 continue
 
-            try:
-                quantidade = float(
-                    str(
-                        cel("quantidade", 0)
-                    ).replace(",", ".")
-                )
-            except:
-                quantidade = 0
+            # =================================================
+            # QUANTIDADE
+            # =================================================
 
             try:
-                valor = float(
-                    str(
-                        cel("valor", 0)
-                    ).replace(",", ".")
-                )
-            except:
+
+                valor_qtd = cel("quantidade", 0)
+
+                if valor_qtd is None:
+                    valor_qtd = 0
+
+                valor_qtd = str(
+                    valor_qtd
+                ).strip()
+
+                if valor_qtd == "":
+                    valor_qtd = "0"
+
+                valor_qtd = valor_qtd.replace(",", ".")
+
+                quantidade = float(valor_qtd)
+
+            except Exception:
+
+                quantidade = 0
+
+            # =================================================
+            # VALOR
+            # =================================================
+
+            try:
+
+                valor_valor = cel("valor", 0)
+
+                if valor_valor is None:
+                    valor_valor = 0
+
+                valor_valor = str(
+                    valor_valor
+                ).strip()
+
+                if valor_valor == "":
+                    valor_valor = "0"
+
+                valor_valor = valor_valor.replace(",", ".")
+
+                valor = float(valor_valor)
+
+            except Exception:
+
                 valor = 0
+
+            # =================================================
+            # OUTROS CAMPOS
+            # =================================================
 
             fornecedor = str(
                 cel("fornecedor", "")
@@ -379,6 +310,20 @@ def importar_generica(wb, tenant_id):
             contato = str(
                 cel("contato", "")
             ).strip()
+
+            # =================================================
+            # DEBUG
+            # =================================================
+
+            print("================================")
+            print("PRODUTO:", nome)
+            print("QUANTIDADE:", quantidade)
+            print("VALOR:", valor)
+            print("FORNECEDOR:", fornecedor)
+
+            # =================================================
+            # VERIFICAR SE EXISTE
+            # =================================================
 
             cursor.execute("""
                 SELECT id, quantidade, valor
@@ -392,6 +337,10 @@ def importar_generica(wb, tenant_id):
             ))
 
             existente = cursor.fetchone()
+
+            # =================================================
+            # ATUALIZAR
+            # =================================================
 
             if existente:
 
@@ -416,6 +365,7 @@ def importar_generica(wb, tenant_id):
                     ) / nova_qtd
 
                 else:
+
                     novo_valor = valor
 
                 cursor.execute("""
@@ -435,6 +385,7 @@ def importar_generica(wb, tenant_id):
                         END
                     WHERE id = %s
                 """, (
+
                     nova_qtd,
                     round(novo_valor, 4),
 
@@ -446,6 +397,10 @@ def importar_generica(wb, tenant_id):
 
                     existente["id"]
                 ))
+
+            # =================================================
+            # INSERIR
+            # =================================================
 
             else:
 
@@ -462,6 +417,7 @@ def importar_generica(wb, tenant_id):
                         %s,%s,%s,%s,%s,%s
                     )
                 """, (
+
                     tenant_id,
                     nome,
                     quantidade,
@@ -480,11 +436,16 @@ def importar_generica(wb, tenant_id):
 
             continue
 
-    print("IMPORTADOS:", importados)
-    print("IGNORADOS:", ignorados)
+    # =====================================================
+    # FINALIZAR
+    # =====================================================
 
     conn.commit()
     conn.close()
+
+    print("================================")
+    print("IMPORTADOS:", importados)
+    print("IGNORADOS:", ignorados)
 
     return {
         "msg": "Planilha importada com sucesso",
@@ -493,13 +454,7 @@ def importar_generica(wb, tenant_id):
 
         "produtos": importados,
 
-        "ignorados": ignorados,
-
-        "colunas_reconhecidas": list(
-            mapa.keys()
-        ),
-
-        "colunas_ignoradas": colunas_ignoradas
+        "ignorados": ignorados
     }, None
 
 
@@ -539,9 +494,14 @@ def importar_excel():
 
             return jsonify({
                 "erro": (
-                    "Formato inválido"
+                    "Formato inválido. "
+                    "Envie .xlsx, .xls ou .ods"
                 )
             }), 400
+
+        # =====================================================
+        # ABRIR PLANILHA
+        # =====================================================
 
         try:
 
@@ -564,22 +524,9 @@ def importar_excel():
                 )
             }), 400
 
-        # =================================================
-        # IMPORTAÇÃO JFL
-        # =================================================
-
-        if detectar_planilha_jfl(wb):
-
-            resultado = importar_jfl(
-                wb,
-                tenant_id
-            )
-
-            return jsonify(resultado), 200
-
-        # =================================================
-        # IMPORTAÇÃO GENÉRICA
-        # =================================================
+        # =====================================================
+        # IMPORTAR
+        # =====================================================
 
         resultado, erro = importar_generica(
             wb,
