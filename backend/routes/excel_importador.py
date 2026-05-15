@@ -1,187 +1,321 @@
 from flask import Blueprint, request, jsonify, g
 import traceback
 import unicodedata
+import re
 
 from database.database import conectar
 from utils.auth_middleware import auth_required
 
 excel_bp = Blueprint("excel", __name__, url_prefix="/excel")
 
-# Colunas aceitas para planilhas genéricas
+# =========================================================
+# MAPEAMENTO FLEXÍVEL DE COLUNAS
+# =========================================================
+
 MAPA_COLUNAS = {
-    "produto":    ["produto", "product", "nome", "name", "descricao", "descrição", "item"],
-    "quantidade": ["quantidade", "qtd", "qty", "quantity", "estoque", "qtde", "saldo"],
-    "valor":      ["valor", "value", "preco", "preço", "price", "custo", "cost", "vl", "vr",
-                   "custo unitario", "custo unitário", "media de custo", "média de custo"],
-    "fornecedor": ["fornecedor", "supplier", "vendor", "fabricante"],
-    "contato":    ["contato", "contact", "telefone", "tel", "fone", "phone"],
-    "estoque_min":["estoque minimo", "estoque mínimo", "estoque_minimo", "min"],
+    "produto": [
+        "produto", "product", "nome", "name",
+        "descricao", "descrição", "item",
+        "nome produto", "produto descricao",
+        "descricao produto"
+    ],
+
+    "quantidade": [
+        "quantidade", "qtd", "qty",
+        "quantity", "estoque", "qtde",
+        "saldo", "qtd estoque"
+    ],
+
+    "valor": [
+        "valor", "value", "preco", "preço",
+        "price", "custo", "cost",
+        "vl", "vr", "valor custo",
+        "custo unitario", "custo unitário",
+        "media de custo", "média de custo",
+        "preco unitario", "preço unitário"
+    ],
+
+    "fornecedor": [
+        "fornecedor", "supplier",
+        "vendor", "fabricante", "empresa"
+    ],
+
+    "contato": [
+        "contato", "contact",
+        "telefone", "tel",
+        "fone", "phone"
+    ],
+
+    "email": [
+        "email", "e-mail", "mail"
+    ],
+
+    "endereco": [
+        "endereco", "endereço", "address"
+    ],
+
+    "estoque_min": [
+        "estoque minimo",
+        "estoque mínimo",
+        "estoque_minimo",
+        "min"
+    ],
+
+    "unidade": [
+        "unidade", "und", "unit"
+    ],
+
+    "preco_venda": [
+        "preco venda",
+        "preço venda",
+        "valor venda",
+        "sale price"
+    ]
 }
 
 
+# =========================================================
+# NORMALIZAÇÃO
+# =========================================================
+
 def normalizar(texto):
     texto = str(texto).strip().lower()
-    return unicodedata.normalize("NFD", texto).encode("ascii", "ignore").decode("ascii")
 
+    texto = unicodedata.normalize(
+        "NFD",
+        texto
+    ).encode(
+        "ascii",
+        "ignore"
+    ).decode("ascii")
+
+    texto = re.sub(r"\s+", " ", texto)
+
+    return texto.strip()
+
+
+# =========================================================
+# MAPEAR CABEÇALHO FLEXÍVEL
+# =========================================================
 
 def mapear_cabecalho(cabecalho):
     mapa = {}
+
     for idx, col in enumerate(cabecalho):
+
         col_norm = normalizar(col)
+
         for campo, variantes in MAPA_COLUNAS.items():
-            if col_norm in [normalizar(v) for v in variantes]:
-                if campo not in mapa:
-                    mapa[campo] = idx
+
+            for variante in variantes:
+
+                variante_norm = normalizar(variante)
+
+                if (
+                    col_norm == variante_norm
+                    or variante_norm in col_norm
+                    or col_norm in variante_norm
+                ):
+
+                    if campo not in mapa:
+                        mapa[campo] = idx
+
     return mapa
 
 
-def detectar_planilha_jfl(wb):
-    """Retorna True se a planilha tiver as abas características da planilha JFL."""
-    abas = [normalizar(s) for s in wb.sheetnames]
-    return all(a in abas for a in ["prod", "entradas", "forn"])
+# =========================================================
+# DETECTAR PLANILHA JFL
+# =========================================================
 
+def detectar_planilha_jfl(wb):
+
+    abas = [normalizar(s) for s in wb.sheetnames]
+
+    obrigatorias = ["prod", "entradas", "forn"]
+
+    return all(a in abas for a in obrigatorias)
+
+
+# =========================================================
+# IMPORTADOR JFL
+# =========================================================
 
 def importar_jfl(wb, tenant_id):
-    """
-    Importa produtos e entradas da planilha no formato JFL.
-    - Aba PROD: cabeçalho na linha 3, dados a partir da linha 4
-      Colunas: col B=ITEM, col D=UNIDADE, col E=ESTOQUE MÍNIMO, col F=MÉDIA DE CUSTO, col G=PREÇO UNITÁRIO
-    - Aba FORN: cabeçalho na linha 2, dados a partir da linha 3
-      Colunas: col B=EMPRESA, col C=CONTATO, col D=E-MAIL, col E=ENDEREÇO
-    """
+
     conn = conectar()
     cursor = conn.cursor()
 
     importados = []
     ignorados = []
 
-    # ------- Fornecedores (aba FORN) -------
-    ws_forn = wb["FORN"]
-    linhas_forn = list(ws_forn.iter_rows(values_only=True))
+    # =====================================================
+    # FORNECEDORES
+    # =====================================================
 
-    # Cabeçalho na linha 2 (índice 1): EMPRESA, CONTATO, E-MAIL, ENDEREÇO, TOTAL COMPRADO
-    # Dados a partir da linha 3 (índice 2)
-    mapa_forn = {}  # nome_empresa -> {contato, email}
-    for linha in linhas_forn[2:]:
-        empresa = str(linha[1] or "").strip() if len(linha) > 1 else ""
-        contato = str(linha[2] or "").strip() if len(linha) > 2 else ""
-        if empresa:
-            mapa_forn[normalizar(empresa)] = {
-                "nome": empresa,
-                "contato": contato,
-            }
+    fornecedores = {}
 
-    # ------- Produtos (aba PROD) -------
+    try:
+
+        ws_forn = wb["FORN"]
+
+        linhas_forn = list(
+            ws_forn.iter_rows(values_only=True)
+        )
+
+        for linha in linhas_forn[2:]:
+
+            empresa = str(
+                linha[1] or ""
+            ).strip()
+
+            contato = str(
+                linha[2] or ""
+            ).strip()
+
+            email = str(
+                linha[3] or ""
+            ).strip()
+
+            endereco = str(
+                linha[4] or ""
+            ).strip()
+
+            if empresa:
+
+                fornecedores[
+                    normalizar(empresa)
+                ] = {
+                    "nome": empresa,
+                    "contato": contato,
+                    "email": email,
+                    "endereco": endereco
+                }
+
+    except Exception:
+        pass
+
+    # =====================================================
+    # PRODUTOS
+    # =====================================================
+
     ws_prod = wb["PROD"]
-    linhas_prod = list(ws_prod.iter_rows(values_only=True))
+
+    linhas_prod = list(
+        ws_prod.iter_rows(values_only=True)
+    )
 
     for i, linha in enumerate(linhas_prod[3:], start=4):
-        nome = str(linha[1] or "").strip() if len(linha) > 1 else ""
-        if not nome:
-            continue
 
         try:
-            valor = float(str(linha[5] or 0).replace(",", ".") or 0) if len(linha) > 5 else 0.0
-        except (ValueError, TypeError):
-            valor = 0.0
 
-        try:
-            cursor.execute(
-                "SELECT id, quantidade, valor FROM produtos WHERE produto = %s AND tenant_id = %s",
-                (nome, tenant_id)
-            )
+            nome = str(
+                linha[1] or ""
+            ).strip()
+
+            if not nome:
+                continue
+
+            nome_normalizado = normalizar(nome)
+
+            unidade = str(
+                linha[3] or ""
+            ).strip() if len(linha) > 3 else ""
+
+            try:
+                estoque_minimo = float(
+                    str(linha[4] or 0).replace(",", ".")
+                )
+            except:
+                estoque_minimo = 0
+
+            try:
+                valor = float(
+                    str(linha[5] or 0).replace(",", ".")
+                )
+            except:
+                valor = 0
+
+            try:
+                preco_venda = float(
+                    str(linha[6] or 0).replace(",", ".")
+                )
+            except:
+                preco_venda = 0
+
+            cursor.execute("""
+                SELECT id, valor
+                FROM produtos
+                WHERE LOWER(TRIM(produto)) = %s
+                AND tenant_id = %s
+            """, (
+                nome_normalizado,
+                tenant_id
+            ))
+
             existente = cursor.fetchone()
 
             if existente:
-                valor_atual = float(existente["valor"] or 0)
-                novo_valor = valor if valor > 0 else valor_atual
+
+                valor_atual = float(
+                    existente["valor"] or 0
+                )
+
+                novo_valor = (
+                    valor if valor > 0
+                    else valor_atual
+                )
+
                 cursor.execute("""
-                    UPDATE produtos SET valor = %s
-                    WHERE produto = %s AND tenant_id = %s
-                """, (round(novo_valor, 4), nome, tenant_id))
-                importados.append(f"{nome} (atualizado)")
+                    UPDATE produtos
+                    SET
+                        valor = %s,
+                        unidade = %s,
+                        estoque_minimo = %s,
+                        preco_venda = %s
+                    WHERE id = %s
+                """, (
+                    round(novo_valor, 4),
+                    unidade,
+                    estoque_minimo,
+                    preco_venda,
+                    existente["id"]
+                ))
+
+                importados.append(
+                    f"{nome} (atualizado)"
+                )
+
             else:
+
                 cursor.execute("""
-                    INSERT INTO produtos (tenant_id, produto, quantidade, valor)
-                    VALUES (%s, %s, %s, %s)
-                """, (tenant_id, nome, 0, valor))
+                    INSERT INTO produtos (
+                        tenant_id,
+                        produto,
+                        quantidade,
+                        valor,
+                        unidade,
+                        estoque_minimo,
+                        preco_venda
+                    )
+                    VALUES (%s,%s,%s,%s,%s,%s,%s)
+                """, (
+                    tenant_id,
+                    nome,
+                    0,
+                    valor,
+                    unidade,
+                    estoque_minimo,
+                    preco_venda
+                ))
+
                 importados.append(nome)
+
         except Exception as e:
-            conn.rollback()
-            ignorados.append(f"Linha {i} ({nome}): {str(e)}")
-            continue
 
-    # ------- Entradas (aba ENTRADAS) -------
-    ws_ent = wb["ENTRADAS"]
-    linhas_ent = list(ws_ent.iter_rows(values_only=True))
-
-    # Cabeçalho na linha 3 (índice 2), dados a partir da linha 4 (índice 3)
-    # col 1=DATA, col 2=PRODUTO, col 3=FORNECEDOR, col 4=QUANTIDADE, col 5=CUSTO UNIT, col 7=VALOR TOTAL
-    entradas_importadas = []
-    entradas_ignoradas = []
-
-    for i, linha in enumerate(linhas_ent[3:], start=4):
-        produto = str(linha[2] or "").strip() if len(linha) > 2 else ""
-        if not produto:
-            continue
-
-        try:
-            data_compra = linha[1]
-            fornecedor_nome = str(linha[3] or "").strip() if len(linha) > 3 else ""
-            quantidade = float(str(linha[4] or 0).replace(",", ".") or 0) if len(linha) > 4 else 0.0
-            custo_unit = float(str(linha[5] or 0).replace(",", ".") or 0) if len(linha) > 5 else 0.0
-        except (ValueError, TypeError):
-            entradas_ignoradas.append(f"Linha {i}: erro ao ler dados")
-            continue
-
-        if quantidade <= 0:
-            entradas_ignoradas.append(f"Linha {i}: quantidade zero ou inválida")
-            continue
-
-        try:
-            cursor.execute(
-                "SELECT id, quantidade, valor FROM produtos WHERE produto = %s AND tenant_id = %s",
-                (produto, tenant_id)
+            ignorados.append(
+                f"Linha {i}: {str(e)}"
             )
-            prod_row = cursor.fetchone()
 
-            if not prod_row:
-                cursor.execute("""
-                    INSERT INTO produtos (tenant_id, produto, quantidade, valor)
-                    VALUES (%s, %s, %s, %s) RETURNING id, quantidade, valor
-                """, (tenant_id, produto, 0, custo_unit))
-                prod_row = cursor.fetchone()
-
-            produto_id = prod_row["id"]
-            qtd_atual = float(prod_row["quantidade"] or 0)
-            valor_atual = float(prod_row["valor"] or 0)
-
-            nova_qtd = qtd_atual + quantidade
-            if nova_qtd > 0:
-                novo_valor = ((qtd_atual * valor_atual) + (quantidade * custo_unit)) / nova_qtd
-            else:
-                novo_valor = custo_unit
-
-            cursor.execute("""
-                UPDATE produtos SET quantidade = %s, valor = %s,
-                    fornecedor = CASE WHEN %s != '' THEN %s ELSE fornecedor END
-                WHERE id = %s AND tenant_id = %s
-            """, (nova_qtd, round(novo_valor, 4), fornecedor_nome, fornecedor_nome, produto_id, tenant_id))
-
-            try:
-                cursor.execute("""
-                    INSERT INTO movimentacoes
-                        (tenant_id, produto_id, tipo, quantidade, valor_unitario, data)
-                    VALUES (%s, %s, 'entrada', %s, %s, %s)
-                """, (tenant_id, produto_id, quantidade, custo_unit, data_compra))
-            except Exception:
-                conn.rollback()  # movimentação falhou, faz rollback parcial e continua
-
-            entradas_importadas.append(produto)
-
-        except Exception as e:
-            conn.rollback()
-            entradas_ignoradas.append(f"Linha {i} ({produto}): {str(e)}")
             continue
 
     conn.commit()
@@ -190,141 +324,396 @@ def importar_jfl(wb, tenant_id):
     return {
         "msg": "Planilha JFL importada com sucesso",
         "produtos_importados": len(importados),
-        "entradas_importadas": len(entradas_importadas),
         "produtos": importados,
-        "entradas": entradas_importadas,
-        "ignorados": ignorados + entradas_ignoradas,
+        "ignorados": ignorados
     }
 
 
+# =========================================================
+# IMPORTADOR GENÉRICO
+# =========================================================
+
 def importar_generica(wb, tenant_id):
-    """Importação genérica pela aba ativa, detectando colunas pelo cabeçalho."""
+
     ws = wb.active
-    linhas = list(ws.iter_rows(values_only=True))
+
+    linhas = list(
+        ws.iter_rows(values_only=True)
+    )
 
     if not linhas or len(linhas) < 2:
-        return None, "Planilha vazia ou sem dados além do cabeçalho"
 
-    cabecalho = [str(c) if c is not None else "" for c in linhas[0]]
+        return None, (
+            "Planilha vazia "
+            "ou sem dados"
+        )
+
+    cabecalho = [
+        str(c) if c is not None else ""
+        for c in linhas[0]
+    ]
+
     mapa = mapear_cabecalho(cabecalho)
 
     if "produto" not in mapa:
+
         return None, (
-            "Coluna 'produto' não encontrada. Verifique o cabeçalho da planilha. "
-            f"Cabeçalho encontrado: {cabecalho}"
+            "Coluna produto não encontrada"
         )
 
     conn = conectar()
     cursor = conn.cursor()
+
     importados = []
     ignorados = []
 
+    colunas_ignoradas = []
+
+    for col in cabecalho:
+
+        col_norm = normalizar(col)
+
+        reconhecida = False
+
+        for variantes in MAPA_COLUNAS.values():
+
+            if any(
+                normalizar(v) in col_norm
+                or col_norm in normalizar(v)
+                for v in variantes
+            ):
+                reconhecida = True
+                break
+
+        if not reconhecida:
+            colunas_ignoradas.append(col)
+
     for i, linha in enumerate(linhas[1:], start=2):
+
         def cel(campo, padrao=""):
+
             idx = mapa.get(campo)
+
             if idx is None:
                 return padrao
-            val = linha[idx] if idx < len(linha) else None
-            return val if val is not None else padrao
 
-        nome = str(cel("produto", "")).strip()
-        if not nome:
-            ignorados.append(f"Linha {i}: produto vazio")
-            continue
+            val = (
+                linha[idx]
+                if idx < len(linha)
+                else None
+            )
+
+            return (
+                val
+                if val is not None
+                else padrao
+            )
 
         try:
-            quantidade = float(str(cel("quantidade", 0)).replace(",", ".") or 0)
-        except (ValueError, TypeError):
-            quantidade = 0.0
 
-        try:
-            valor = float(str(cel("valor", 0)).replace(",", ".") or 0)
-        except (ValueError, TypeError):
-            valor = 0.0
+            nome = str(
+                cel("produto", "")
+            ).strip()
 
-        fornecedor = str(cel("fornecedor", "")).strip()
-        contato    = str(cel("contato", "")).strip()
+            if not nome:
 
-        cursor.execute(
-            "SELECT id, quantidade, valor FROM produtos WHERE produto = %s AND tenant_id = %s",
-            (nome, tenant_id)
-        )
-        existente = cursor.fetchone()
+                ignorados.append(
+                    f"Linha {i}: produto vazio"
+                )
 
-        if existente:
-            qtd_atual   = float(existente["quantidade"] or 0)
-            valor_atual = float(existente["valor"] or 0)
-            nova_qtd    = qtd_atual + quantidade
-            if nova_qtd > 0:
-                novo_valor = ((qtd_atual * valor_atual) + (quantidade * valor)) / nova_qtd
-            else:
-                novo_valor = valor
+                continue
+
+            nome_normalizado = normalizar(nome)
+
+            try:
+                quantidade = float(
+                    str(
+                        cel("quantidade", 0)
+                    ).replace(",", ".")
+                )
+            except:
+                quantidade = 0
+
+            try:
+                valor = float(
+                    str(
+                        cel("valor", 0)
+                    ).replace(",", ".")
+                )
+            except:
+                valor = 0
+
+            fornecedor = str(
+                cel("fornecedor", "")
+            ).strip()
+
+            contato = str(
+                cel("contato", "")
+            ).strip()
+
+            email = str(
+                cel("email", "")
+            ).strip()
+
+            endereco = str(
+                cel("endereco", "")
+            ).strip()
+
+            unidade = str(
+                cel("unidade", "")
+            ).strip()
+
+            try:
+                estoque_minimo = float(
+                    str(
+                        cel("estoque_min", 0)
+                    ).replace(",", ".")
+                )
+            except:
+                estoque_minimo = 0
 
             cursor.execute("""
-                UPDATE produtos
-                SET quantidade = %s, valor = %s,
-                    fornecedor = CASE WHEN %s != '' THEN %s ELSE fornecedor END,
-                    contato    = CASE WHEN %s != '' THEN %s ELSE contato END
-                WHERE produto = %s AND tenant_id = %s
+                SELECT id, quantidade, valor
+                FROM produtos
+                WHERE LOWER(TRIM(produto)) = %s
+                AND tenant_id = %s
             """, (
-                nova_qtd, round(novo_valor, 4),
-                fornecedor, fornecedor,
-                contato, contato,
-                nome, tenant_id
+                nome_normalizado,
+                tenant_id
             ))
-        else:
-            cursor.execute("""
-                INSERT INTO produtos (tenant_id, produto, quantidade, valor, fornecedor, contato)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """, (tenant_id, nome, quantidade, valor, fornecedor, contato))
 
-        importados.append(nome)
+            existente = cursor.fetchone()
+
+            if existente:
+
+                qtd_atual = float(
+                    existente["quantidade"] or 0
+                )
+
+                valor_atual = float(
+                    existente["valor"] or 0
+                )
+
+                nova_qtd = qtd_atual + quantidade
+
+                if nova_qtd > 0:
+
+                    novo_valor = (
+                        (
+                            qtd_atual * valor_atual
+                        ) + (
+                            quantidade * valor
+                        )
+                    ) / nova_qtd
+
+                else:
+                    novo_valor = valor
+
+                cursor.execute("""
+                    UPDATE produtos
+                    SET
+                        quantidade = %s,
+                        valor = %s,
+                        fornecedor = CASE
+                            WHEN %s != ''
+                            THEN %s
+                            ELSE fornecedor
+                        END,
+                        contato = CASE
+                            WHEN %s != ''
+                            THEN %s
+                            ELSE contato
+                        END,
+                        email = CASE
+                            WHEN %s != ''
+                            THEN %s
+                            ELSE email
+                        END,
+                        endereco = CASE
+                            WHEN %s != ''
+                            THEN %s
+                            ELSE endereco
+                        END,
+                        unidade = CASE
+                            WHEN %s != ''
+                            THEN %s
+                            ELSE unidade
+                        END,
+                        estoque_minimo = %s
+                    WHERE id = %s
+                """, (
+                    nova_qtd,
+                    round(novo_valor, 4),
+
+                    fornecedor,
+                    fornecedor,
+
+                    contato,
+                    contato,
+
+                    email,
+                    email,
+
+                    endereco,
+                    endereco,
+
+                    unidade,
+                    unidade,
+
+                    estoque_minimo,
+
+                    existente["id"]
+                ))
+
+            else:
+
+                cursor.execute("""
+                    INSERT INTO produtos (
+                        tenant_id,
+                        produto,
+                        quantidade,
+                        valor,
+                        fornecedor,
+                        contato,
+                        email,
+                        endereco,
+                        unidade,
+                        estoque_minimo
+                    )
+                    VALUES (
+                        %s,%s,%s,%s,%s,
+                        %s,%s,%s,%s,%s
+                    )
+                """, (
+                    tenant_id,
+                    nome,
+                    quantidade,
+                    valor,
+                    fornecedor,
+                    contato,
+                    email,
+                    endereco,
+                    unidade,
+                    estoque_minimo
+                ))
+
+            importados.append(nome)
+
+        except Exception as e:
+
+            ignorados.append(
+                f"Linha {i}: {str(e)}"
+            )
+
+            continue
 
     conn.commit()
     conn.close()
 
     return {
         "msg": "Planilha importada com sucesso",
+
         "total_importados": len(importados),
+
         "produtos": importados,
+
         "ignorados": ignorados,
+
+        "colunas_reconhecidas": list(
+            mapa.keys()
+        ),
+
+        "colunas_ignoradas": colunas_ignoradas
     }, None
 
+
+# =========================================================
+# ROTA
+# =========================================================
 
 @excel_bp.route("/importar", methods=["POST"])
 @auth_required
 def importar_excel():
+
     try:
+
         tenant_id = g.usuario["tenant_id"]
 
         arquivo = request.files.get("arquivo")
+
         if not arquivo:
-            return jsonify({"erro": "Arquivo não enviado"}), 400
+
+            return jsonify({
+                "erro": "Arquivo não enviado"
+            }), 400
 
         nome_arquivo = arquivo.filename or ""
-        extensao = nome_arquivo.rsplit(".", 1)[-1].lower() if "." in nome_arquivo else ""
 
-        if extensao not in ("xlsx", "xls", "ods"):
-            return jsonify({"erro": "Formato inválido. Envie um arquivo .xlsx, .xls ou .ods"}), 400
+        extensao = (
+            nome_arquivo.rsplit(".", 1)[-1].lower()
+            if "." in nome_arquivo
+            else ""
+        )
+
+        if extensao not in (
+            "xlsx",
+            "xls",
+            "ods"
+        ):
+
+            return jsonify({
+                "erro": (
+                    "Formato inválido"
+                )
+            }), 400
 
         try:
+
             import openpyxl
             from io import BytesIO
-            conteudo = arquivo.read()
-            wb = openpyxl.load_workbook(BytesIO(conteudo), read_only=True, data_only=True)
-        except Exception as e:
-            return jsonify({"erro": f"Erro ao ler planilha: {str(e)}"}), 400
 
-        # Detecta o formato da planilha e usa o importador correto
+            conteudo = arquivo.read()
+
+            wb = openpyxl.load_workbook(
+                BytesIO(conteudo),
+                read_only=True,
+                data_only=True
+            )
+
+        except Exception as e:
+
+            return jsonify({
+                "erro": (
+                    f"Erro ao ler planilha: {str(e)}"
+                )
+            }), 400
+
         if detectar_planilha_jfl(wb):
-            resultado = importar_jfl(wb, tenant_id)
+
+            resultado = importar_jfl(
+                wb,
+                tenant_id
+            )
+
             return jsonify(resultado), 200
-        else:
-            resultado, erro = importar_generica(wb, tenant_id)
-            if erro:
-                return jsonify({"erro": erro}), 400
-            return jsonify(resultado), 200
+
+        resultado, erro = importar_generica(
+            wb,
+            tenant_id
+        )
+
+        if erro:
+
+            return jsonify({
+                "erro": erro
+            }), 400
+
+        return jsonify(resultado), 200
 
     except Exception as e:
+
         traceback.print_exc()
-        return jsonify({"erro": str(e)}), 500
+
+        return jsonify({
+            "erro": str(e)
+        }), 500
