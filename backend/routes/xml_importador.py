@@ -36,10 +36,14 @@ def importar_xml():
 
         numero_nota  = ide.findtext("nfe:nNF",   "", ns) if ide    is not None else ""
         serie        = ide.findtext("nfe:serie",  "", ns) if ide    is not None else ""
-        data_emissao = ide.findtext("nfe:dhEmi",  "", ns) if ide    is not None else ""
+        data_emissao = (ide.findtext("nfe:dhEmi", "", ns) or ide.findtext("nfe:dEmi", "", ns)) if ide is not None else ""
         chave_nfe    = infNFe.attrib.get("Id", "")        if infNFe is not None else ""
         fornecedor   = emit.findtext("nfe:xNome", "", ns) if emit   is not None else ""
         cnpj         = emit.findtext("nfe:CNPJ",  "", ns) if emit   is not None else ""
+
+        # Validação mínima: XML precisa ter ao menos número da nota e fornecedor
+        if not numero_nota or not fornecedor:
+            return jsonify({"erro": "XML inválido ou namespace NF-e não reconhecido. Verifique se o arquivo é uma NF-e válida."}), 400
 
         # Telefone do emitente (campo correto para contato)
         telefone_emit = ""
