@@ -141,27 +141,6 @@ def importar_jfl(wb, tenant_id):
             entradas_ignoradas.append(f"Linha {i}: quantidade zero ou inválida")
             continue
 
-        # Busca ou cria fornecedor
-        fornecedor_id = None
-        if fornecedor_nome:
-            forn_info = mapa_forn.get(normalizar(fornecedor_nome), {})
-            contato = forn_info.get("contato", "")
-
-            cursor.execute(
-                "SELECT id FROM fornecedores WHERE fornecedor = %s AND tenant_id = %s",
-                (fornecedor_nome, tenant_id)
-            )
-            forn_row = cursor.fetchone()
-
-            if forn_row:
-                fornecedor_id = forn_row["id"]
-            else:
-                cursor.execute("""
-                    INSERT INTO fornecedores (tenant_id, fornecedor, contato)
-                    VALUES (%s, %s, %s) RETURNING id
-                """, (tenant_id, fornecedor_nome, contato))
-                fornecedor_id = cursor.fetchone()["id"]
-
         # Busca produto
         cursor.execute(
             "SELECT id, quantidade, valor FROM produtos WHERE produto = %s AND tenant_id = %s",
@@ -198,9 +177,9 @@ def importar_jfl(wb, tenant_id):
         try:
             cursor.execute("""
                 INSERT INTO movimentacoes
-                    (tenant_id, produto_id, tipo, quantidade, valor_unitario, fornecedor_id, data)
-                VALUES (%s, %s, 'entrada', %s, %s, %s, %s)
-            """, (tenant_id, produto_id, quantidade, custo_unit, fornecedor_id, data_compra))
+                    (tenant_id, produto_id, tipo, quantidade, valor_unitario, data)
+                VALUES (%s, %s, 'entrada', %s, %s, %s)
+            """, (tenant_id, produto_id, quantidade, custo_unit, data_compra))
         except Exception:
             pass  # movimentação opcional, não bloqueia a importação
 
