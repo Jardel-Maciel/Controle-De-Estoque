@@ -280,11 +280,13 @@ document.getElementById("btnDownloadPDF")?.addEventListener("click", () => {
         y = 20;
       }
 
-      // zebra — linhas pares usam #1e293b, ímpares ficam transparentes
+      // zebra — todas as linhas têm fundo escuro, alternando dois tons
       if (idx % 2 === 0) {
-        doc.setFillColor(...COR.card);
-        doc.rect(14, y - 5, colW, 9, "F");
+        doc.setFillColor(...COR.card);    // #1e293b linhas pares
+      } else {
+        doc.setFillColor(...COR.surface); // #0f172a linhas ímpares
       }
+      doc.rect(14, y - 5, colW, 9, "F");
 
       const qtd   = p.quantidade ?? 0;
       const valor = parseFloat(p.valor || 0);
@@ -296,7 +298,21 @@ document.getElementById("btnDownloadPDF")?.addEventListener("click", () => {
 
       doc.text(String(idx + 1), colX[0], y);
       doc.text(String(p.produto || "-").substring(0, 38), colX[1], y);
+
+      // Quantidade + badge baixo estoque lado a lado
       doc.text(String(qtd), colX[2], y);
+      if (qtd <= 5) {
+        // badge à direita do número, sem sobrepor coluna de valor
+        doc.setFillColor(...COR.yellow);
+        doc.roundedRect(colX[2] + 8, y - 3.5, 13, 5, 1, 1, "F");
+        doc.setFontSize(5.5);
+        doc.setTextColor(...COR.surface);
+        doc.text("! baixo", colX[2] + 9, y - 0.2);
+        // restaura estilo para os próximos campos
+        doc.setFontSize(8);
+        doc.setTextColor(...COR.textWhite);
+      }
+
       doc.text(
         `R$ ${valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
         colX[3], y
@@ -305,17 +321,6 @@ document.getElementById("btnDownloadPDF")?.addEventListener("click", () => {
         `R$ ${total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
         colX[4], y
       );
-
-      // badge baixo estoque — cor #facc15 igual ao .card.warning
-      if (qtd <= 5) {
-        doc.setFillColor(...COR.yellow);
-        doc.roundedRect(colX[2] + 6, y - 4, 14, 5, 1, 1, "F");
-        doc.setFontSize(5.5);
-        doc.setTextColor(...COR.surface);
-        doc.text("⚠ baixo", colX[2] + 7.5, y - 0.5);
-        doc.setFontSize(8);
-        doc.setTextColor(...COR.textWhite);
-      }
 
       y += 9;
     });
