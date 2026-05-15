@@ -15,7 +15,6 @@ MAPA_COLUNAS = {
                    "custo unitario", "custo unitário", "media de custo", "média de custo"],
     "fornecedor": ["fornecedor", "supplier", "vendor", "fabricante"],
     "contato":    ["contato", "contact", "telefone", "tel", "fone", "phone"],
-    "unidade":    ["unidade", "un", "unidade de medida", "und"],
     "estoque_min":["estoque minimo", "estoque mínimo", "estoque_minimo", "min"],
 }
 
@@ -84,11 +83,9 @@ def importar_jfl(wb, tenant_id):
             continue
 
         try:
-            unidade = str(linha[3] or "").strip() if len(linha) > 3 else ""
             estoque_min = float(str(linha[4] or 0).replace(",", ".") or 0) if len(linha) > 4 else 0.0
             valor = float(str(linha[5] or 0).replace(",", ".") or 0) if len(linha) > 5 else 0.0
         except (ValueError, TypeError):
-            unidade = ""
             estoque_min = 0.0
             valor = 0.0
 
@@ -100,23 +97,21 @@ def importar_jfl(wb, tenant_id):
         existente = cursor.fetchone()
 
         if existente:
-            # Atualiza valor médio se necessário, mantém quantidade
             qtd_atual = float(existente["quantidade"] or 0)
             valor_atual = float(existente["valor"] or 0)
             novo_valor = valor if valor > 0 else valor_atual
 
             cursor.execute("""
                 UPDATE produtos
-                SET valor      = %s,
-                    unidade    = CASE WHEN %s != '' THEN %s ELSE unidade END
+                SET valor = %s
                 WHERE produto = %s AND tenant_id = %s
-            """, (round(novo_valor, 4), unidade, unidade, nome, tenant_id))
+            """, (round(novo_valor, 4), nome, tenant_id))
             importados.append(f"{nome} (atualizado)")
         else:
             cursor.execute("""
-                INSERT INTO produtos (tenant_id, produto, quantidade, valor, unidade)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (tenant_id, nome, 0, valor, unidade))
+                INSERT INTO produtos (tenant_id, produto, quantidade, valor)
+                VALUES (%s, %s, %s, %s)
+            """, (tenant_id, nome, 0, valor))
             importados.append(nome)
 
     # ------- Entradas (aba ENTRADAS) -------
@@ -271,7 +266,6 @@ def importar_generica(wb, tenant_id):
 
         fornecedor = str(cel("fornecedor", "")).strip()
         contato    = str(cel("contato", "")).strip()
-        unidade    = str(cel("unidade", "")).strip()
 
         cursor.execute(
             "SELECT id, quantidade, valor FROM produtos WHERE produto = %s AND tenant_id = %s",
@@ -292,21 +286,19 @@ def importar_generica(wb, tenant_id):
                 UPDATE produtos
                 SET quantidade = %s, valor = %s,
                     fornecedor = CASE WHEN %s != '' THEN %s ELSE fornecedor END,
-                    contato    = CASE WHEN %s != '' THEN %s ELSE contato END,
-                    unidade    = CASE WHEN %s != '' THEN %s ELSE unidade END
+                    contato    = CASE WHEN %s != '' THEN %s ELSE contato END
                 WHERE produto = %s AND tenant_id = %s
             """, (
                 nova_qtd, round(novo_valor, 4),
                 fornecedor, fornecedor,
                 contato, contato,
-                unidade, unidade,
                 nome, tenant_id
             ))
         else:
             cursor.execute("""
-                INSERT INTO produtos (tenant_id, produto, quantidade, valor, fornecedor, contato, unidade)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """, (tenant_id, nome, quantidade, valor, fornecedor, contato, unidade))
+                INSERT INTO produtos (tenant_id, produto, quantidade, valor, fornecedor, contato)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (tenant_id, nome, quantidade, valor, fornecedor, contato))
 
         importados.append(nome)
 
