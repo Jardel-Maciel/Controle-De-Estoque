@@ -9,49 +9,68 @@ from utils.auth_middleware import auth_required
 excel_bp = Blueprint("excel", __name__, url_prefix="/excel")
 
 # =========================================================
-# MAPEAMENTO FLEXÍVEL DE COLUNAS
+# MAPA FLEXÍVEL DE COLUNAS
 # =========================================================
 
 MAPA_COLUNAS = {
     "produto": [
-        "produto", "product", "nome", "name",
-        "descricao", "descrição", "item",
-        "nome produto", "produto descricao",
+        "produto",
+        "product",
+        "nome",
+        "name",
+        "descricao",
+        "descrição",
+        "item",
+        "nome produto",
+        "produto descricao",
         "descricao produto"
     ],
 
     "quantidade": [
-        "quantidade", "qtd", "qty",
-        "quantity", "estoque", "qtde",
-        "saldo", "qtd estoque"
+        "quantidade",
+        "qtd",
+        "qty",
+        "quantity",
+        "estoque",
+        "qtde",
+        "saldo",
+        "qtd estoque"
     ],
 
     "valor": [
-        "valor", "value", "preco", "preço",
-        "price", "custo", "cost",
-        "vl", "vr", "valor custo",
-        "custo unitario", "custo unitário",
-        "media de custo", "média de custo",
-        "preco unitario", "preço unitário"
+        "valor",
+        "value",
+        "preco",
+        "preço",
+        "price",
+        "custo",
+        "cost",
+        "vl",
+        "vr",
+        "valor custo",
+        "custo unitario",
+        "custo unitário",
+        "media de custo",
+        "média de custo",
+        "preco unitario",
+        "preço unitário"
     ],
 
     "fornecedor": [
-        "fornecedor", "supplier",
-        "vendor", "fabricante", "empresa"
+        "fornecedor",
+        "supplier",
+        "vendor",
+        "fabricante",
+        "empresa"
     ],
 
     "contato": [
-        "contato", "contact",
-        "telefone", "tel",
-        "fone", "phone"
-    ],
-
-    "email": [
-        "email", "e-mail", "mail"
-    ],
-
-    "endereco": [
-        "endereco", "endereço", "address"
+        "contato",
+        "contact",
+        "telefone",
+        "tel",
+        "fone",
+        "phone"
     ],
 
     "estoque_min": [
@@ -59,26 +78,16 @@ MAPA_COLUNAS = {
         "estoque mínimo",
         "estoque_minimo",
         "min"
-    ],
-
-    "unidade": [
-        "unidade", "und", "unit"
-    ],
-
-    "preco_venda": [
-        "preco venda",
-        "preço venda",
-        "valor venda",
-        "sale price"
     ]
 }
 
 
 # =========================================================
-# NORMALIZAÇÃO
+# NORMALIZAR TEXTO
 # =========================================================
 
 def normalizar(texto):
+
     texto = str(texto).strip().lower()
 
     texto = unicodedata.normalize(
@@ -95,10 +104,11 @@ def normalizar(texto):
 
 
 # =========================================================
-# MAPEAR CABEÇALHO FLEXÍVEL
+# MAPEAR CABEÇALHO
 # =========================================================
 
 def mapear_cabecalho(cabecalho):
+
     mapa = {}
 
     for idx, col in enumerate(cabecalho):
@@ -131,9 +141,10 @@ def detectar_planilha_jfl(wb):
 
     abas = [normalizar(s) for s in wb.sheetnames]
 
-    obrigatorias = ["prod", "entradas", "forn"]
-
-    return all(a in abas for a in obrigatorias)
+    return all(
+        aba in abas
+        for aba in ["prod", "entradas", "forn"]
+    )
 
 
 # =========================================================
@@ -147,56 +158,6 @@ def importar_jfl(wb, tenant_id):
 
     importados = []
     ignorados = []
-
-    # =====================================================
-    # FORNECEDORES
-    # =====================================================
-
-    fornecedores = {}
-
-    try:
-
-        ws_forn = wb["FORN"]
-
-        linhas_forn = list(
-            ws_forn.iter_rows(values_only=True)
-        )
-
-        for linha in linhas_forn[2:]:
-
-            empresa = str(
-                linha[1] or ""
-            ).strip()
-
-            contato = str(
-                linha[2] or ""
-            ).strip()
-
-            email = str(
-                linha[3] or ""
-            ).strip()
-
-            endereco = str(
-                linha[4] or ""
-            ).strip()
-
-            if empresa:
-
-                fornecedores[
-                    normalizar(empresa)
-                ] = {
-                    "nome": empresa,
-                    "contato": contato,
-                    "email": email,
-                    "endereco": endereco
-                }
-
-    except Exception:
-        pass
-
-    # =====================================================
-    # PRODUTOS
-    # =====================================================
 
     ws_prod = wb["PROD"]
 
@@ -215,40 +176,23 @@ def importar_jfl(wb, tenant_id):
             if not nome:
                 continue
 
-            nome_normalizado = normalizar(nome)
-
-            unidade = str(
-                linha[3] or ""
-            ).strip() if len(linha) > 3 else ""
-
-            try:
-                estoque_minimo = float(
-                    str(linha[4] or 0).replace(",", ".")
-                )
-            except:
-                estoque_minimo = 0
-
             try:
                 valor = float(
-                    str(linha[5] or 0).replace(",", ".")
+                    str(
+                        linha[5] or 0
+                    ).replace(",", ".")
                 )
             except:
                 valor = 0
 
-            try:
-                preco_venda = float(
-                    str(linha[6] or 0).replace(",", ".")
-                )
-            except:
-                preco_venda = 0
-
             cursor.execute("""
-                SELECT id, valor
+                SELECT id, quantidade, valor
                 FROM produtos
-                WHERE LOWER(TRIM(produto)) = %s
+                WHERE LOWER(TRIM(produto)) =
+                      LOWER(TRIM(%s))
                 AND tenant_id = %s
             """, (
-                nome_normalizado,
+                nome,
                 tenant_id
             ))
 
@@ -261,23 +205,17 @@ def importar_jfl(wb, tenant_id):
                 )
 
                 novo_valor = (
-                    valor if valor > 0
+                    valor
+                    if valor > 0
                     else valor_atual
                 )
 
                 cursor.execute("""
                     UPDATE produtos
-                    SET
-                        valor = %s,
-                        unidade = %s,
-                        estoque_minimo = %s,
-                        preco_venda = %s
+                    SET valor = %s
                     WHERE id = %s
                 """, (
                     round(novo_valor, 4),
-                    unidade,
-                    estoque_minimo,
-                    preco_venda,
                     existente["id"]
                 ))
 
@@ -292,20 +230,14 @@ def importar_jfl(wb, tenant_id):
                         tenant_id,
                         produto,
                         quantidade,
-                        valor,
-                        unidade,
-                        estoque_minimo,
-                        preco_venda
+                        valor
                     )
-                    VALUES (%s,%s,%s,%s,%s,%s,%s)
+                    VALUES (%s,%s,%s,%s)
                 """, (
                     tenant_id,
                     nome,
                     0,
-                    valor,
-                    unidade,
-                    estoque_minimo,
-                    preco_venda
+                    valor
                 ))
 
                 importados.append(nome)
@@ -344,8 +276,7 @@ def importar_generica(wb, tenant_id):
     if not linhas or len(linhas) < 2:
 
         return None, (
-            "Planilha vazia "
-            "ou sem dados"
+            "Planilha vazia ou sem dados"
         )
 
     cabecalho = [
@@ -390,26 +321,26 @@ def importar_generica(wb, tenant_id):
 
     for i, linha in enumerate(linhas[1:], start=2):
 
-        def cel(campo, padrao=""):
-
-            idx = mapa.get(campo)
-
-            if idx is None:
-                return padrao
-
-            val = (
-                linha[idx]
-                if idx < len(linha)
-                else None
-            )
-
-            return (
-                val
-                if val is not None
-                else padrao
-            )
-
         try:
+
+            def cel(campo, padrao=""):
+
+                idx = mapa.get(campo)
+
+                if idx is None:
+                    return padrao
+
+                val = (
+                    linha[idx]
+                    if idx < len(linha)
+                    else None
+                )
+
+                return (
+                    val
+                    if val is not None
+                    else padrao
+                )
 
             nome = str(
                 cel("produto", "")
@@ -422,8 +353,6 @@ def importar_generica(wb, tenant_id):
                 )
 
                 continue
-
-            nome_normalizado = normalizar(nome)
 
             try:
                 quantidade = float(
@@ -451,34 +380,14 @@ def importar_generica(wb, tenant_id):
                 cel("contato", "")
             ).strip()
 
-            email = str(
-                cel("email", "")
-            ).strip()
-
-            endereco = str(
-                cel("endereco", "")
-            ).strip()
-
-            unidade = str(
-                cel("unidade", "")
-            ).strip()
-
-            try:
-                estoque_minimo = float(
-                    str(
-                        cel("estoque_min", 0)
-                    ).replace(",", ".")
-                )
-            except:
-                estoque_minimo = 0
-
             cursor.execute("""
                 SELECT id, quantidade, valor
                 FROM produtos
-                WHERE LOWER(TRIM(produto)) = %s
+                WHERE LOWER(TRIM(produto)) =
+                      LOWER(TRIM(%s))
                 AND tenant_id = %s
             """, (
-                nome_normalizado,
+                nome,
                 tenant_id
             ))
 
@@ -523,23 +432,7 @@ def importar_generica(wb, tenant_id):
                             WHEN %s != ''
                             THEN %s
                             ELSE contato
-                        END,
-                        email = CASE
-                            WHEN %s != ''
-                            THEN %s
-                            ELSE email
-                        END,
-                        endereco = CASE
-                            WHEN %s != ''
-                            THEN %s
-                            ELSE endereco
-                        END,
-                        unidade = CASE
-                            WHEN %s != ''
-                            THEN %s
-                            ELSE unidade
-                        END,
-                        estoque_minimo = %s
+                        END
                     WHERE id = %s
                 """, (
                     nova_qtd,
@@ -550,17 +443,6 @@ def importar_generica(wb, tenant_id):
 
                     contato,
                     contato,
-
-                    email,
-                    email,
-
-                    endereco,
-                    endereco,
-
-                    unidade,
-                    unidade,
-
-                    estoque_minimo,
 
                     existente["id"]
                 ))
@@ -574,15 +456,10 @@ def importar_generica(wb, tenant_id):
                         quantidade,
                         valor,
                         fornecedor,
-                        contato,
-                        email,
-                        endereco,
-                        unidade,
-                        estoque_minimo
+                        contato
                     )
                     VALUES (
-                        %s,%s,%s,%s,%s,
-                        %s,%s,%s,%s,%s
+                        %s,%s,%s,%s,%s,%s
                     )
                 """, (
                     tenant_id,
@@ -590,11 +467,7 @@ def importar_generica(wb, tenant_id):
                     quantidade,
                     valor,
                     fornecedor,
-                    contato,
-                    email,
-                    endereco,
-                    unidade,
-                    estoque_minimo
+                    contato
                 ))
 
             importados.append(nome)
@@ -606,6 +479,9 @@ def importar_generica(wb, tenant_id):
             )
 
             continue
+
+    print("IMPORTADOS:", importados)
+    print("IGNORADOS:", ignorados)
 
     conn.commit()
     conn.close()
@@ -628,7 +504,7 @@ def importar_generica(wb, tenant_id):
 
 
 # =========================================================
-# ROTA
+# ROTA IMPORTAR
 # =========================================================
 
 @excel_bp.route("/importar", methods=["POST"])
@@ -688,6 +564,10 @@ def importar_excel():
                 )
             }), 400
 
+        # =================================================
+        # IMPORTAÇÃO JFL
+        # =================================================
+
         if detectar_planilha_jfl(wb):
 
             resultado = importar_jfl(
@@ -696,6 +576,10 @@ def importar_excel():
             )
 
             return jsonify(resultado), 200
+
+        # =================================================
+        # IMPORTAÇÃO GENÉRICA
+        # =================================================
 
         resultado, erro = importar_generica(
             wb,
