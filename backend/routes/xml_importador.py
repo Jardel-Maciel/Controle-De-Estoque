@@ -1,11 +1,61 @@
 from flask import Blueprint, request, jsonify, g
 import xml.etree.ElementTree as ET
 import traceback
+import re
+import uuid
 
 from database.database import conectar
 from utils.auth_middleware import auth_required
 
 xml_bp = Blueprint("xml", __name__, url_prefix="/xml")
+
+
+def _strip_ns(tag):
+    """Remove namespace de uma tag. Ex: '{http://...}ide' -> 'ide'"""
+    return re.sub(r"\{[^}]+\}", "", tag)
+
+
+def _find(node, tag):
+    """Busca um filho direto pelo nome local, ignorando namespace."""
+    if node is None:
+        return None
+    for child in node:
+        if _strip_ns(child.tag) == tag:
+            return child
+    return None
+
+
+def _findtext(node, tag, default=""):
+    """Retorna o texto de um filho pelo nome local."""
+    child = _find(node, tag)
+    if child is not None and child.text:
+        return child.text.strip()
+    return default
+
+
+def _find_deep(root, tag):
+    """Busca recursiva pelo nome local em toda a árvore."""
+    if root is None:
+        return None
+    if _strip_ns(root.tag) == tag:
+        return root
+    for child in root:
+        result = _find_deep(child, tag)
+        if result is not None:
+            return result
+    return None
+
+
+def _findall_deep(root, tag):
+    """Busca recursiva de todos os nós com determinado nome local."""
+    results = []
+    if root is None:
+        return results
+    if _strip_ns(root.tag) == tag:
+        results.append(root)
+    for child in root:
+        results.extend(_findall_deep(child, tag))
+    return results
 
 
 @xml_bp.route("/importar", methods=["POST"])
@@ -25,71 +75,100 @@ def importar_xml():
         except ET.ParseError as e:
             return jsonify({"erro": f"XML inválido: {str(e)}"}), 400
 
-        ns = {"nfe": "http://www.portalfiscal.inf.br/nfe"}
+        # Busca os nós principais ignorando namespace
+        infNFe = _find_deep(root, "infNFe")
+        ide    = _find_deep(root, "ide")
+        emit   = _find_deep(root, "emit")
+        total  = _find_deep(root, "ICMSTot")
 
-        infNFe = root.find(".//nfe:infNFe", ns)
-        ide    = root.find(".//nfe:ide",    ns)
-        emit   = root.find(".//nfe:emit",   ns)
+        # --- Campos do emitente ---
+        fornecedor    = _findtext(emit, "xNome")
+        cnpj          = _findtext(emit, "CNPJ")
+        telefone_emit = _findtext(emit, "fone")
 
-        # FIX #4: path correto para ICMSTot (dentro de <total>)
-        total  = root.find(".//nfe:total/nfe:ICMSTot", ns)
+        # --- Campos da nota (ide pode não existir em XMLs simplificados) ---
+        numero_nota  = _findtext(ide, "nNF")
+        serie        = _findtext(ide, "serie")
+        data_emissao = _findtext(ide, "dhEmi") or _findtext(ide, "dEmi")
 
-        numero_nota  = ide.findtext("nfe:nNF",   "", ns) if ide    is not None else ""
-        serie        = ide.findtext("nfe:serie",  "", ns) if ide    is not None else ""
-        data_emissao = (ide.findtext("nfe:dhEmi", "", ns) or ide.findtext("nfe:dEmi", "", ns)) if ide is not None else ""
-        chave_nfe    = infNFe.attrib.get("Id", "")        if infNFe is not None else ""
-        fornecedor   = emit.findtext("nfe:xNome", "", ns) if emit   is not None else ""
-        cnpj         = emit.findtext("nfe:CNPJ",  "", ns) if emit   is not None else ""
+        # chave da NF-e (atributo Id do infNFe)
+        chave_nfe = infNFe.attrib.get("Id", "") if infNFe is not None else ""
 
-        # Validação mínima: XML precisa ter ao menos número da nota e fornecedor
-        if not numero_nota or not fornecedor:
-            return jsonify({"erro": "XML inválido ou namespace NF-e não reconhecido. Verifique se o arquivo é uma NF-e válida."}), 400
+        # Fallbacks para campos ausentes (XMLs simplificados / de teste)
+        if not numero_nota:
+            numero_nota = chave_nfe[3:45] if len(chave_nfe) > 10 else str(uuid.uuid4())[:8].upper()
+        if not chave_nfe:
+            chave_nfe = f"MANUAL-{tenant_id}-{numero_nota}"
 
-        # Telefone do emitente (campo correto para contato)
-        telefone_emit = ""
-        if emit is not None:
-            enderEmit = emit.find("nfe:enderEmit", ns)
-            telefone_emit = emit.findtext("nfe:fone", "", ns)
+        # Valor total
+        valor_total_nota = 0.0
+        if total is not None:
+            try:
+                valor_total_nota = float(_findtext(total, "vNF", "0"))
+            except ValueError:
+                valor_total_nota = 0.0
 
-        valor_total_nota = float(total.findtext("nfe:vNF", "0", ns) if total is not None else 0)
+        # Log de diagnóstico
+        print(f"[XML] numero_nota={numero_nota!r} | fornecedor={fornecedor!r} | "
+              f"chave={chave_nfe!r} | data={data_emissao!r} | total={valor_total_nota}")
 
-        # Avisa se valor total não foi encontrado
-        if total is None:
-            print(f"[AVISO] Tag <ICMSTot> não encontrada no XML da nota {numero_nota}")
+        # Validação mínima: precisa ter ao menos o emitente OU produtos
+        dets = _findall_deep(root, "det")
+        if not fornecedor and not dets:
+            return jsonify({
+                "erro": "XML não reconhecido: nenhum dado de fornecedor ou produto foi encontrado.",
+                "debug": {
+                    "root_tag": _strip_ns(root.tag),
+                    "root_children": [_strip_ns(c.tag) for c in root],
+                    "ide_encontrado": ide is not None,
+                    "emit_encontrado": emit is not None,
+                    "infNFe_encontrado": infNFe is not None,
+                }
+            }), 400
 
         conn = conectar()
         cursor = conn.cursor()
 
-        # Verifica duplicidade
-        cursor.execute("SELECT id FROM notas_fiscais WHERE chave_nfe = %s AND tenant_id = %s", (chave_nfe, tenant_id))
+        # Verifica duplicidade pela chave
+        cursor.execute(
+            "SELECT id FROM notas_fiscais WHERE chave_nfe = %s AND tenant_id = %s",
+            (chave_nfe, tenant_id)
+        )
         if cursor.fetchone():
             conn.close()
-            return jsonify({"erro": "NF-e já importada"}), 400
+            return jsonify({"erro": f"NF-e {numero_nota} já foi importada anteriormente"}), 400
 
-        # FIX #2: salva o conteúdo XML, não apenas o nome do arquivo
         xml_texto = conteudo.decode("utf-8", errors="replace")
 
         # Salva nota fiscal
         cursor.execute("""
-            INSERT INTO notas_fiscais (tenant_id, numero_nota, serie, chave_nfe, fornecedor, cnpj, data_emissao, valor_total, xml_original)
+            INSERT INTO notas_fiscais
+                (tenant_id, numero_nota, serie, chave_nfe, fornecedor, cnpj, data_emissao, valor_total, xml_original)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """, (tenant_id, numero_nota, serie, chave_nfe, fornecedor, cnpj, data_emissao, valor_total_nota, xml_texto))
+        """, (tenant_id, numero_nota, serie, chave_nfe,
+              fornecedor or "Sem fornecedor", cnpj,
+              data_emissao, valor_total_nota, xml_texto))
 
         produtos_importados = []
 
-        for det in root.findall(".//nfe:det", ns):
-            prod = det.find("nfe:prod", ns)
+        for det in dets:
+            prod = _find(det, "prod")
             if prod is None:
                 continue
 
-            nome       = prod.findtext("nfe:xProd", "", ns).strip()
-            quantidade = float(prod.findtext("nfe:qCom",   "0", ns))
-            valor      = float(prod.findtext("nfe:vUnCom", "0", ns))
+            nome           = _findtext(prod, "xProd")
+            quantidade_str = _findtext(prod, "qCom",   "0")
+            valor_str      = _findtext(prod, "vUnCom", "0")
 
             if not nome:
                 continue
 
-            # FIX #1: incluir "valor" no SELECT para poder calcular preço médio
+            try:
+                quantidade = float(quantidade_str)
+                valor      = float(valor_str)
+            except ValueError:
+                continue
+
             cursor.execute(
                 "SELECT id, quantidade, valor FROM produtos WHERE produto = %s AND tenant_id = %s",
                 (nome, tenant_id)
@@ -100,23 +179,22 @@ def importar_xml():
                 qtd_atual   = float(existente["quantidade"])
                 valor_atual = float(existente["valor"] or 0)
                 nova_qtd    = qtd_atual + quantidade
-                # Preço médio ponderado
                 novo_valor  = ((qtd_atual * valor_atual) + (quantidade * valor)) / nova_qtd if nova_qtd > 0 else valor
                 cursor.execute("""
                     UPDATE produtos
                     SET quantidade = %s, valor = %s, fornecedor = %s,
                         contato = %s, cnpj = %s, numero_nota = %s, data_emissao = %s
                     WHERE produto = %s AND tenant_id = %s
-                """, (nova_qtd, round(novo_valor, 4), fornecedor,
-                      # FIX #3: contato recebe telefone, não o CNPJ
+                """, (nova_qtd, round(novo_valor, 4), fornecedor or "Sem fornecedor",
                       telefone_emit, cnpj, numero_nota, data_emissao,
                       nome, tenant_id))
             else:
                 cursor.execute("""
-                    INSERT INTO produtos (tenant_id, produto, quantidade, valor, fornecedor, contato, cnpj, numero_nota, data_emissao)
+                    INSERT INTO produtos
+                        (tenant_id, produto, quantidade, valor, fornecedor, contato, cnpj, numero_nota, data_emissao)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """, (tenant_id, nome, quantidade, valor, fornecedor,
-                      # FIX #3: contato recebe telefone, não o CNPJ
+                """, (tenant_id, nome, quantidade, valor,
+                      fornecedor or "Sem fornecedor",
                       telefone_emit, cnpj, numero_nota, data_emissao))
 
             produtos_importados.append(nome)
@@ -127,7 +205,7 @@ def importar_xml():
         return jsonify({
             "msg": "XML importado com sucesso",
             "nota": numero_nota,
-            "fornecedor": fornecedor,
+            "fornecedor": fornecedor or "Sem fornecedor",
             "produtos": produtos_importados,
             "total_produtos": len(produtos_importados)
         })
