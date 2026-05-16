@@ -751,13 +751,11 @@ tr:last-child td { border-bottom: none; }
 }
 
 .login-logo-img {
-  height: 48px;
+  height: 72px;
   width: auto;
   object-fit: contain;
-  /* Logo tem fundo preto, mostrar bem */
-  border-radius: 8px;
-  background: #0A0A0A;
-  padding: 4px 8px;
+  filter: drop-shadow(0 6px 24px rgba(22,119,255,0.28))
+          drop-shadow(0 2px 8px rgba(0,196,140,0.14));
 }
 
 .login-headline {
