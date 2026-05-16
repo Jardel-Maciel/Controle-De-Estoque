@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard — Estoque Pro</title>
+  <title>Dashboard — Estoque Fácil</title>
   <link rel="stylesheet" href="css/design-system.css"/>
   <link rel="stylesheet" href="css/toast.css"/>
 </head>
@@ -13,12 +13,21 @@
   <!-- SIDEBAR -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
-      <div class="logo-mark">📦</div>
-      <div>
-        <div class="logo-name">Estoque Pro</div>
+      <!-- Ícone E em caixas azul/verde (baseado na logo) -->
+      <svg class="logo-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="2" width="15" height="8" rx="2" fill="#1677FF"/>
+        <rect x="2" y="14" width="15" height="8" rx="2" fill="#1677FF" opacity="0.7"/>
+        <rect x="10" y="14" width="15" height="8" rx="2" fill="#00C48C"/>
+        <rect x="2" y="26" width="22" height="8" rx="2" fill="#00C48C"/>
+      </svg>
+      <div class="logo-text">
+        <div class="logo-name">
+          <span class="white">Estoque</span> <span class="green">Fácil</span>
+        </div>
         <div class="logo-tag">SaaS</div>
       </div>
     </div>
+
     <div class="nav-section">
       <div class="nav-label">Menu</div>
       <a href="dashboard.html" class="nav-link active">
@@ -38,6 +47,7 @@
         Histórico
       </a>
     </div>
+
     <div class="nav-section" style="margin-top:8px">
       <div class="nav-label">Ferramentas</div>
       <a href="#" class="nav-link" id="navImportarXML">
@@ -49,6 +59,7 @@
         Relatório PDF
       </a>
     </div>
+
     <div class="sidebar-footer">
       <button class="nav-link" id="btnLogout" style="width:100%;border:none;background:none;cursor:pointer;text-align:left;font-family:inherit;font-size:13.5px;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -81,22 +92,30 @@
       <!-- STAT CARDS -->
       <div class="stats-grid">
         <div class="stat-card blue">
-          <div class="stat-icon blue">📦</div>
+          <div class="stat-icon blue">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          </div>
           <div class="stat-label">Total de produtos</div>
           <div class="stat-value" id="totalProdutos">—</div>
         </div>
         <div class="stat-card cyan">
-          <div class="stat-icon cyan">🔢</div>
+          <div class="stat-icon cyan">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          </div>
           <div class="stat-label">Total em estoque</div>
           <div class="stat-value" id="totalItens">—</div>
         </div>
         <div class="stat-card amber">
-          <div class="stat-icon amber">⚠️</div>
+          <div class="stat-icon amber">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
           <div class="stat-label">Baixo estoque</div>
           <div class="stat-value" id="baixoEstoque">—</div>
         </div>
         <div class="stat-card green">
-          <div class="stat-icon green">💰</div>
+          <div class="stat-icon green">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
           <div class="stat-label">Custo total</div>
           <div class="stat-value" id="totalEstoque" style="font-size:18px">—</div>
         </div>
@@ -150,7 +169,6 @@
   </div>
 </div>
 
-<!-- Input XML oculto -->
 <input type="file" id="inputXML" accept=".xml" style="display:none"/>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -159,19 +177,16 @@
 <script src="js/dashboard.js"></script>
 <script src="js/admin-btn.js"></script>
 <script>
-  // Avatar
   (function(){
     const nome = localStorage.getItem('nome') || '?';
     document.getElementById('avatarUser').textContent = nome.charAt(0).toUpperCase();
   })();
 
-  // Importar XML via sidebar
   document.getElementById('navImportarXML').addEventListener('click', function(e){
     e.preventDefault();
     document.getElementById('inputXML').click();
   });
 
-  // Logout
   document.getElementById('btnLogout').addEventListener('click', function(){
     localStorage.clear();
     location.href = 'index.html';

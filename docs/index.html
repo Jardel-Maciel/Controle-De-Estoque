@@ -3,21 +3,20 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Login — Estoque Pro</title>
+  <title>Login — Estoque Fácil</title>
   <link rel="stylesheet" href="css/design-system.css"/>
   <link rel="stylesheet" href="css/toast.css"/>
 </head>
 <body>
 
 <div class="login-bg">
+  <div class="login-glow"></div>
+
   <div class="login-card">
 
+    <!-- Logo -->
     <div class="login-logo">
-      <div class="logo-mark">📦</div>
-      <div>
-        <div class="logo-name">Estoque Pro</div>
-        <div class="logo-tag">SaaS</div>
-      </div>
+      <img src="assets/logo.png" alt="Estoque Fácil" class="login-logo-img"/>
     </div>
 
     <h1 class="login-headline">Bem-vindo de volta</h1>
@@ -36,14 +35,18 @@
       </div>
     </div>
 
-    <div style="text-align:right; margin-top:-6px; margin-bottom:20px;">
-      <a href="#" style="font-size:12px; color:var(--accent); text-decoration:none;" id="linkEsqueceu">Esqueceu a senha?</a>
+    <div style="text-align:right; margin-top:-6px; margin-bottom:22px;">
+      <a href="#" style="font-size:12px; color:var(--green); text-decoration:none; font-weight:500;" id="linkEsqueceu">Esqueceu a senha?</a>
     </div>
 
     <button class="btn btn-primary login-btn" id="btnLogin">Entrar</button>
 
     <div class="msg-erro" id="msgErro"></div>
     <div class="msg-ok"   id="msgOk"></div>
+
+    <p style="text-align:center; margin-top:28px; font-size:11px; color:var(--text-muted);">
+      Controle inteligente de estoque · SaaS
+    </p>
 
   </div>
 </div>

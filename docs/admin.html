@@ -4,28 +4,28 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin — Controle de Estoque</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="css/toast.css" />
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --bg:       #020617;
-      --surface:  #0f172a;
-      --card:     #1e293b;
+      --bg:       #081526;
+      --surface:  #0A1D3D;
+      --card:     #0d2348;
       --border:   rgba(148,163,184,0.1);
-      --blue:     #38bdf8;
-      --indigo:   #6366f1;
-      --green:    #22c55e;
+      --blue:     #1677FF;
+      --indigo:   #1677FF;
+      --green:    #00C48C;
       --red:      #ef4444;
       --yellow:   #facc15;
-      --text:     #e2e8f0;
-      --muted:    #94a3b8;
+      --text:     #F0F6FF;
+      --muted:    #8BA6CC;
       --dimmed:   #64748b;
     }
 
-    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
 
     /* ===================== SIDEBAR ===================== */
     .sidebar {
@@ -146,8 +146,13 @@
 <!-- ===================== SIDEBAR ===================== -->
 <aside class="sidebar">
   <div class="sidebar-logo">
-    <em>📦</em>
-    <span>Admin Panel</span>
+    <svg style="width:32px;height:32px;flex-shrink:0" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="2" y="2" width="15" height="8" rx="2" fill="#1677FF"/>
+      <rect x="2" y="14" width="15" height="8" rx="2" fill="#1677FF" opacity="0.7"/>
+      <rect x="10" y="14" width="15" height="8" rx="2" fill="#00C48C"/>
+      <rect x="2" y="26" width="22" height="8" rx="2" fill="#00C48C"/>
+    </svg>
+    <span style="font-size:14px"><span style="color:#FFFFFF;font-weight:700">Estoque</span> <span style="color:#00C48C;font-weight:700">Fácil</span></span>
   </div>
 
   <div class="nav-label">Visão Geral</div>

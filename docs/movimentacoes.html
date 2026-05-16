@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Movimentações — Estoque Pro</title>
+  <title>Movimentações — Estoque Fácil</title>
   <link rel="stylesheet" href="css/design-system.css"/>
   <link rel="stylesheet" href="css/toast.css"/>
 </head>
@@ -13,12 +13,20 @@
   <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="sidebar-logo">
-      <div class="logo-mark">📦</div>
-      <div>
-        <div class="logo-name">Estoque Pro</div>
+      <svg class="logo-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="2" width="15" height="8" rx="2" fill="#1677FF"/>
+        <rect x="2" y="14" width="15" height="8" rx="2" fill="#1677FF" opacity="0.7"/>
+        <rect x="10" y="14" width="15" height="8" rx="2" fill="#00C48C"/>
+        <rect x="2" y="26" width="22" height="8" rx="2" fill="#00C48C"/>
+      </svg>
+      <div class="logo-text">
+        <div class="logo-name">
+          <span class="white">Estoque</span> <span class="green">Fácil</span>
+        </div>
         <div class="logo-tag">SaaS</div>
       </div>
     </div>
+
     <div class="nav-section">
       <div class="nav-label">Menu</div>
       <a href="dashboard.html" class="nav-link">
@@ -38,6 +46,7 @@
         Histórico
       </a>
     </div>
+
     <div class="sidebar-footer">
       <button class="nav-link" id="btnLogout" style="width:100%;border:none;background:none;cursor:pointer;text-align:left;font-family:inherit;font-size:13.5px;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -48,7 +57,6 @@
 
   <!-- MAIN -->
   <div class="main">
-
     <header class="topbar">
       <div class="topbar-left">
         <span class="page-title">Movimentações</span>
@@ -65,9 +73,8 @@
 
     <div class="content">
 
-      <!-- FILTERS -->
       <div class="toolbar" style="margin-bottom:20px">
-        <button class="btn btn-secondary btn-sm filtro-btn active" data-filtro="todos">Todos</button>
+        <button class="btn btn-primary btn-sm filtro-btn active" data-filtro="todos">Todos</button>
         <button class="btn btn-secondary btn-sm filtro-btn" data-filtro="entrada">
           <span style="color:var(--success)">●</span> Entradas
         </button>
@@ -76,7 +83,6 @@
         </button>
       </div>
 
-      <!-- LISTA MOVIMENTAÇÕES -->
       <div id="lista" style="display:grid; gap:10px;">
         <div class="empty-state">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
@@ -111,13 +117,8 @@
 
   function renderMovimentacoes(lista) {
     const el = document.getElementById("lista");
-
     if (!lista || lista.length === 0) {
-      el.innerHTML = `
-        <div class="empty-state">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-          <p>Nenhuma movimentação encontrada</p>
-        </div>`;
+      el.innerHTML = `<div class="empty-state"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/></svg><p>Nenhuma movimentação encontrada</p></div>`;
       return;
     }
 
@@ -125,19 +126,19 @@
       const dataF = m.data ? new Date(m.data).toLocaleString("pt-BR") : "—";
       const isEntrada = m.tipo === 'entrada';
       return `
-        <div class="card mov-item" data-tipo="${m.tipo}" style="display:flex; align-items:center; gap:16px; padding:16px 20px;">
-          <div style="width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+        <div class="card" style="display:flex; align-items:center; gap:16px; padding:16px 20px; transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--border-hover)'" onmouseout="this.style.borderColor=''">
+          <div style="width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:18px; font-weight:700;
             background:${isEntrada ? 'var(--success-dim)' : 'var(--danger-dim)'};
-            color:${isEntrada ? 'var(--success)' : 'var(--danger)'}; font-size:16px;">
+            color:${isEntrada ? 'var(--success)' : 'var(--danger)'};">
             ${isEntrada ? '↓' : '↑'}
           </div>
           <div style="flex:1; min-width:0;">
-            <div style="font-weight:500; color:var(--text-primary); text-transform:capitalize; margin-bottom:2px;">${m.produto}</div>
+            <div style="font-weight:600; color:var(--text-primary); text-transform:capitalize; margin-bottom:2px;">${m.produto}</div>
             <div style="font-size:12px; color:var(--text-muted);">${m.comentario || 'Sem observação'} · ${m.responsavel || 'Sem responsável'}</div>
           </div>
           <span class="badge ${isEntrada ? 'badge-success' : 'badge-danger'}">${isEntrada ? 'Entrada' : 'Saída'}</span>
           <div style="text-align:right; flex-shrink:0;">
-            <div style="font-size:15px; font-weight:500; font-family:var(--font-mono); color:${isEntrada ? 'var(--success)' : 'var(--danger)'}">
+            <div style="font-size:16px; font-weight:700; font-family:var(--font-mono); color:${isEntrada ? 'var(--success)' : 'var(--danger)'}">
               ${isEntrada ? '+' : '-'}${m.quantidade}
             </div>
             <div style="font-size:11px; color:var(--text-muted)">${dataF}</div>
@@ -158,8 +159,7 @@
 
   document.querySelectorAll('.filtro-btn').forEach(btn => {
     btn.addEventListener('click', function(){
-      document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active','btn-primary'));
-      document.querySelectorAll('.filtro-btn').forEach(b => b.classList.add('btn-secondary'));
+      document.querySelectorAll('.filtro-btn').forEach(b => { b.classList.remove('active','btn-primary'); b.classList.add('btn-secondary'); });
       this.classList.remove('btn-secondary');
       this.classList.add('active','btn-primary');
       filtroAtivo = this.dataset.filtro;
@@ -170,9 +170,7 @@
   async function carregar() {
     if (!token) return;
     try {
-      const res = await fetch(`${API}/movimentacoes`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
+      const res = await fetch(`${API}/movimentacoes`, { headers: { "Authorization": `Bearer ${token}` } });
       if (!res.ok) { document.getElementById("erro").innerText = "Erro ao carregar."; return; }
       todasMovimentacoes = await res.json();
       aplicarFiltros();

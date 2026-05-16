@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Histórico — Estoque Pro</title>
+  <title>Histórico — Estoque Fácil</title>
   <link rel="stylesheet" href="css/design-system.css"/>
   <link rel="stylesheet" href="css/toast.css"/>
 </head>
@@ -13,12 +13,20 @@
   <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="sidebar-logo">
-      <div class="logo-mark">📦</div>
-      <div>
-        <div class="logo-name">Estoque Pro</div>
+      <svg class="logo-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="2" width="15" height="8" rx="2" fill="#1677FF"/>
+        <rect x="2" y="14" width="15" height="8" rx="2" fill="#1677FF" opacity="0.7"/>
+        <rect x="10" y="14" width="15" height="8" rx="2" fill="#00C48C"/>
+        <rect x="2" y="26" width="22" height="8" rx="2" fill="#00C48C"/>
+      </svg>
+      <div class="logo-text">
+        <div class="logo-name">
+          <span class="white">Estoque</span> <span class="green">Fácil</span>
+        </div>
         <div class="logo-tag">SaaS</div>
       </div>
     </div>
+
     <div class="nav-section">
       <div class="nav-label">Menu</div>
       <a href="dashboard.html" class="nav-link">
@@ -38,6 +46,7 @@
         Histórico
       </a>
     </div>
+
     <div class="sidebar-footer">
       <button class="nav-link" id="btnLogout" style="width:100%;border:none;background:none;cursor:pointer;text-align:left;font-family:inherit;font-size:13.5px;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -48,7 +57,6 @@
 
   <!-- MAIN -->
   <div class="main">
-
     <header class="topbar">
       <div class="topbar-left">
         <span class="page-title">Histórico</span>
@@ -64,7 +72,6 @@
     </header>
 
     <div class="content">
-
       <div class="card">
         <div class="card-header">
           <span class="card-title">Histórico semanal de movimentações</span>
@@ -93,7 +100,6 @@
           </table>
         </div>
       </div>
-
     </div>
   </div>
 </div>
@@ -105,6 +111,9 @@
 <script>
   const nome = localStorage.getItem('nome') || JSON.parse(localStorage.getItem('user') || '{}').nome || '?';
   document.getElementById('avatarUser').textContent = nome.charAt(0).toUpperCase();
+  document.getElementById('btnLogout').addEventListener('click', function(){
+    localStorage.clear(); location.href = 'index.html';
+  });
 </script>
 </body>
 </html>
