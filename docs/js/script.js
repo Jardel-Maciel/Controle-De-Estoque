@@ -194,20 +194,12 @@ window.entrada = (id) => abrirModal("entrada", id);
 window.saida   = (id) => abrirModal("saida", id);
 
 window.remover = async (id) => {
-  const confirmado = await showConfirm({
-    titulo: "Excluir produto",
-    mensagem: "Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita.",
-    confirmTexto: "Excluir",
-    cancelTexto: "Cancelar",
-    tipo: "danger"
-  });
-  if (!confirmado) return;
+  if (!confirm("Deseja realmente excluir este produto?")) return;
   try {
     await fetch(`${API}/produtos/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` }
     });
-    showToast("Produto excluído com sucesso", "success");
     carregar();
   } catch (err) {
     console.error(err);
@@ -365,10 +357,16 @@ if (inputXML) {
 }
 
 // =========================
-// IMPORTAR EXCEL
+// IMPORTAR EXCEL — com seleção de aba
 // =========================
 const inputExcel = document.getElementById("inputExcel");
 
+// Guarda o arquivo e a aba escolhida entre os passos
+let _excelArquivo    = null;
+let _excelAbaSelecionada = null;
+let _excelDadosAbas  = [];
+
+// Abre o file picker
 ["btnImportarExcel", "navImportarExcel"].forEach(function(id) {
   const btn = document.getElementById(id);
   if (btn) {
@@ -379,33 +377,246 @@ const inputExcel = document.getElementById("inputExcel");
   }
 });
 
+// Ao escolher o arquivo → chama /excel/preview
 if (inputExcel) {
   inputExcel.addEventListener("change", async function(e) {
     const arquivo = e.target.files[0];
     if (!arquivo) return;
 
+    _excelArquivo = arquivo;
+    _excelAbaSelecionada = null;
+
+    showToast("Lendo planilha...", "info");
+
     const formData = new FormData();
     formData.append("arquivo", arquivo);
 
-    showToast("Importando planilha...", "info");
-
     try {
-      const resposta = await fetch(`${API}/excel/importar`, {
+      const res = await fetch(`${API}/excel/preview`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData
       });
-      const dados = await resposta.json();
-      if (!resposta.ok) { showToast(dados.erro || "Erro ao importar planilha", "error"); return; }
-      showToast(`Planilha importada! ${dados.total_importados} produto(s) adicionados.`, "success");
-      carregar();
-    } catch (erro) {
-      console.error(erro);
-      showToast("Erro ao importar planilha", "error");
-    } finally {
+      const dados = await res.json();
+
+      if (!res.ok) {
+        showToast(dados.erro || "Erro ao ler planilha", "error");
+        inputExcel.value = "";
+        return;
+      }
+
+      _excelDadosAbas = dados.abas || [];
+
+      // Se só tem 1 aba, importa direto sem abrir modal
+      if (_excelDadosAbas.length === 1) {
+        _excelAbaSelecionada = _excelDadosAbas[0].nome;
+        await _executarImportacaoExcel();
+        return;
+      }
+
+      // Várias abas → abre o modal de seleção
+      _abrirModalExcel(_excelDadosAbas);
+
+    } catch (err) {
+      console.error(err);
+      showToast("Erro ao ler planilha", "error");
       inputExcel.value = "";
     }
   });
+}
+
+// ── Abre o modal e popula as tabs ──────────────────────────
+function _abrirModalExcel(abas) {
+  const modal    = document.getElementById("modalExcel");
+  const tabBar   = document.getElementById("excelTabBar");
+  const preview  = document.getElementById("excelPreviewWrap");
+  const info     = document.getElementById("excelAbaInfo");
+  const btnOk    = document.getElementById("confirmarImportExcel");
+
+  if (!modal) return;
+
+  // Limpa estado anterior
+  tabBar.innerHTML  = "";
+  preview.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:32px;">Selecione uma aba acima para visualizar os dados</div>';
+  info.textContent  = "";
+  if (btnOk) btnOk.disabled = true;
+  _excelAbaSelecionada = null;
+
+  // Cria um botão-tab por aba
+  abas.forEach(function(aba) {
+    const btn = document.createElement("button");
+    btn.className = "btn btn-ghost";
+    btn.style.cssText = "font-size:12.5px; padding:6px 14px; position:relative;";
+    btn.dataset.aba = aba.nome;
+
+    const badge = aba.tem_produto
+      ? '<span style="color:var(--green);margin-left:5px;font-size:11px;">✓</span>'
+      : '<span style="color:var(--text-muted);margin-left:5px;font-size:11px;">—</span>';
+
+    btn.innerHTML = aba.nome + badge;
+
+    btn.addEventListener("click", function() {
+      // Marca tab ativa
+      tabBar.querySelectorAll("button").forEach(function(b) {
+        b.style.background   = "";
+        b.style.borderColor  = "";
+        b.style.color        = "";
+      });
+      btn.style.background  = "var(--accent-dim)";
+      btn.style.borderColor = "var(--accent)";
+      btn.style.color       = "var(--accent)";
+
+      _excelAbaSelecionada = aba.nome;
+
+      // Habilita botão importar
+      if (btnOk) {
+        btnOk.disabled = !aba.tem_produto;
+        btnOk.title = aba.tem_produto ? "" : "Essa aba não possui coluna de produto reconhecida";
+      }
+
+      // Info
+      if (info) {
+        if (aba.tem_produto) {
+          info.innerHTML = 'Campos detectados: <strong style="color:var(--green)">'
+            + aba.colunas_mapeadas.join(", ") + '</strong>';
+        } else {
+          info.innerHTML = '<span style="color:var(--warning)">⚠ Coluna de produto não detectada nessa aba</span>';
+        }
+      }
+
+      // Renderiza preview
+      _renderPreview(aba, preview);
+    });
+
+    tabBar.appendChild(btn);
+  });
+
+  // Seleciona automaticamente a primeira aba com produto, ou a primeira
+  const sugerida = abas.find(function(a) { return a.tem_produto; }) || abas[0];
+  if (sugerida) {
+    const btnSugerido = tabBar.querySelector('[data-aba="' + sugerida.nome + '"]');
+    if (btnSugerido) btnSugerido.click();
+  }
+
+  modal.style.display = "flex";
+}
+
+// ── Renderiza tabela de preview da aba ────────────────────
+function _renderPreview(aba, container) {
+  if (!aba.preview || aba.preview.length === 0) {
+    container.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:32px;">Nenhum dado para exibir nessa aba</div>';
+    return;
+  }
+
+  const header = aba.preview[0] || [];
+  const rows   = aba.preview.slice(1);
+
+  let html = '<div style="overflow-x:auto;">';
+  html += '<p style="color:var(--text-muted);font-size:12px;margin-bottom:10px;">Prévia das primeiras linhas — <em>somente leitura</em></p>';
+  html += '<table style="width:100%;border-collapse:collapse;font-size:12.5px;">';
+
+  // Cabeçalho
+  html += '<thead><tr>';
+  header.forEach(function(col) {
+    html += '<th style="padding:8px 12px;background:var(--surface-3);color:var(--text-secondary);'
+          + 'font-weight:600;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;">'
+          + _esc(col) + '</th>';
+  });
+  html += '</tr></thead>';
+
+  // Linhas de dados
+  html += '<tbody>';
+  if (rows.length === 0) {
+    html += '<tr><td colspan="' + header.length + '" style="padding:20px;color:var(--text-muted);text-align:center;">Sem dados de amostra</td></tr>';
+  } else {
+    rows.forEach(function(row, ri) {
+      const bg = ri % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)";
+      html += '<tr style="background:' + bg + '">';
+      row.forEach(function(cel) {
+        html += '<td style="padding:7px 12px;border-bottom:1px solid var(--border);color:var(--text-primary);">'
+              + _esc(cel) + '</td>';
+      });
+      html += '</tr>';
+    });
+  }
+  html += '</tbody></table></div>';
+
+  container.innerHTML = html;
+}
+
+function _esc(str) {
+  return String(str || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+// ── Fecha o modal ─────────────────────────────────────────
+function _fecharModalExcel() {
+  const modal = document.getElementById("modalExcel");
+  if (modal) modal.style.display = "none";
+  inputExcel.value = "";
+  _excelArquivo    = null;
+  _excelAbaSelecionada = null;
+}
+
+document.getElementById("fecharModalExcel") ?.addEventListener("click", _fecharModalExcel);
+document.getElementById("cancelarModalExcel")?.addEventListener("click", _fecharModalExcel);
+
+// Fecha ao clicar fora da caixa
+document.getElementById("modalExcel")?.addEventListener("click", function(e) {
+  if (e.target === this) _fecharModalExcel();
+});
+
+// ── Confirmar importação ───────────────────────────────────
+document.getElementById("confirmarImportExcel")?.addEventListener("click", async function() {
+  if (!_excelAbaSelecionada) return;
+  await _executarImportacaoExcel();
+});
+
+async function _executarImportacaoExcel() {
+  if (!_excelArquivo) return;
+
+  // Fecha modal antes de importar
+  const modal = document.getElementById("modalExcel");
+  if (modal) modal.style.display = "none";
+
+  showToast("Importando planilha...", "info");
+
+  const formData = new FormData();
+  formData.append("arquivo", _excelArquivo);
+  if (_excelAbaSelecionada) formData.append("aba", _excelAbaSelecionada);
+
+  try {
+    const res = await fetch(`${API}/excel/importar`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData
+    });
+    const dados = await res.json();
+
+    if (!res.ok) {
+      showToast(dados.erro || "Erro ao importar planilha", "error");
+      return;
+    }
+
+    const msg = `✓ ${dados.total_importados} produto(s) importados da aba "${dados.aba}".`;
+    showToast(msg, "success");
+
+    if (dados.ignorados && dados.ignorados.length > 0) {
+      console.info("Linhas ignoradas:", dados.ignorados);
+    }
+
+    carregar();
+
+  } catch (err) {
+    console.error(err);
+    showToast("Erro ao importar planilha", "error");
+  } finally {
+    inputExcel.value  = "";
+    _excelArquivo     = null;
+    _excelAbaSelecionada = null;
+  }
 }
 
 // =========================
