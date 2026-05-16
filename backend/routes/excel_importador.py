@@ -9,7 +9,7 @@ excel_bp = Blueprint("excel", __name__, url_prefix="/excel")
 
 # Colunas aceitas por campo (variações de nome)
 MAPA_COLUNAS = {
-    "produto":    ["produto", "product", "nome", "name", "descricao", "descrição", "item"],
+    "produto":    ["produto", "produtos", "product", "nome", "name", "descricao", "descrição", "item"],
     "quantidade": ["quantidade", "qtd", "qty", "quantity", "estoque", "qtde", "saldo",
                    "entradas", "saidas", "saídas"],
     "valor":      ["valor", "value", "preco", "preço", "price", "custo", "cost", "vl", "vr",
