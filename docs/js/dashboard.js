@@ -73,7 +73,7 @@ async function carregarDashboard() {
     const data = await res.json();
 
     if (!res.ok) {
-      alert(data.erro || "Erro ao carregar dashboard");
+      showToast(data.erro || "Erro ao carregar dashboard", "error");
       return;
     }
 
@@ -159,7 +159,7 @@ async function carregarDashboard() {
 
   } catch (err) {
     console.error("Erro dashboard:", err);
-    alert("Erro ao carregar dashboard");
+    showToast("Erro ao carregar dashboard", "error");
   }
 }
 
@@ -169,7 +169,7 @@ async function carregarDashboard() {
 document.getElementById("btnDownloadPDF")?.addEventListener("click", () => {
 
   if (!dadosGlobais) {
-    alert("Aguarde os dados carregarem.");
+    showToast("Aguarde os dados carregarem.", "warning");
     return;
   }
 

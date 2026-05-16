@@ -6,6 +6,223 @@
   <title>Histórico — Estoque Fácil</title>
   <link rel="stylesheet" href="css/design-system.css"/>
   <link rel="stylesheet" href="css/toast.css"/>
+  <style>
+    /* ── Layout analytics ─────────────────────────── */
+    .analytics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    /* ── Gráficos ─────────────────────────────────── */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .chart-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chart-title svg { color: var(--accent); }
+
+    .chart-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .chart-body {
+      padding: 20px;
+      position: relative;
+    }
+
+    .chart-canvas-wrap {
+      position: relative;
+      height: 280px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .chart-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: var(--text-muted);
+      font-size: 13px;
+      height: 280px;
+    }
+
+    /* ── Ranking lateral ──────────────────────────── */
+    .ranking-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .ranking-list { padding: 8px 0; }
+
+    .ranking-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 20px;
+      transition: background 0.15s;
+      cursor: default;
+    }
+
+    .ranking-item:hover { background: rgba(22,119,255,0.04); }
+
+    .ranking-pos {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .ranking-pos.gold   { background: rgba(250,204,21,0.15); color: #facc15; }
+    .ranking-pos.silver { background: rgba(148,163,184,0.15); color: #94a3b8; }
+    .ranking-pos.bronze { background: rgba(234,88,12,0.15); color: #ea580c; }
+    .ranking-pos.other  { background: var(--surface-3); color: var(--text-muted); }
+
+    .ranking-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .ranking-info { flex: 1; min-width: 0; }
+
+    .ranking-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-transform: capitalize;
+    }
+
+    .ranking-bar-wrap {
+      height: 4px;
+      background: var(--surface-3);
+      border-radius: 99px;
+      margin-top: 5px;
+      overflow: hidden;
+    }
+
+    .ranking-bar {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.8s cubic-bezier(0.34,1.56,0.64,1);
+    }
+
+    .ranking-value {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--danger);
+      font-family: var(--font-mono);
+      flex-shrink: 0;
+    }
+
+    /* ── Donut center label ───────────────────────── */
+    .donut-center {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .donut-center-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      letter-spacing: -0.03em;
+      line-height: 1;
+    }
+
+    .donut-center-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 3px;
+    }
+
+    /* ── Filter bar ───────────────────────────────── */
+    .filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 11px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .filter-chip:hover {
+      border-color: var(--border-hover);
+      color: var(--text-primary);
+    }
+
+    .filter-chip.active {
+      background: var(--accent-dim);
+      border-color: rgba(22,119,255,0.35);
+      color: var(--accent);
+    }
+
+    /* ── Responsive ───────────────────────────────── */
+    @media (max-width: 1100px) {
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 800px) {
+      .analytics-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 540px) {
+      .analytics-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
 <div class="app">
@@ -60,7 +277,7 @@
     <header class="topbar">
       <div class="topbar-left">
         <span class="page-title">Histórico</span>
-        <span class="breadcrumb">/ Movimentações detalhadas</span>
+        <span class="breadcrumb">/ Análise de movimentações</span>
       </div>
       <div class="topbar-right">
         <button class="btn btn-primary btn-sm" id="btnExportarPDF">
@@ -72,9 +289,90 @@
     </header>
 
     <div class="content">
+
+      <!-- ── STAT CARDS ─────────────────────────────── -->
+      <div class="analytics-grid">
+        <div class="stat-card red">
+          <div class="stat-icon red">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+          </div>
+          <div class="stat-label">Total de Saídas</div>
+          <div class="stat-value" id="statTotalSaidas">—</div>
+        </div>
+
+        <div class="stat-card green">
+          <div class="stat-icon green">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </div>
+          <div class="stat-label">Total de Entradas</div>
+          <div class="stat-value" id="statTotalEntradas">—</div>
+        </div>
+
+        <div class="stat-card amber">
+          <div class="stat-icon amber">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </div>
+          <div class="stat-label">Produto + Saído</div>
+          <div class="stat-value" id="statTopProduto" style="font-size:14px;padding-top:6px;font-family:var(--font)">—</div>
+        </div>
+      </div>
+
+      <!-- ── GRÁFICOS ───────────────────────────────── -->
+      <div class="charts-grid">
+
+        <!-- Donut: saídas por produto -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 7.07 17.07"/></svg>
+                Saídas por Produto
+              </div>
+              <div class="chart-subtitle" style="margin-top:2px">Participação % no total de saídas</div>
+            </div>
+            <div style="display:flex;gap:6px">
+              <button class="filter-chip active" data-periodo="todos">Tudo</button>
+              <button class="filter-chip" data-periodo="30">30d</button>
+              <button class="filter-chip" data-periodo="7">7d</button>
+            </div>
+          </div>
+          <div class="chart-body">
+            <div class="chart-canvas-wrap" id="wrapDonut">
+              <canvas id="graficoDonut"></canvas>
+              <div class="donut-center" id="donutCenter">
+                <div class="donut-center-value" id="donutTotal">0</div>
+                <div class="donut-center-label">saídas</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ranking de saídas -->
+        <div class="ranking-card">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                Ranking de Saídas
+              </div>
+              <div class="chart-subtitle" style="margin-top:2px">Produtos com maior volume de saída</div>
+            </div>
+            <span class="badge badge-danger" id="rankingTotal">0 itens</span>
+          </div>
+          <div class="ranking-list" id="rankingLista">
+            <div class="chart-empty">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              Carregando dados...
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── TABELA ─────────────────────────────────── -->
       <div class="card">
         <div class="card-header">
-          <span class="card-title">Histórico semanal de movimentações</span>
+          <span class="card-title">Histórico de movimentações</span>
           <div class="search-wrap">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input class="search-input" type="text" id="pesquisaProduto" placeholder="Pesquisar produto..."/>
@@ -100,11 +398,13 @@
           </table>
         </div>
       </div>
-    </div>
-  </div>
-</div>
+
+    </div><!-- /.content -->
+  </div><!-- /.main -->
+</div><!-- /.app -->
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="js/toast.js"></script>
 <script src="js/historico.js"></script>
 <script src="js/admin-btn.js"></script>

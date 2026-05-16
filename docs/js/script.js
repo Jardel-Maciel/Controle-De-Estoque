@@ -194,12 +194,20 @@ window.entrada = (id) => abrirModal("entrada", id);
 window.saida   = (id) => abrirModal("saida", id);
 
 window.remover = async (id) => {
-  if (!confirm("Deseja realmente excluir este produto?")) return;
+  const confirmado = await showConfirm({
+    titulo: "Excluir produto",
+    mensagem: "Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita.",
+    confirmTexto: "Excluir",
+    cancelTexto: "Cancelar",
+    tipo: "danger"
+  });
+  if (!confirmado) return;
   try {
     await fetch(`${API}/produtos/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` }
     });
+    showToast("Produto excluído com sucesso", "success");
     carregar();
   } catch (err) {
     console.error(err);
