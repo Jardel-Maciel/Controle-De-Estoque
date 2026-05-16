@@ -1,165 +1,296 @@
-from flask import Blueprint, request, jsonify, g
-import traceback
+from flask import Blueprint, request, jsonify
+from openpyxl import load_workbook
+from database import db
+from models.produto import Produto
+import tempfile
+import os
 
-from database.database import conectar
-from utils.auth_middleware import auth_required
+excel_importador_bp = Blueprint(
+    "excel_importador",
+    __name__
+)
 
-excel_bp = Blueprint("excel", __name__, url_prefix="/excel")
-
-# Colunas aceitas (variações de nome que o usuário pode usar)
-MAPA_COLUNAS = {
-    "produto":     ["produto", "product", "nome", "name", "descricao", "descrição", "item"],
-    "quantidade":  ["quantidade", "qtd", "qty", "quantity", "estoque", "qtde"],
-    "valor":       ["valor", "value", "preco", "preço", "price", "custo", "cost", "vl", "vr"],
-    "fornecedor":  ["fornecedor", "supplier", "vendor", "fabricante"],
-    "contato":     ["contato", "contact", "telefone", "tel", "fone", "phone"],
-}
-
-
-def normalizar(texto):
-    """Remove acentos, espaços extras e deixa minúsculo para comparação."""
-    import unicodedata
-    texto = str(texto).strip().lower()
-    return unicodedata.normalize("NFD", texto).encode("ascii", "ignore").decode("ascii")
-
-
-def mapear_cabecalho(cabecalho):
-    """Retorna dict {campo_interno: indice_coluna} com base no cabeçalho da planilha."""
-    mapa = {}
-    for idx, col in enumerate(cabecalho):
-        col_norm = normalizar(col)
-        for campo, variantes in MAPA_COLUNAS.items():
-            if col_norm in [normalizar(v) for v in variantes]:
-                if campo not in mapa:  # primeira ocorrência ganha
-                    mapa[campo] = idx
-    return mapa
-
-
-@excel_bp.route("/importar", methods=["POST"])
-@auth_required
+@excel_importador_bp.route(
+    "/importar-excel",
+    methods=["POST"]
+)
 def importar_excel():
+
     try:
-        tenant_id = g.usuario["tenant_id"]
 
-        arquivo = request.files.get("arquivo")
+        arquivo = request.files.get(
+            "arquivo"
+        )
+
+        aba_escolhida = request.form.get(
+            "aba"
+        )
+
         if not arquivo:
-            return jsonify({"erro": "Arquivo não enviado"}), 400
-
-        nome_arquivo = arquivo.filename or ""
-        extensao = nome_arquivo.rsplit(".", 1)[-1].lower() if "." in nome_arquivo else ""
-
-        if extensao not in ("xlsx", "xls", "ods"):
-            return jsonify({"erro": "Formato inválido. Envie um arquivo .xlsx, .xls ou .ods"}), 400
-
-        # Lê o arquivo em memória com openpyxl
-        try:
-            import openpyxl
-            from io import BytesIO
-
-            conteudo = arquivo.read()
-            wb = openpyxl.load_workbook(BytesIO(conteudo), read_only=True, data_only=True)
-            ws = wb.active
-
-            linhas = list(ws.iter_rows(values_only=True))
-
-        except Exception as e:
-            return jsonify({"erro": f"Erro ao ler planilha: {str(e)}"}), 400
-
-        if not linhas or len(linhas) < 2:
-            return jsonify({"erro": "Planilha vazia ou sem dados além do cabeçalho"}), 400
-
-        # Mapeia cabeçalho (primeira linha)
-        cabecalho = [str(c) if c is not None else "" for c in linhas[0]]
-        mapa = mapear_cabecalho(cabecalho)
-
-        if "produto" not in mapa:
             return jsonify({
-                "erro": "Coluna 'produto' não encontrada. Verifique o cabeçalho da planilha.",
-                "cabecalho_encontrado": cabecalho
+                "erro":
+                "Arquivo não enviado"
             }), 400
 
-        conn = conectar()
-        cursor = conn.cursor()
+        with tempfile.NamedTemporaryFile(
+            delete=False,
+            suffix=".xlsx"
+        ) as temp:
 
-        importados = []
-        ignorados  = []
+            arquivo.save(
+                temp.name
+            )
 
-        for i, linha in enumerate(linhas[1:], start=2):  # pula cabeçalho
+            caminho = temp.name
 
-            def cel(campo, padrao=""):
-                idx = mapa.get(campo)
-                if idx is None:
-                    return padrao
-                val = linha[idx]
-                return val if val is not None else padrao
+        wb = load_workbook(
+            caminho,
+            data_only=True
+        )
 
-            nome = str(cel("produto", "")).strip()
+        # ==================================
+        # LISTA ABAS
+        # ==================================
+
+        abas = wb.sheetnames
+
+        # Se não informar aba
+        # devolve lista
+
+        if not aba_escolhida:
+
+            os.remove(caminho)
+
+            return jsonify({
+                "selecione_aba": True,
+                "abas": abas
+            })
+
+        # ==================================
+        # VALIDA ABA
+        # ==================================
+
+        if aba_escolhida not in abas:
+
+            os.remove(caminho)
+
+            return jsonify({
+                "erro":
+                f"A aba "
+                f"{aba_escolhida} "
+                f"não existe",
+                "abas":
+                abas
+            }), 400
+
+        ws = wb[
+            aba_escolhida
+        ]
+
+        # ==================================
+        # CABEÇALHOS
+        # ==================================
+
+        headers = []
+
+        for cell in ws[1]:
+
+            valor = ""
+
+            if cell.value:
+
+                valor = str(
+                    cell.value
+                ).lower().strip()
+
+            headers.append(
+                valor
+            )
+
+        coluna_produto = None
+        coluna_qtd = None
+        coluna_valor = None
+        coluna_fornecedor = None
+
+        for i, h in enumerate(
+            headers
+        ):
+
+            if any(
+                x in h
+                for x in [
+                    "produto",
+                    "descricao",
+                    "descrição",
+                    "item"
+                ]
+            ):
+                coluna_produto = i
+
+            if any(
+                x in h
+                for x in [
+                    "qtd",
+                    "quantidade",
+                    "estoque",
+                    "qtde"
+                ]
+            ):
+                coluna_qtd = i
+
+            if any(
+                x in h
+                for x in [
+                    "valor",
+                    "preco",
+                    "preço",
+                    "custo"
+                ]
+            ):
+                coluna_valor = i
+
+            if any(
+                x in h
+                for x in [
+                    "fornecedor",
+                    "fabricante"
+                ]
+            ):
+                coluna_fornecedor = i
+
+        if coluna_produto is None:
+
+            return jsonify({
+                "erro":
+                "Coluna produto não encontrada"
+            }), 400
+
+        total_importados = 0
+        total_atualizados = 0
+
+        # ==================================
+        # IMPORTAÇÃO
+        # ==================================
+
+        for row in ws.iter_rows(
+            min_row=2
+        ):
+
+            nome = row[
+                coluna_produto
+            ].value
+
             if not nome:
-                ignorados.append(f"Linha {i}: produto vazio")
                 continue
 
-            try:
-                quantidade = float(str(cel("quantidade", 0)).replace(",", ".") or 0)
-            except (ValueError, TypeError):
-                quantidade = 0.0
+            nome = str(
+                nome
+            ).strip()
 
-            try:
-                valor = float(str(cel("valor", 0)).replace(",", ".") or 0)
-            except (ValueError, TypeError):
-                valor = 0.0
+            qtd = 0
+            valor = 0
+            fornecedor = ""
 
-            fornecedor = str(cel("fornecedor", "")).strip()
-            contato    = str(cel("contato",    "")).strip()
+            if (
+                coluna_qtd
+                is not None
+            ):
 
-            # Verifica se produto já existe
-            cursor.execute(
-                "SELECT id, quantidade, valor FROM produtos WHERE produto = %s AND tenant_id = %s",
-                (nome, tenant_id)
-            )
-            existente = cursor.fetchone()
+                v = row[
+                    coluna_qtd
+                ].value
 
-            if existente:
-                qtd_atual   = float(existente["quantidade"] or 0)
-                valor_atual = float(existente["valor"] or 0)
-                nova_qtd    = qtd_atual + quantidade
+                if v:
 
-                # Preço médio ponderado (igual ao importador XML)
-                if nova_qtd > 0:
-                    novo_valor = ((qtd_atual * valor_atual) + (quantidade * valor)) / nova_qtd
-                else:
-                    novo_valor = valor
+                    try:
+                        qtd = float(v)
+                    except:
+                        qtd = 0
 
-                cursor.execute("""
-                    UPDATE produtos
-                    SET quantidade = %s,
-                        valor      = %s,
-                        fornecedor = CASE WHEN %s != '' THEN %s ELSE fornecedor END,
-                        contato    = CASE WHEN %s != '' THEN %s ELSE contato END
-                    WHERE produto = %s AND tenant_id = %s
-                """, (
-                    nova_qtd, round(novo_valor, 4),
-                    fornecedor, fornecedor,
-                    contato,    contato,
-                    nome, tenant_id
-                ))
+            if (
+                coluna_valor
+                is not None
+            ):
+
+                v = row[
+                    coluna_valor
+                ].value
+
+                if v:
+
+                    try:
+                        valor = float(v)
+                    except:
+                        valor = 0
+
+            if (
+                coluna_fornecedor
+                is not None
+            ):
+
+                v = row[
+                    coluna_fornecedor
+                ].value
+
+                if v:
+                    fornecedor = str(
+                        v
+                    )
+
+            produto = Produto.query.filter_by(
+                nome=nome
+            ).first()
+
+            if produto:
+
+                produto.quantidade = qtd
+                produto.valor = valor
+                produto.fornecedor = fornecedor
+
+                total_atualizados += 1
+
             else:
-                cursor.execute("""
-                    INSERT INTO produtos (tenant_id, produto, quantidade, valor, fornecedor, contato)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                """, (tenant_id, nome, quantidade, valor, fornecedor, contato))
 
-            importados.append(nome)
+                novo = Produto(
+                    nome=nome,
+                    quantidade=qtd,
+                    valor=valor,
+                    fornecedor=fornecedor
+                )
 
-        conn.commit()
-        conn.close()
+                db.session.add(
+                    novo
+                )
+
+                total_importados += 1
+
+        db.session.commit()
+
+        os.remove(
+            caminho
+        )
 
         return jsonify({
-            "msg":             "Planilha importada com sucesso",
-            "total_importados": len(importados),
-            "produtos":        importados,
-            "ignorados":       ignorados
-        }), 200
+
+            "sucesso": True,
+
+            "aba_importada":
+            aba_escolhida,
+
+            "produtos_importados":
+            total_importados,
+
+            "produtos_atualizados":
+            total_atualizados,
+
+            "abas_disponiveis":
+            abas
+
+        })
 
     except Exception as e:
-        traceback.print_exc()
-        return jsonify({"erro": str(e)}), 500
+
+        return jsonify({
+            "erro":
+            str(e)
+        }), 500
