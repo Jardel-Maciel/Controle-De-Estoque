@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify, g
 import traceback
+import datetime
 from io import BytesIO
 
 from database.database import conectar
@@ -7,16 +8,12 @@ from utils.auth_middleware import auth_required
 
 excel_bp = Blueprint("excel", __name__, url_prefix="/excel")
 
-# Colunas aceitas por campo (variações de nome)
-# A ordem dentro de cada lista define a PRIORIDADE: menor índice = maior prioridade.
 MAPA_COLUNAS = {
-    "produto":    ["produto", "produtos", "product", "item", "nome", "name", "descricao", "descricao"],
-    # "saldo" tem prioridade sobre "entradas"/"saidas"
+    "produto":    ["produto", "produtos", "product", "item", "nome", "name", "descricao"],
     "quantidade": ["saldo", "quantidade", "qtd", "qty", "quantity", "qtde",
-                   "estoque", "entradas", "saidas", "saidas"],
-    "valor":      ["media de custo", "media de custo", "custo unitario", "custo unitario",
-                   "preco unitario", "preco unitario", "valor", "value",
-                   "preco", "preco", "price", "custo", "cost", "vl", "vr"],
+                   "estoque", "entradas", "saidas"],
+    "valor":      ["media de custo", "custo unitario", "preco unitario", "valor",
+                   "value", "preco", "price", "custo", "cost", "vl", "vr"],
     "fornecedor": ["fornecedor", "supplier", "vendor", "fabricante"],
     "contato":    ["contato", "contact", "telefone", "tel", "fone", "phone", "e-mail", "email"],
 }
@@ -29,13 +26,8 @@ def normalizar(texto):
 
 
 def mapear_cabecalho(cabecalho):
-    """
-    Retorna dict {campo_interno: indice_coluna}.
-    Respeita a prioridade: variante com menor índice na lista tem preferência.
-    """
     mapa = {}
     mapa_prioridade = {}
-
     for idx, col in enumerate(cabecalho):
         col_norm = normalizar(col)
         for campo, variantes in MAPA_COLUNAS.items():
@@ -49,15 +41,9 @@ def mapear_cabecalho(cabecalho):
 
 
 def detectar_cabecalho(linhas, max_busca=15):
-    """
-    Percorre as primeiras linhas procurando aquela que parece um cabeçalho.
-    Escolhe a linha com MAIS campos mapeados (não apenas a primeira que tem 'produto').
-    Retorna (indice_linha, mapa_colunas) ou (None, {}).
-    """
     melhor_idx = None
     melhor_mapa = {}
     melhor_score = 0
-
     for i, linha in enumerate(linhas[:max_busca]):
         celulas = [str(c).strip() if c is not None else "" for c in linha]
         nao_vazias = [c for c in celulas if c]
@@ -66,18 +52,15 @@ def detectar_cabecalho(linhas, max_busca=15):
         mapa = mapear_cabecalho(celulas)
         if "produto" not in mapa:
             continue
-        score = len(mapa)  # mais campos mapeados = melhor cabeçalho
+        score = len(mapa)
         if score > melhor_score:
             melhor_score = score
             melhor_idx = i
             melhor_mapa = mapa
-
     return melhor_idx, melhor_mapa
 
 
 def linhas_para_preview(linhas, max_linhas=5):
-    import datetime
-
     def cel_str(v):
         if v is None:
             return ""
@@ -87,16 +70,13 @@ def linhas_para_preview(linhas, max_linhas=5):
 
     todas = [tuple(cel_str(c) for c in linha) for linha in linhas[:max_linhas + 2]]
     n_cols = max((len(r) for r in todas), default=0)
-
     colunas_com_dado = [
         j for j in range(n_cols)
         if any(j < len(r) and r[j] for r in todas)
     ]
-
     resultado = []
     for row in todas[:max_linhas]:
         resultado.append([row[j] if j < len(row) else "" for j in colunas_com_dado])
-
     return resultado
 
 
@@ -136,20 +116,18 @@ def preview_excel():
 
             idx_cabecalho, mapa = detectar_cabecalho(linhas)
             tem_produto = "produto" in mapa
-
             inicio = idx_cabecalho if idx_cabecalho is not None else 0
             preview = linhas_para_preview(linhas[inicio:], max_linhas=5)
 
             abas.append({
-                "nome":            nome_aba,
-                "tem_produto":     tem_produto,
-                "cabecalho_linha": idx_cabecalho,
+                "nome":             nome_aba,
+                "tem_produto":      tem_produto,
+                "cabecalho_linha":  idx_cabecalho,
                 "colunas_mapeadas": list(mapa.keys()),
-                "preview":         preview,
+                "preview":          preview,
             })
 
         wb.close()
-
         return jsonify({"abas": abas}), 200
 
     except Exception as e:
@@ -177,21 +155,14 @@ def importar_excel():
             return jsonify({"erro": "Formato inválido. Envie .xlsx, .xls ou .ods"}), 400
 
         aba_escolhida = request.form.get("aba", "").strip()
-
         conteudo = arquivo.read()
 
         try:
             import openpyxl
             wb = openpyxl.load_workbook(BytesIO(conteudo), read_only=True, data_only=True)
-
-            if aba_escolhida and aba_escolhida in wb.sheetnames:
-                ws = wb[aba_escolhida]
-            else:
-                ws = wb.active
-
+            ws = wb[aba_escolhida] if aba_escolhida and aba_escolhida in wb.sheetnames else wb.active
             linhas = list(ws.iter_rows(values_only=True))
             wb.close()
-
         except Exception as e:
             return jsonify({"erro": f"Erro ao ler planilha: {str(e)}"}), 400
 
@@ -203,7 +174,7 @@ def importar_excel():
         if idx_cabecalho is None or "produto" not in mapa:
             cabecalho_raw = [str(c) if c is not None else "" for c in (linhas[0] if linhas else [])]
             return jsonify({
-                "erro": "Não foi possível encontrar a coluna de produto nessa aba. Verifique o cabeçalho.",
+                "erro": "Não foi possível encontrar a coluna de produto nessa aba.",
                 "dica": "A coluna de produto deve ter um dos nomes: Produto, Item, Nome, Descricao.",
                 "cabecalho_encontrado": cabecalho_raw
             }), 400
@@ -213,91 +184,83 @@ def importar_excel():
         if not dados_linhas:
             return jsonify({"erro": "Aba sem dados após o cabeçalho"}), 400
 
-        conn = conectar()
-        cursor = conn.cursor()
-
         importados = []
         ignorados  = []
 
-        import datetime
+        with conectar() as conn:
+            cursor = conn.cursor()
 
-        for i, linha in enumerate(dados_linhas, start=idx_cabecalho + 2):
+            for i, linha in enumerate(dados_linhas, start=idx_cabecalho + 2):
 
-            def cel(campo, padrao="", _linha=linha):
-                idx = mapa.get(campo)
-                if idx is None or idx >= len(_linha):
-                    return padrao
-                val = _linha[idx]
-                return val if val is not None else padrao
+                def cel(campo, padrao="", _linha=linha):
+                    idx = mapa.get(campo)
+                    if idx is None or idx >= len(_linha):
+                        return padrao
+                    val = _linha[idx]
+                    return val if val is not None else padrao
 
-            # Nome do produto
-            nome_raw = cel("produto", "")
-            if isinstance(nome_raw, datetime.datetime):
-                ignorados.append(f"Linha {i}: valor é uma data, ignorado")
-                continue
-            nome = str(nome_raw).strip()
-            if not nome or nome.lower() in ("none", "nan", ""):
-                ignorados.append(f"Linha {i}: produto vazio")
-                continue
+                nome_raw = cel("produto", "")
+                if isinstance(nome_raw, datetime.datetime):
+                    ignorados.append(f"Linha {i}: valor é uma data, ignorado")
+                    continue
+                nome = str(nome_raw).strip()
+                if not nome or nome.lower() in ("none", "nan", ""):
+                    ignorados.append(f"Linha {i}: produto vazio")
+                    continue
 
-            # Quantidade (0 é válido — produto cadastrado sem estoque)
-            try:
-                qtd_raw = str(cel("quantidade", 0)).replace(",", ".").strip()
-                quantidade = float(qtd_raw) if qtd_raw else 0.0
-            except (ValueError, TypeError):
-                quantidade = 0.0
+                try:
+                    qtd_raw = str(cel("quantidade", 0)).replace(",", ".").strip()
+                    quantidade = float(qtd_raw) if qtd_raw else 0.0
+                except (ValueError, TypeError):
+                    quantidade = 0.0
 
-            # Valor
-            try:
-                valor = float(
-                    str(cel("valor", 0)).replace(",", ".").replace("R$", "").strip() or 0
+                try:
+                    valor = float(
+                        str(cel("valor", 0)).replace(",", ".").replace("R$", "").strip() or 0
+                    )
+                except (ValueError, TypeError):
+                    valor = 0.0
+
+                fornecedor = str(cel("fornecedor", "")).strip()
+                contato    = str(cel("contato",    "")).strip()
+
+                cursor.execute(
+                    "SELECT id, quantidade, valor FROM produtos WHERE produto = %s AND tenant_id = %s",
+                    (nome, tenant_id)
                 )
-            except (ValueError, TypeError):
-                valor = 0.0
+                existente = cursor.fetchone()
 
-            fornecedor = str(cel("fornecedor", "")).strip()
-            contato    = str(cel("contato",    "")).strip()
+                if existente:
+                    qtd_atual   = float(existente["quantidade"] or 0)
+                    valor_atual = float(existente["valor"] or 0)
+                    nova_qtd    = qtd_atual + quantidade
+                    if nova_qtd > 0 and quantidade > 0:
+                        novo_valor = ((qtd_atual * valor_atual) + (quantidade * valor)) / nova_qtd
+                    else:
+                        novo_valor = valor if valor > 0 else valor_atual
 
-            # Verifica se produto já existe
-            cursor.execute(
-                "SELECT id, quantidade, valor FROM produtos WHERE produto = %s AND tenant_id = %s",
-                (nome, tenant_id)
-            )
-            existente = cursor.fetchone()
-
-            if existente:
-                qtd_atual   = float(existente["quantidade"] or 0)
-                valor_atual = float(existente["valor"] or 0)
-                nova_qtd    = qtd_atual + quantidade
-
-                if nova_qtd > 0 and quantidade > 0:
-                    novo_valor = ((qtd_atual * valor_atual) + (quantidade * valor)) / nova_qtd
+                    cursor.execute("""
+                        UPDATE produtos
+                        SET quantidade = %s,
+                            valor      = %s,
+                            fornecedor = CASE WHEN %s != '' THEN %s ELSE fornecedor END,
+                            contato    = CASE WHEN %s != '' THEN %s ELSE contato END
+                        WHERE produto = %s AND tenant_id = %s
+                    """, (
+                        nova_qtd, round(novo_valor, 4),
+                        fornecedor, fornecedor,
+                        contato,    contato,
+                        nome, tenant_id
+                    ))
                 else:
-                    novo_valor = valor if valor > 0 else valor_atual
+                    cursor.execute("""
+                        INSERT INTO produtos (tenant_id, produto, quantidade, valor, fornecedor, contato)
+                        VALUES (%s, %s, %s, %s, %s, %s)
+                    """, (tenant_id, nome, quantidade, valor, fornecedor, contato))
 
-                cursor.execute("""
-                    UPDATE produtos
-                    SET quantidade = %s,
-                        valor      = %s,
-                        fornecedor = CASE WHEN %s != '' THEN %s ELSE fornecedor END,
-                        contato    = CASE WHEN %s != '' THEN %s ELSE contato END
-                    WHERE produto = %s AND tenant_id = %s
-                """, (
-                    nova_qtd, round(novo_valor, 4),
-                    fornecedor, fornecedor,
-                    contato,    contato,
-                    nome, tenant_id
-                ))
-            else:
-                cursor.execute("""
-                    INSERT INTO produtos (tenant_id, produto, quantidade, valor, fornecedor, contato)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                """, (tenant_id, nome, quantidade, valor, fornecedor, contato))
+                importados.append(nome)
 
-            importados.append(nome)
-
-        conn.commit()
-        conn.close()
+            conn.commit()
 
         return jsonify({
             "msg":              "Planilha importada com sucesso",
