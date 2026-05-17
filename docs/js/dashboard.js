@@ -26,29 +26,31 @@ const COR = {
 };
 
 // =========================
-// PALETA DO PDF (tema claro — legível ao imprimir)
+// PALETA DO PDF — identidade Estoque Fácil
+// Azul #38bdf8 + Teal #14b8a6 + Escuro #0f172a
 // =========================
 const PDF = {
   headerBg:    [15,  23,  42],   // #0f172a cabeçalho escuro
   headerText:  [226, 232, 240],  // #e2e8f0 texto do cabeçalho
   headerSub:   [148, 163, 184],  // #94a3b8 subtítulo
-  accent:      [56,  189, 248],  // #38bdf8 azul
+  accent:      [56,  189, 248],  // #38bdf8 azul (cor principal)
+  teal:        [20,  184, 166],  // #14b8a6 teal (cor secundária da logo)
   indigo:      [99,  102, 241],  // #6366f1
-  green:       [34,  197,  94],  // #22c55e
+  green:       [20,  184, 166],  // teal no lugar de verde — consistência de marca
   yellow:      [234, 179,   8],  // #eab308 amarelo mais escuro (legível no branco)
-  cardBg:      [241, 245, 249],  // #f1f5f9 fundo dos cards
-  cardBorder:  [226, 232, 240],  // #e2e8f0 borda dos cards
-  rowEven:     [241, 245, 249],  // #f1f5f9 linha par (cinza bem claro)
+  cardBg:      [240, 249, 255],  // #f0f9ff azul bem claro (tom de marca)
+  cardBorder:  [186, 230, 253],  // #bae6fd borda azul claro
+  rowEven:     [240, 253, 250],  // #f0fdfa teal bem claro
   rowOdd:      [255, 255, 255],  // #ffffff linha ímpar (branco)
-  tableHeader: [30,  41,  59],   // #1e293b fundo header tabela
+  tableHeader: [15,  23,  42],   // #0f172a fundo header tabela (escuro marca)
   tableHText:  [226, 232, 240],  // #e2e8f0 texto header tabela
   textDark:    [15,  23,  42],   // #0f172a texto principal
   textMid:     [71,  85, 105],   // #475569 texto secundário
   textLight:   [148, 163, 184],  // #94a3b8 texto fraco
-  border:      [203, 213, 225],  // #cbd5e1 bordas da tabela
+  border:      [186, 230, 253],  // #bae6fd bordas da tabela (azul suave)
   badgeBg:     [254, 243, 199],  // #fef3c7 fundo badge amarelo claro
   badgeText:   [146,  64,  14],  // #92400e texto badge
-  footerBg:    [30,  41,  59],   // #1e293b rodapé
+  footerBg:    [15,  23,  42],   // #0f172a rodapé escuro (igual header)
   footerText:  [148, 163, 184],  // #94a3b8 texto rodapé
 };
 
@@ -183,43 +185,58 @@ document.getElementById("btnDownloadPDF")?.addEventListener("click", () => {
   const produtos = dadosGlobais.produtos || [];
 
   // ----------------------------------------
-  // CABEÇALHO escuro
+  // CABEÇALHO — fundo escuro com logo + info
   // ----------------------------------------
   doc.setFillColor(...PDF.headerBg);
-  doc.rect(0, 0, W, 44, "F");
+  doc.rect(0, 0, W, 52, "F");
 
-  // barra accent topo
+  // barra accent topo — azul (cor principal da logo)
   doc.setFillColor(...PDF.accent);
   doc.rect(0, 0, W, 3, "F");
 
-  doc.setFontSize(20);
-  doc.setTextColor(...PDF.headerText);
-  doc.setFont("helvetica", "bold");
-  doc.text("Controle de Estoque", 14, 20);
+  // barra teal inferior do header — cor secundária da logo
+  doc.setFillColor(...PDF.teal);
+  doc.rect(0, 49, W, 3, "F");
 
-  doc.setFontSize(9);
+  // LOGO — inserida no lado esquerdo do cabeçalho
+  // A logo tem 879x258px (razão ≈ 3.41:1). Altura no PDF = 22mm → largura ≈ 75mm
+  try {
+    const logoUrl = "assets/logo_transparent.png";
+    doc.addImage(logoUrl, "PNG", 10, 8, 75, 22);
+  } catch (e) {
+    // fallback: texto caso a logo não carregue
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...PDF.accent);
+    doc.text("Estoque", 14, 22);
+    doc.setTextColor(...PDF.teal);
+    doc.text(" Fácil", 47, 22);
+  }
+
+  // Info do relatório — lado direito
+  doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...PDF.headerSub);
-  doc.text("Relatorio Gerencial de Estoque", 14, 28);
-  doc.text(`Emitido em: ${agora}`, 14, 35);
+  doc.text("Relatório Gerencial de Estoque", W - 14, 20, { align: "right" });
+  doc.text(`Emitido em: ${agora}`, W - 14, 28, { align: "right" });
 
   // ----------------------------------------
   // CARDS RESUMO — fundo claro com borda colorida
   // ----------------------------------------
   const cards = [
     { label: "Total Produtos", valor: String(dadosGlobais.total_produtos ?? 0), cor: PDF.accent  },
-    { label: "Total Itens",    valor: String(dadosGlobais.total_itens    ?? 0), cor: PDF.indigo  },
+    { label: "Total Itens",    valor: String(dadosGlobais.total_itens    ?? 0), cor: PDF.teal    },
     { label: "Baixo Estoque",  valor: String(dadosGlobais.baixo_estoque  ?? 0), cor: PDF.yellow  },
     {
       label: "Custo Total",
       valor: `R$ ${parseFloat(dadosGlobais.valor_total || 0)
         .toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
-      cor: PDF.green
+      cor: PDF.teal
     }
   ];
 
   const cardW = (W - 28 - 9) / 4;
-  const cardY = 50;
+  const cardY = 58;
 
   cards.forEach((card, i) => {
     const x = 14 + i * (cardW + 3);
@@ -246,7 +263,7 @@ document.getElementById("btnDownloadPDF")?.addEventListener("click", () => {
   // ----------------------------------------
   // TÍTULO SEÇÃO TABELA
   // ----------------------------------------
-  let y = 84;
+  let y = 92;
 
   doc.setFontSize(11);
   doc.setTextColor(...PDF.textDark);
@@ -290,13 +307,15 @@ document.getElementById("btnDownloadPDF")?.addEventListener("click", () => {
       if (y > H - 20) {
         doc.addPage();
         doc.setFillColor(...PDF.headerBg);
-        doc.rect(0, 0, W, 12, "F");
+        doc.rect(0, 0, W, 14, "F");
         doc.setFillColor(...PDF.accent);
         doc.rect(0, 0, W, 2, "F");
+        doc.setFillColor(...PDF.teal);
+        doc.rect(0, 12, W, 2, "F");
         doc.setFontSize(8);
         doc.setTextColor(...PDF.headerSub);
-        doc.text("Controle de Estoque - continuacao", 14, 9);
-        y = 20;
+        doc.text("Estoque Fácil — continuação", 14, 10);
+        y = 22;
       }
 
       // zebra clara: par = cinza claro, ímpar = branco
@@ -377,13 +396,13 @@ document.getElementById("btnDownloadPDF")?.addEventListener("click", () => {
     doc.setPage(i);
     doc.setFillColor(...PDF.footerBg);
     doc.rect(0, H - 10, W, 10, "F");
-    doc.setFillColor(...PDF.accent);
+    doc.setFillColor(...PDF.teal);
     doc.rect(0, H - 10, W, 1, "F");
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...PDF.footerText);
-    doc.text("Controle de Estoque - Documento Confidencial", 14, H - 3);
-    doc.text(`Pagina ${i} de ${totalPages}`, W - 28, H - 3);
+    doc.text("Estoque Fácil — Controle Inteligente | Documento Confidencial", 14, H - 3);
+    doc.text(`Página ${i} de ${totalPages}`, W - 14, H - 3, { align: "right" });
   }
 
   doc.save(`relatorio-estoque-${dataArq}.pdf`);
