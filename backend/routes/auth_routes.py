@@ -1,11 +1,31 @@
 from flask import Blueprint, request, jsonify
 from database.database import conectar
 import bcrypt
-from utils.jwt import gerar_token
+import datetime
+import jwt
+import os
+
+from utils.jwt import gerar_token, verificar_token
 
 auth_bp = Blueprint("auth", __name__)
 
 SUPERADMIN_EMAIL = "jardel.maciel22@gmail.com"
+
+
+def _get_secret():
+    return os.environ.get("JWT_SECRET_KEY", "fallback-nao-use-em-producao")
+
+
+# =========================
+# GERAR REFRESH TOKEN (expira em 30 dias)
+# =========================
+def gerar_refresh_token(usuario_id):
+    payload = {
+        "sub":  usuario_id,
+        "tipo": "refresh",
+        "exp":  datetime.datetime.utcnow() + datetime.timedelta(days=30)
+    }
+    return jwt.encode(payload, _get_secret(), algorithm="HS256")
 
 
 # =========================
@@ -46,10 +66,12 @@ def login():
         if not bcrypt.checkpw(senha.encode(), senha_db):
             return jsonify({"erro": "Senha inválida"}), 401
 
-        token = gerar_token(dict(usuario))
+        token         = gerar_token(dict(usuario))
+        refresh_token = gerar_refresh_token(usuario["id"])
 
         return jsonify({
-            "token": token,
+            "token":         token,
+            "refresh_token": refresh_token,
             "user": {
                 "id":        usuario["id"],
                 "nome":      usuario["nome"],
@@ -58,6 +80,53 @@ def login():
                 "tenant_id": usuario.get("tenant_id", 1),
                 "superadmin": email == SUPERADMIN_EMAIL
             }
+        }), 200
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"erro": str(e)}), 500
+
+
+# =========================
+# RENOVAR TOKEN (refresh)
+# =========================
+@auth_bp.route("/auth/refresh", methods=["POST"])
+def refresh():
+    try:
+        dados = request.get_json()
+        refresh_token = dados.get("refresh_token", "").strip()
+
+        if not refresh_token:
+            return jsonify({"erro": "refresh_token obrigatório"}), 400
+
+        try:
+            payload = jwt.decode(refresh_token, _get_secret(), algorithms=["HS256"])
+        except jwt.ExpiredSignatureError:
+            return jsonify({"erro": "Sessão expirada, faça login novamente"}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"erro": "Token inválido"}), 401
+
+        if payload.get("tipo") != "refresh":
+            return jsonify({"erro": "Token inválido"}), 401
+
+        usuario_id = payload.get("sub")
+
+        conn = conectar()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE id = %s AND ativo = 1", (usuario_id,))
+        usuario = cursor.fetchone()
+        conn.close()
+
+        if not usuario:
+            return jsonify({"erro": "Usuário não encontrado"}), 404
+
+        novo_token    = gerar_token(dict(usuario))
+        novo_refresh  = gerar_refresh_token(usuario["id"])
+
+        return jsonify({
+            "token":         novo_token,
+            "refresh_token": novo_refresh
         }), 200
 
     except Exception as e:

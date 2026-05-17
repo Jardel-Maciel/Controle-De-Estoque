@@ -67,7 +67,9 @@ async function fazerLogin() {
       return;
     }
 
+    // Salva os dois tokens
     localStorage.setItem("token", dados.token);
+    localStorage.setItem("refresh_token", dados.refresh_token);
     localStorage.setItem("user", JSON.stringify(dados.user));
     localStorage.setItem("nome", dados.user.nome || "");
     window.location.href = "dashboard.html";
