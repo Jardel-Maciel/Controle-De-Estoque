@@ -17,6 +17,7 @@ from routes.movimentacoes_routes import movimentacoes_bp
 from routes.xml_importador import xml_bp
 from routes.excel_importador import excel_bp
 from routes.admin_routes import admin_bp
+from routes.gerente_routes import gerente_bp
 
 app = Flask(__name__)
 
@@ -50,6 +51,7 @@ app.register_blueprint(movimentacoes_bp)
 app.register_blueprint(xml_bp)
 app.register_blueprint(excel_bp)
 app.register_blueprint(admin_bp)
+app.register_blueprint(gerente_bp)
 
 # =========================
 # HEALTHCHECK

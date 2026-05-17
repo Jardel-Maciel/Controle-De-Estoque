@@ -14,7 +14,7 @@ const msgErro     = document.getElementById("msgErro");
 // =========================
 let senhaVisivel = false;
 
-toggleBtn.addEventListener("click", () => {
+if (toggleBtn) toggleBtn.addEventListener("click", () => {
   senhaVisivel = !senhaVisivel;
   senhaInput.type = senhaVisivel ? "text" : "password";
   toggleBtn.textContent = senhaVisivel ? "🙈" : "👁";
@@ -32,8 +32,8 @@ function limparErro() {
   msgErro.classList.remove("show");
 }
 
-emailInput.addEventListener("input", limparErro);
-senhaInput.addEventListener("input", limparErro);
+if (emailInput) emailInput.addEventListener("input", limparErro);
+if (senhaInput) senhaInput.addEventListener("input", limparErro);
 
 // =========================
 // LOGIN
@@ -72,7 +72,14 @@ async function fazerLogin() {
     localStorage.setItem("refresh_token", dados.refresh_token);
     localStorage.setItem("user", JSON.stringify(dados.user));
     localStorage.setItem("nome", dados.user.nome || "");
-    window.location.href = "dashboard.html";
+
+    // Redireciona conforme o role
+    const role = dados.user.role || "cliente";
+    if (role === "gerente") {
+      window.location.href = "gerente.html";
+    } else {
+      window.location.href = "dashboard.html";
+    }
 
   } catch (erro) {
     console.error("ERRO LOGIN:", erro);
@@ -82,96 +89,50 @@ async function fazerLogin() {
   }
 }
 
-btnLogin.addEventListener("click", fazerLogin);
-emailInput.addEventListener("keypress", e => { if (e.key === "Enter") fazerLogin(); });
-senhaInput.addEventListener("keypress", e => { if (e.key === "Enter") fazerLogin(); });
+if (btnLogin)    btnLogin.addEventListener("click", fazerLogin);
+if (emailInput)  emailInput.addEventListener("keypress", e => { if (e.key === "Enter") fazerLogin(); });
+if (senhaInput)  senhaInput.addEventListener("keypress", e => { if (e.key === "Enter") fazerLogin(); });
 
 // =========================
 // MODAL REDEFINIR SENHA
+// O HTML usa id="modalSenha" e id="emailReset"
 // =========================
-let emailVerificado = "";
+async function enviarReset() {
+  const email   = document.getElementById("emailReset")?.value.trim().toLowerCase();
+  const msgErroR = document.getElementById("msgResetErro");
+  const msgOkR   = document.getElementById("msgResetOk");
 
-function abrirModal() {
-  document.getElementById("modalReset").classList.add("open");
-  irStep(1);
-}
-
-function fecharModal() {
-  document.getElementById("modalReset").classList.remove("open");
-  document.getElementById("resetEmail").value     = "";
-  document.getElementById("novaSenha").value      = "";
-  document.getElementById("confirmarSenha").value = "";
-  emailVerificado = "";
-  irStep(1);
-}
-
-function irStep(n) {
-  [1, 2, 3].forEach(i => {
-    document.getElementById(`step${i}`).classList.toggle("active", i === n);
-    document.getElementById(`dot${i}`).classList.toggle("done", i <= n);
-  });
-}
-
-function voltarStep1() { irStep(1); }
-
-function erroStep(id, msg) {
-  const el = document.getElementById(id);
-  el.textContent = msg;
-  el.classList.add("show");
-  setTimeout(() => el.classList.remove("show"), 3500);
-}
-
-function toggleModalSenha(inputId, btn) {
-  const inp = document.getElementById(inputId);
-  const vis = inp.type === "password";
-  inp.type = vis ? "text" : "password";
-  btn.textContent = vis ? "🙈" : "👁";
-}
-
-async function verificarEmail() {
-  const email = document.getElementById("resetEmail").value.trim().toLowerCase();
-  if (!email) { erroStep("erroStep1", "Informe o email."); return; }
+  if (!email) {
+    if (msgErroR) { msgErroR.textContent = "Informe o email."; msgErroR.classList.add("show"); }
+    return;
+  }
 
   try {
-    const res = await fetch(`${API}/auth/verificar-email`, {
+    const res   = await fetch(`${API}/auth/solicitar-reset`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email })
     });
     const dados = await res.json();
-    if (res.ok) {
-      emailVerificado = email;
-      irStep(2);
-    } else {
-      erroStep("erroStep1", dados.erro || "Email não encontrado.");
+
+    if (msgErroR) msgErroR.classList.remove("show");
+    if (msgOkR) {
+      msgOkR.textContent = dados.msg || "Se o e-mail estiver cadastrado, você receberá as instruções.";
+      msgOkR.classList.add("show");
     }
   } catch {
-    erroStep("erroStep1", "Erro ao conectar com o servidor.");
+    if (msgErroR) { msgErroR.textContent = "Erro ao conectar com o servidor."; msgErroR.classList.add("show"); }
   }
 }
 
-async function redefinirSenha() {
-  const nova      = document.getElementById("novaSenha").value.trim();
-  const confirmar = document.getElementById("confirmarSenha").value.trim();
-
-  if (!nova || nova.length < 6) { erroStep("erroStep2", "Senha deve ter pelo menos 6 caracteres."); return; }
-  if (nova !== confirmar)        { erroStep("erroStep2", "As senhas não coincidem."); return; }
-
-  try {
-    const res = await fetch(`${API}/auth/redefinir-senha`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: emailVerificado, nova_senha: nova })
-    });
-    const dados = await res.json();
-    if (res.ok) { irStep(3); }
-    else { erroStep("erroStep2", dados.erro || "Erro ao redefinir senha."); }
-  } catch {
-    erroStep("erroStep2", "Erro ao conectar com o servidor.");
-  }
+// Fechar modal clicando fora — usa o ID correto do HTML
+const modalSenha = document.getElementById("modalSenha");
+if (modalSenha) {
+  modalSenha.addEventListener("click", e => {
+    if (e.target === e.currentTarget) modalSenha.classList.remove("open");
+  });
 }
 
-// Fechar modal clicando fora
-document.getElementById("modalReset").addEventListener("click", e => {
-  if (e.target === e.currentTarget) fecharModal();
-});
+// Botão enviar reset — conecta ao endpoint correto
+const btnEnviarReset = document.getElementById("enviarReset");
+if (btnEnviarReset) btnEnviarReset.addEventListener("click", enviarReset);

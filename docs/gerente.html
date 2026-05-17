@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Painel do Gerente — Estoque Fácil</title>
+  <link rel="shortcut icon" href="assets/favicon.png" type="image/x-icon">
+  <link rel="stylesheet" href="css/design-system.css"/>
+  <link rel="stylesheet" href="css/toast.css"/>
+  <style>
+    .badge-pendente  { background: var(--warning-dim); color: var(--warning);   border: 1px solid rgba(245,158,11,0.25); padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-aprovado  { background: var(--success-dim); color: var(--success);   border: 1px solid rgba(0,196,140,0.25);  padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-reprovado { background: var(--danger-dim);  color: var(--danger);    border: 1px solid rgba(239,68,68,0.25);  padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-entrada   { background: var(--success-dim); color: var(--success);   padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-saida     { background: var(--danger-dim);  color: var(--danger);    padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-role-gerente  { background: rgba(99,102,241,0.15); color: #818cf8; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-role-cliente  { background: var(--accent-dim); color: var(--accent); padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-ativo   { background: var(--success-dim); color: var(--success); padding: 2px 10px; border-radius: 20px; font-size: 11px; }
+    .badge-inativo { background: var(--danger-dim);  color: var(--danger);  padding: 2px 10px; border-radius: 20px; font-size: 11px; }
+
+    .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+    .tab-btn {
+      padding: 10px 20px; background: none; border: none; border-bottom: 2px solid transparent;
+      color: var(--text-muted); cursor: pointer; font-family: var(--font); font-size: 13.5px;
+      font-weight: 500; transition: all 0.15s; margin-bottom: -1px;
+    }
+    .tab-btn:hover { color: var(--text-secondary); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .ranking-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+    }
+    .ranking-item:last-child { border-bottom: none; }
+    .ranking-pos { width: 24px; height: 24px; border-radius: 50%; background: var(--accent-dim); color: var(--accent); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ranking-bar-wrap { flex: 1; height: 6px; background: var(--surface-3); border-radius: 3px; overflow: hidden; }
+    .ranking-bar { height: 100%; background: linear-gradient(90deg, var(--accent), var(--green)); border-radius: 3px; transition: width 0.6s ease; }
+
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 999; display: none; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <svg class="logo-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="2" width="15" height="8" rx="2" fill="#1677FF"/>
+        <rect x="2" y="14" width="15" height="8" rx="2" fill="#1677FF" opacity="0.7"/>
+        <rect x="10" y="14" width="15" height="8" rx="2" fill="#00C48C"/>
+        <rect x="2" y="26" width="22" height="8" rx="2" fill="#00C48C"/>
+      </svg>
+      <div class="logo-text">
+        <div class="logo-name"><span class="white">Estoque</span> <span class="green">Fácil</span></div>
+        <div class="logo-tag">Gerente</div>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Menu</div>
+      <a href="gerente.html" class="nav-link active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        Painel Gerente
+      </a>
+      <a href="dashboard.html" class="nav-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        Estoque
+      </a>
+      <a href="movimentacoes.html" class="nav-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        Movimentações
+      </a>
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="nav-link" id="btnLogout" style="width:100%;border:none;background:none;cursor:pointer;text-align:left;font-family:inherit;font-size:13.5px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sair
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="page-title">Painel do Gerente</span>
+        <span class="breadcrumb">/ Visão da equipe</span>
+      </div>
+      <div class="topbar-right">
+        <div class="user-avatar" id="avatarUser" title="Perfil">?</div>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- STAT CARDS -->
+      <div class="stats-grid" style="margin-bottom:20px;">
+        <div class="stat-card blue">
+          <div class="stat-icon blue">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="stat-label">Funcionários ativos</div>
+          <div class="stat-value" id="statUsuarios">—</div>
+        </div>
+        <div class="stat-card amber">
+          <div class="stat-icon amber">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div class="stat-label">Aguardando aprovação</div>
+          <div class="stat-value" id="statPendentes">—</div>
+        </div>
+        <div class="stat-card cyan">
+          <div class="stat-icon cyan">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div class="stat-label">Movimentações este mês</div>
+          <div class="stat-value" id="statMov">—</div>
+        </div>
+      </div>
+
+      <!-- TABS -->
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="aprovacoes">
+          ⏳ Aprovações <span id="badgePendentes" style="background:var(--warning);color:#000;border-radius:10px;padding:1px 7px;font-size:10px;margin-left:4px;display:none">0</span>
+        </button>
+        <button class="tab-btn" data-tab="equipe">👥 Equipe</button>
+        <button class="tab-btn" data-tab="atividade">📊 Atividade</button>
+      </div>
+
+      <!-- TAB: APROVAÇÕES -->
+      <div class="tab-panel active" id="tab-aprovacoes">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Movimentações pendentes</span>
+            <button class="btn btn-ghost btn-sm" onclick="carregarPendentes()">↻ Atualizar</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Produto</th><th>Tipo</th><th>Qtd</th><th>Responsável</th><th>Data</th><th>Comentário</th><th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaPendentes">
+                <tr><td colspan="7"><div class="empty-state"><p>Carregando...</p></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: EQUIPE -->
+      <div class="tab-panel" id="tab-equipe">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Membros da equipe</span>
+            <button class="btn btn-primary btn-sm" id="btnNovoUsuario">+ Novo usuário</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Nome</th><th>Email</th><th>Perfil</th><th>Status</th><th>Ações</th></tr>
+              </thead>
+              <tbody id="tabelaEquipe">
+                <tr><td colspan="5"><div class="empty-state"><p>Carregando...</p></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: ATIVIDADE -->
+      <div class="tab-panel" id="tab-atividade">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="card">
+            <div class="card-header"><span class="card-title">Ranking de movimentações</span></div>
+            <div class="card-body" id="rankingEquipe"><p style="color:var(--text-muted);font-size:13px">Carregando...</p></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Últimas movimentações</span></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Produto</th><th>Tipo</th><th>Responsável</th><th>Status</th></tr></thead>
+                <tbody id="tabelaRecentes">
+                  <tr><td colspan="4"><div class="empty-state"><p>Carregando...</p></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL REPROVAR -->
+<div class="modal-overlay" id="modalReprovar">
+  <div class="modal-box" style="max-width:380px">
+    <div class="modal-header">
+      <span class="modal-title">Reprovar movimentação</span>
+      <button class="btn btn-ghost btn-icon" onclick="fecharModalReprovar()">✕</button>
+    </div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Informe o motivo da reprovação (opcional).</p>
+    <div class="form-group">
+      <label class="form-label">Motivo</label>
+      <input class="form-input" type="text" id="motivoReprovar" placeholder="Ex: quantidade incorreta"/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="fecharModalReprovar()">Cancelar</button>
+      <button class="btn btn-danger" id="btnConfirmarReprovar">Reprovar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NOVO USUÁRIO -->
+<div class="modal-overlay" id="modalNovoUsuario">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-header">
+      <span class="modal-title">Novo usuário</span>
+      <button class="btn btn-ghost btn-icon" onclick="fecharModalUsuario()">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nome</label>
+      <input class="form-input" type="text" id="novoNome" placeholder="Nome completo"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" type="email" id="novoEmail" placeholder="email@exemplo.com"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Senha inicial</label>
+      <input class="form-input" type="password" id="novaSenha" placeholder="Mínimo 6 caracteres"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Perfil</label>
+      <select class="form-input" id="novoRole">
+        <option value="cliente">Funcionário</option>
+      </select>
+    </div>
+    <div class="msg-erro" id="erroNovoUsuario"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="fecharModalUsuario()">Cancelar</button>
+      <button class="btn btn-primary" id="btnSalvarUsuario">Criar usuário</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/toast.js"></script>
+<script src="js/api.js"></script>
+<script>
+  // Guarda de rota — só gerente acessa
+  const _user = JSON.parse(localStorage.getItem("user") || "{}");
+  if (!localStorage.getItem("token")) window.location.href = "index.html";
+  if (_user.role && _user.role !== "gerente" && _user.role !== "admin") window.location.href = "dashboard.html";
+
+  document.getElementById("avatarUser").textContent =
+    (localStorage.getItem("nome") || "?").charAt(0).toUpperCase();
+
+  document.getElementById("btnLogout").addEventListener("click", () => {
+    localStorage.clear(); location.href = "index.html";
+  });
+
+  // ========================= TABS =========================
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+
+      if (btn.dataset.tab === "equipe")    carregarEquipe();
+      if (btn.dataset.tab === "atividade") carregarAtividade();
+    });
+  });
+
+  // ========================= CARREGAR DASHBOARD =========================
+  async function carregarDashboard() {
+    const res = await apiFetch("/gerente/dashboard");
+    if (!res) return;
+    const d = await res.json();
+
+    document.getElementById("statUsuarios").textContent = d.total_usuarios ?? 0;
+    document.getElementById("statPendentes").textContent = d.pendentes ?? 0;
+    document.getElementById("statMov").textContent = d.mov_mes ?? 0;
+
+    const badge = document.getElementById("badgePendentes");
+    if (d.pendentes > 0) {
+      badge.textContent = d.pendentes;
+      badge.style.display = "inline";
+    }
+
+    renderPendentes(d.pendentes > 0 ? null : []);
+  }
+
+  // ========================= PENDENTES =========================
+  let movIdReprovar = null;
+
+  async function carregarPendentes() {
+    const res = await apiFetch("/gerente/pendentes");
+    if (!res) return;
+    const dados = await res.json();
+    renderPendentes(dados);
+  }
+
+  function renderPendentes(dados) {
+    const tbody = document.getElementById("tabelaPendentes");
+
+    if (dados === null) {
+      carregarPendentes();
+      return;
+    }
+
+    if (!dados.length) {
+      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><p>✅ Nenhuma movimentação pendente</p></div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = dados.map(m => `
+      <tr>
+        <td><strong>${m.produto}</strong></td>
+        <td><span class="badge-${m.tipo}">${m.tipo}</span></td>
+        <td>${m.quantidade}</td>
+        <td>${m.responsavel || "—"}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${m.data || "—"}</td>
+        <td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis">${m.comentario || "—"}</td>
+        <td>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-sm" style="background:var(--success-dim);color:var(--success);border:1px solid rgba(0,196,140,0.3)"
+              onclick="aprovar(${m.id})">✓ Aprovar</button>
+            <button class="btn btn-sm" style="background:var(--danger-dim);color:var(--danger);border:1px solid rgba(239,68,68,0.3)"
+              onclick="abrirReprovar(${m.id})">✗ Reprovar</button>
+          </div>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  async function aprovar(id) {
+    const res = await apiFetch(`/gerente/aprovar/${id}`, { method: "PATCH" });
+    if (!res) return;
+    const d = await res.json();
+    if (res.ok) { showToast("Movimentação aprovada!", "success"); carregarDashboard(); }
+    else showToast(d.erro || "Erro ao aprovar", "error");
+  }
+
+  function abrirReprovar(id) {
+    movIdReprovar = id;
+    document.getElementById("motivoReprovar").value = "";
+    document.getElementById("modalReprovar").classList.add("open");
+  }
+  function fecharModalReprovar() {
+    document.getElementById("modalReprovar").classList.remove("open");
+    movIdReprovar = null;
+  }
+
+  document.getElementById("btnConfirmarReprovar").addEventListener("click", async () => {
+    if (!movIdReprovar) return;
+    const motivo = document.getElementById("motivoReprovar").value.trim();
+    const res = await apiFetch(`/gerente/reprovar/${movIdReprovar}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ motivo })
+    });
+    if (!res) return;
+    const d = await res.json();
+    if (res.ok) { showToast("Movimentação reprovada", "warning"); fecharModalReprovar(); carregarDashboard(); }
+    else showToast(d.erro || "Erro", "error");
+  });
+
+  // ========================= EQUIPE =========================
+  async function carregarEquipe() {
+    const res = await apiFetch("/gerente/usuarios");
+    if (!res) return;
+    const dados = await res.json();
+    const tbody = document.getElementById("tabelaEquipe");
+
+    if (!dados.length) {
+      tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><p>Nenhum usuário encontrado</p></div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = dados.map(u => `
+      <tr>
+        <td><strong>${u.nome}</strong></td>
+        <td style="color:var(--text-secondary);font-size:12px">${u.email}</td>
+        <td><span class="badge-role-${u.role === 'gerente' ? 'gerente' : 'cliente'}">${u.role === 'gerente' ? 'Gerente' : 'Funcionário'}</span></td>
+        <td><span class="${u.ativo ? 'badge-ativo' : 'badge-inativo'}">${u.ativo ? 'Ativo' : 'Inativo'}</span></td>
+        <td>
+          <button class="btn btn-ghost btn-sm" onclick="toggleUsuario(${u.id}, ${u.ativo})">
+            ${u.ativo ? 'Desativar' : 'Ativar'}
+          </button>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  async function toggleUsuario(id, ativo) {
+    const res = await apiFetch(`/gerente/usuarios/${id}/toggle`, { method: "PATCH" });
+    if (!res) return;
+    const d = await res.json();
+    if (res.ok) { showToast(d.ativo ? "Usuário ativado" : "Usuário desativado", "success"); carregarEquipe(); }
+    else showToast(d.erro || "Erro", "error");
+  }
+
+  // Modal novo usuário
+  document.getElementById("btnNovoUsuario").addEventListener("click", () => {
+    document.getElementById("modalNovoUsuario").classList.add("open");
+  });
+  function fecharModalUsuario() {
+    document.getElementById("modalNovoUsuario").classList.remove("open");
+    document.getElementById("erroNovoUsuario").classList.remove("show");
+  }
+
+  document.getElementById("btnSalvarUsuario").addEventListener("click", async () => {
+    const nome  = document.getElementById("novoNome").value.trim();
+    const email = document.getElementById("novoEmail").value.trim();
+    const senha = document.getElementById("novaSenha").value.trim();
+    const role  = document.getElementById("novoRole").value;
+    const errEl = document.getElementById("erroNovoUsuario");
+
+    if (!nome || !email || !senha) {
+      errEl.textContent = "Preencha todos os campos"; errEl.classList.add("show"); return;
+    }
+    if (senha.length < 6) {
+      errEl.textContent = "Senha deve ter mínimo 6 caracteres"; errEl.classList.add("show"); return;
+    }
+
+    const res = await apiFetch("/gerente/usuarios", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome, email, senha, role })
+    });
+    if (!res) return;
+    const d = await res.json();
+    if (res.ok) {
+      showToast("Usuário criado com sucesso!", "success");
+      fecharModalUsuario();
+      carregarEquipe();
+    } else {
+      errEl.textContent = d.erro || "Erro ao criar usuário";
+      errEl.classList.add("show");
+    }
+  });
+
+  // ========================= ATIVIDADE =========================
+  async function carregarAtividade() {
+    const res = await apiFetch("/gerente/dashboard");
+    if (!res) return;
+    const d = await res.json();
+
+    // Ranking
+    const ranking = document.getElementById("rankingEquipe");
+    if (!d.por_responsavel || !d.por_responsavel.length) {
+      ranking.innerHTML = `<p style="color:var(--text-muted);font-size:13px">Nenhuma movimentação registrada ainda.</p>`;
+    } else {
+      const max = d.por_responsavel[0].total;
+      ranking.innerHTML = d.por_responsavel.map((r, i) => `
+        <div class="ranking-item">
+          <div class="ranking-pos">${i + 1}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:500;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.responsavel}</div>
+            <div class="ranking-bar-wrap">
+              <div class="ranking-bar" style="width:${Math.round((r.total / max) * 100)}%"></div>
+            </div>
+          </div>
+          <div style="font-size:13px;font-weight:600;color:var(--accent);flex-shrink:0">${r.total}</div>
+        </div>
+      `).join("");
+    }
+
+    // Recentes
+    const tbody = document.getElementById("tabelaRecentes");
+    if (!d.recentes || !d.recentes.length) {
+      tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><p>Sem movimentações</p></div></td></tr>`;
+    } else {
+      tbody.innerHTML = d.recentes.map(m => `
+        <tr>
+          <td><strong>${m.produto}</strong></td>
+          <td><span class="badge-${m.tipo}">${m.tipo}</span></td>
+          <td style="font-size:12px">${m.responsavel || "—"}</td>
+          <td><span class="badge-${m.status || 'aprovado'}">${m.status || 'aprovado'}</span></td>
+        </tr>
+      `).join("");
+    }
+  }
+
+  // ========================= INIT =========================
+  carregarDashboard();
+  carregarPendentes();
+</script>
+</body>
+</html>

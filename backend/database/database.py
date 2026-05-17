@@ -128,8 +128,20 @@ def criar_tabelas():
                 quantidade FLOAT,
                 comentario TEXT,
                 responsavel TEXT,
-                data TEXT
+                data TEXT,
+                status TEXT DEFAULT 'aprovado',
+                aprovado_por TEXT
             )
+        """)
+
+        # Migration: adiciona colunas se não existirem (idempotente)
+        cursor.execute("""
+            ALTER TABLE movimentacoes
+            ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'aprovado'
+        """)
+        cursor.execute("""
+            ALTER TABLE movimentacoes
+            ADD COLUMN IF NOT EXISTS aprovado_por TEXT
         """)
 
         cursor.execute("""
