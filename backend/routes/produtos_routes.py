@@ -5,27 +5,20 @@ from database.database import conectar
 produtos_bp = Blueprint("produtos", __name__)
 
 
-# =========================
-# LISTAR PRODUTOS
-# =========================
 @produtos_bp.route("/produtos", methods=["GET"])
 @auth_required
 def listar_produtos():
-
     try:
         tenant_id = g.usuario["tenant_id"]
 
-        conn = conectar()
-        cursor = conn.cursor()
-
-        cursor.execute("""
-            SELECT * FROM produtos
-            WHERE tenant_id = %s
-            ORDER BY id DESC
-        """, (tenant_id,))
-
-        dados = cursor.fetchall()
-        conn.close()
+        with conectar() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT * FROM produtos
+                WHERE tenant_id = %s
+                ORDER BY id DESC
+            """, (tenant_id,))
+            dados = cursor.fetchall()
 
         return jsonify([dict(item) for item in dados])
 
@@ -35,16 +28,11 @@ def listar_produtos():
         return jsonify({"erro": str(e)}), 500
 
 
-# =========================
-# CRIAR PRODUTO
-# =========================
 @produtos_bp.route("/produtos", methods=["POST"])
 @auth_required
 def criar_produto():
-
     try:
         tenant_id = g.usuario["tenant_id"]
-
         dados = request.get_json(force=True)
 
         produto      = str(dados.get("produto", "")).strip()
@@ -58,24 +46,21 @@ def criar_produto():
         chave_nfe    = dados.get("chave_nfe", "")
         data_emissao = dados.get("data_emissao", "")
 
-        conn = conectar()
-        cursor = conn.cursor()
-
-        cursor.execute("""
-            INSERT INTO produtos (
+        with conectar() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO produtos (
+                    tenant_id, produto, quantidade, valor,
+                    fornecedor, contato, cnpj, numero_nota,
+                    serie, chave_nfe, data_emissao
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (
                 tenant_id, produto, quantidade, valor,
                 fornecedor, contato, cnpj, numero_nota,
                 serie, chave_nfe, data_emissao
-            )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """, (
-            tenant_id, produto, quantidade, valor,
-            fornecedor, contato, cnpj, numero_nota,
-            serie, chave_nfe, data_emissao
-        ))
-
-        conn.commit()
-        conn.close()
+            ))
+            conn.commit()
 
         return jsonify({"msg": "Produto cadastrado com sucesso"})
 
@@ -85,26 +70,19 @@ def criar_produto():
         return jsonify({"erro": str(e)}), 500
 
 
-# =========================
-# REMOVER PRODUTO
-# =========================
 @produtos_bp.route("/produtos/<int:id>", methods=["DELETE"])
 @auth_required
 def remover_produto(id):
-
     try:
         tenant_id = g.usuario["tenant_id"]
 
-        conn = conectar()
-        cursor = conn.cursor()
-
-        cursor.execute("""
-            DELETE FROM produtos
-            WHERE id = %s AND tenant_id = %s
-        """, (id, tenant_id))
-
-        conn.commit()
-        conn.close()
+        with conectar() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                DELETE FROM produtos
+                WHERE id = %s AND tenant_id = %s
+            """, (id, tenant_id))
+            conn.commit()
 
         return jsonify({"msg": "Produto removido"})
 
