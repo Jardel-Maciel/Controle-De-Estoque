@@ -321,8 +321,37 @@ if (campoPesquisa) {
 }
 
 // =========================
-// EXPORTAR PDF
+// EXPORTAR PDF — tema idêntico ao dashboard.js
 // =========================
+
+// Paleta PDF — mesma do dashboard.js
+const PDF = {
+  headerBg:    [15,  23,  42],
+  headerText:  [226, 232, 240],
+  headerSub:   [148, 163, 184],
+  accent:      [56,  189, 248],
+  teal:        [20,  184, 166],
+  yellow:      [234, 179,   8],
+  cardBg:      [240, 249, 255],
+  cardBorder:  [186, 230, 253],
+  rowEven:     [240, 253, 250],
+  rowOdd:      [255, 255, 255],
+  tableHeader: [15,  23,  42],
+  tableHText:  [226, 232, 240],
+  textDark:    [15,  23,  42],
+  textMid:     [71,  85, 105],
+  textLight:   [148, 163, 184],
+  border:      [186, 230, 253],
+  badgeBg:     [254, 243, 199],
+  badgeText:   [146,  64,  14],
+  entradaBg:   [209, 250, 229],
+  entradaText: [6,   95,  70],
+  saidaBg:     [254, 226, 226],
+  saidaText:   [153,  27,  27],
+  footerBg:    [15,  23,  42],
+  footerText:  [148, 163, 184],
+};
+
 const btnPDF = document.getElementById("btnExportarPDF");
 if (btnPDF) {
   btnPDF.addEventListener("click", () => {
@@ -337,69 +366,208 @@ if (btnPDF) {
     }
 
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-    const W = doc.internal.pageSize.getWidth();
-    const H = doc.internal.pageSize.getHeight();
-    const agora = new Date().toLocaleString("pt-BR");
-    const data  = new Date().toISOString().slice(0, 10);
+    const doc     = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const W       = doc.internal.pageSize.getWidth();
+    const H       = doc.internal.pageSize.getHeight();
+    const agora   = new Date().toLocaleString("pt-BR");
+    const dataArq = new Date().toISOString().slice(0, 10);
 
-    // Cabeçalho
-    doc.setFillColor(15, 23, 42);
-    doc.rect(0, 0, W, 30, "F");
-    doc.setFillColor(56, 189, 248);
+    // ----------------------------------------
+    // CABEÇALHO — fundo escuro, igual ao dashboard
+    // ----------------------------------------
+    doc.setFillColor(...PDF.headerBg);
+    doc.rect(0, 0, W, 52, "F");
+
+    // barra accent topo — azul
+    doc.setFillColor(...PDF.accent);
     doc.rect(0, 0, W, 3, "F");
-    doc.setFontSize(16);
-    doc.setTextColor(226, 232, 240);
-    doc.setFont("helvetica", "bold");
-    doc.text("Histórico de Movimentações", 14, 16);
+
+    // barra teal inferior do header
+    doc.setFillColor(...PDF.teal);
+    doc.rect(0, 49, W, 3, "F");
+
+    // LOGO — lado esquerdo
+    try {
+      doc.addImage("assets/logo_transparent.png", "PNG", 10, 8, 75, 22);
+    } catch (e) {
+      doc.setFontSize(16);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...PDF.accent);
+      doc.text("Estoque", 14, 22);
+      doc.setTextColor(...PDF.teal);
+      doc.text(" Fácil", 47, 22);
+    }
+
+    // Info do relatório — lado direito
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(148, 163, 184);
-    doc.text(`Emitido em: ${agora}`, 14, 24);
+    doc.setTextColor(...PDF.headerSub);
+    doc.text("Relatório de Histórico de Movimentações", W - 14, 20, { align: "right" });
+    doc.text(`Emitido em: ${agora}`, W - 14, 28, { align: "right" });
 
-    // Tabela
-    const cols = ["Produto", "Tipo", "Qtd.", "Responsável", "Comentário", "Data"];
-    const colX = [14, 70, 100, 120, 170, 220];
-    let y = 42;
+    // ----------------------------------------
+    // CARDS RESUMO
+    // ----------------------------------------
+    const totalEntradas = dadosCache.filter(d => d.tipo === "entrada")
+      .reduce((s, d) => s + Number(d.quantidade || 0), 0);
+    const totalSaidas = dadosCache.filter(d => d.tipo === "saida")
+      .reduce((s, d) => s + Number(d.quantidade || 0), 0);
+    const totalRegistros = dadosCache.length;
 
-    doc.setFillColor(15, 23, 42);
-    doc.rect(14, y - 6, W - 28, 10, "F");
+    const cards = [
+      { label: "Total Registros",  valor: String(totalRegistros), cor: PDF.accent },
+      { label: "Total Entradas",   valor: String(totalEntradas),  cor: PDF.teal   },
+      { label: "Total Saídas",     valor: String(totalSaidas),    cor: PDF.yellow },
+    ];
+
+    const cardW = (W - 28 - 6) / 3;
+    const cardY = 58;
+
+    cards.forEach((card, i) => {
+      const x = 14 + i * (cardW + 3);
+
+      doc.setFillColor(...PDF.cardBg);
+      doc.roundedRect(x, cardY, cardW, 24, 3, 3, "F");
+
+      doc.setFillColor(...card.cor);
+      doc.rect(x, cardY, 3, 24, "F");
+
+      doc.setFontSize(7);
+      doc.setTextColor(...PDF.textMid);
+      doc.setFont("helvetica", "normal");
+      doc.text(card.label, x + 6, cardY + 9);
+
+      doc.setFontSize(13);
+      doc.setTextColor(...PDF.textDark);
+      doc.setFont("helvetica", "bold");
+      doc.text(card.valor, x + 6, cardY + 19);
+    });
+
+    // ----------------------------------------
+    // TÍTULO DA SEÇÃO
+    // ----------------------------------------
+    let y = 92;
+
+    doc.setFontSize(11);
+    doc.setTextColor(...PDF.textDark);
+    doc.setFont("helvetica", "bold");
+    doc.text("Movimentações de Estoque", 14, y);
+
+    doc.setDrawColor(...PDF.accent);
+    doc.setLineWidth(0.5);
+    doc.line(14, y + 2, W - 14, y + 2);
+
+    y += 10;
+
+    // ----------------------------------------
+    // TABELA
+    // ----------------------------------------
+    const cols = ["#", "Produto", "Tipo", "Qtd.", "Responsável", "Comentário", "Data"];
+    const colX = [14, 24, 82, 108, 124, 172, 222];
+    const colW = W - 28;
+
+    // header da tabela — fundo escuro, texto claro
+    doc.setFillColor(...PDF.tableHeader);
+    doc.rect(14, y - 5, colW, 10, "F");
+
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(56, 189, 248);
+    doc.setTextColor(...PDF.tableHText);
     cols.forEach((col, i) => doc.text(col, colX[i], y));
     y += 8;
 
     dadosCache.forEach((item, idx) => {
-      if (y > H - 15) {
+      if (y > H - 18) {
         doc.addPage();
-        y = 20;
+
+        // mini-header nas páginas seguintes
+        doc.setFillColor(...PDF.headerBg);
+        doc.rect(0, 0, W, 14, "F");
+        doc.setFillColor(...PDF.accent);
+        doc.rect(0, 0, W, 2, "F");
+        doc.setFillColor(...PDF.teal);
+        doc.rect(0, 12, W, 2, "F");
+        doc.setFontSize(8);
+        doc.setTextColor(...PDF.headerSub);
+        doc.text("Estoque Fácil — continuação", 14, 10);
+        y = 22;
       }
-      if (idx % 2 === 0) {
-        doc.setFillColor(30, 41, 59);
-        doc.rect(14, y - 5, W - 28, 9, "F");
-      }
+
+      // zebra: par = teal claro, ímpar = branco
+      doc.setFillColor(...(idx % 2 === 0 ? PDF.rowEven : PDF.rowOdd));
+      doc.rect(14, y - 5, colW, 9, "F");
+
+      // borda inferior sutil
+      doc.setDrawColor(...PDF.border);
+      doc.setLineWidth(0.1);
+      doc.line(14, y + 4, W - 14, y + 4);
+
       doc.setFontSize(7.5);
       doc.setFont("helvetica", "normal");
-      doc.setTextColor(226, 232, 240);
-      doc.text(String(item.produto || "—").substring(0, 22), colX[0], y);
-      doc.text(String(item.tipo || "—").toUpperCase(), colX[1], y);
-      doc.text(String(item.quantidade ?? "—"), colX[2], y);
-      doc.text(String(item.responsavel || "—").substring(0, 18), colX[3], y);
-      doc.text(String(item.comentario  || "—").substring(0, 22), colX[4], y);
-      doc.text(item.data ? new Date(item.data).toLocaleString("pt-BR") : "—", colX[5], y);
+      doc.setTextColor(...PDF.textDark);
+
+      doc.text(String(idx + 1), colX[0], y);
+      doc.text(String(item.produto || "—").substring(0, 22), colX[1], y);
+
+      // badge Tipo — entrada verde / saída vermelho
+      const tipo = (item.tipo || "").toLowerCase();
+      const isBadgeEntrada = tipo === "entrada";
+      const badgeBg   = isBadgeEntrada ? PDF.entradaBg   : PDF.saidaBg;
+      const badgeTxt  = isBadgeEntrada ? PDF.entradaText : PDF.saidaText;
+      const badgeLabel = isBadgeEntrada ? "Entrada" : "Saída";
+
+      doc.setFillColor(...badgeBg);
+      doc.roundedRect(colX[2], y - 3.5, 18, 5, 1, 1, "F");
+      doc.setFontSize(6);
+      doc.setTextColor(...badgeTxt);
+      doc.text(badgeLabel, colX[2] + 9, y - 0.3, { align: "center" });
+
+      doc.setFontSize(7.5);
+      doc.setTextColor(...PDF.textDark);
+
+      doc.text(String(item.quantidade ?? "—"), colX[3], y);
+      doc.text(String(item.responsavel || "—").substring(0, 18), colX[4], y);
+      doc.text(String(item.comentario  || "—").substring(0, 24), colX[5], y);
+      doc.text(item.data ? new Date(item.data).toLocaleString("pt-BR") : "—", colX[6], y);
+
       y += 9;
     });
 
-    // Rodapé
-    doc.setFillColor(15, 23, 42);
-    doc.rect(0, H - 10, W, 10, "F");
-    doc.setFontSize(7);
-    doc.setTextColor(100, 116, 139);
-    doc.text("Controle de Estoque", 14, H - 3);
-    doc.text(`Total: ${dadosCache.length} registros`, W - 40, H - 3);
+    // linha separadora final
+    doc.setDrawColor(...PDF.accent);
+    doc.setLineWidth(0.4);
+    doc.line(14, y, W - 14, y);
 
-    doc.save(`historico-${data}.pdf`);
+    // rodapé da tabela — total de registros
+    y += 7;
+    doc.setFillColor(...PDF.tableHeader);
+    doc.rect(14, y - 5, colW, 10, "F");
+
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...PDF.headerSub);
+    doc.text("Total de registros:", colX[5], y);
+    doc.setTextColor(...PDF.accent);
+    doc.text(String(dadosCache.length), colX[6], y);
+
+    // ----------------------------------------
+    // RODAPÉ EM TODAS AS PÁGINAS
+    // ----------------------------------------
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFillColor(...PDF.footerBg);
+      doc.rect(0, H - 10, W, 10, "F");
+      doc.setFillColor(...PDF.teal);
+      doc.rect(0, H - 10, W, 1, "F");
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...PDF.footerText);
+      doc.text("Estoque Fácil — Controle Inteligente | Documento Confidencial", 14, H - 3);
+      doc.text(`Página ${i} de ${totalPages}`, W - 14, H - 3, { align: "right" });
+    }
+
+    doc.save(`historico-${dataArq}.pdf`);
   });
 }
 
