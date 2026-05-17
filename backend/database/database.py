@@ -2,10 +2,10 @@ import psycopg2
 import psycopg2.extras
 import psycopg2.pool
 import os
+import bcrypt
 
 # =========================
 # POOL DE CONEXÕES
-# Criado uma vez quando o módulo é importado.
 # minconn=2 → mantém 2 conexões abertas sempre
 # maxconn=10 → nunca abre mais de 10 ao mesmo tempo
 # =========================
@@ -159,10 +159,19 @@ def criar_tabelas():
         conn.commit()
 
         # =========================
-        # SUPERADMIN AUTOMÁTICO
+        # SUPERADMIN — lido do ambiente, nunca hardcoded
+        # Configure no .env:
+        #   SUPERADMIN_EMAIL=seu@email.com
+        #   SUPERADMIN_SENHA=uma-senha-forte
+        #   SUPERADMIN_NOME=SeuNome
         # =========================
-        SUPERADMIN_EMAIL = "jardel.maciel22@gmail.com"
-        SUPERADMIN_SENHA = "$2b$12$uWS8Po4Z1NtuixpYTsl5P.2C9cdk2nAKBjprEHG0KF.mpbPJv1TcW"
+        superadmin_email = os.environ.get("SUPERADMIN_EMAIL")
+        superadmin_senha = os.environ.get("SUPERADMIN_SENHA")
+        superadmin_nome  = os.environ.get("SUPERADMIN_NOME", "Admin")
+
+        if not superadmin_email or not superadmin_senha:
+            print("⚠️  SUPERADMIN_EMAIL ou SUPERADMIN_SENHA não definidos no .env — seed do superadmin ignorado.")
+            return
 
         cursor.execute("SELECT id FROM tenants WHERE codigo = %s", ("superadmin",))
         tenant = cursor.fetchone()
@@ -177,13 +186,19 @@ def criar_tabelas():
         else:
             tenant_id = tenant["id"]
 
-        cursor.execute("SELECT id FROM users WHERE email = %s", (SUPERADMIN_EMAIL,))
+        cursor.execute("SELECT id FROM users WHERE email = %s", (superadmin_email,))
         if not cursor.fetchone():
+            senha_hash = bcrypt.hashpw(
+                superadmin_senha.encode(), bcrypt.gensalt()
+            ).decode("utf-8")
             cursor.execute("""
                 INSERT INTO users (nome, email, senha, role, tenant_id, ativo)
                 VALUES (%s, %s, %s, %s, %s, 1)
-            """, ("Jardel", SUPERADMIN_EMAIL, SUPERADMIN_SENHA, "admin", tenant_id))
+            """, (superadmin_nome, superadmin_email, senha_hash, "admin", tenant_id))
+            print(f"✅ Superadmin criado: {superadmin_email}")
+        else:
+            print(f"✅ Superadmin já existe: {superadmin_email}")
 
         conn.commit()
 
-    print("✅ Tabelas criadas e superadmin verificado.")
+    print("✅ Tabelas verificadas.")

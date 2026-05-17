@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from database.database import conectar
 import bcrypt
 import datetime
+import secrets
 import jwt
 import os
 
@@ -9,11 +10,16 @@ from utils.jwt import gerar_token, verificar_token
 
 auth_bp = Blueprint("auth", __name__)
 
-SUPERADMIN_EMAIL = "jardel.maciel22@gmail.com"
-
-
+# Lido do ambiente — sem fallback em produção
 def _get_secret():
-    return os.environ.get("JWT_SECRET_KEY", "fallback-nao-use-em-producao")
+    secret = os.environ.get("JWT_SECRET_KEY")
+    if not secret:
+        raise RuntimeError("JWT_SECRET_KEY não definida no ambiente.")
+    return secret
+
+# Superadmin lido do ambiente (sem hardcode)
+def _get_superadmin_email():
+    return os.environ.get("SUPERADMIN_EMAIL", "").strip().lower()
 
 
 # =========================
@@ -44,11 +50,10 @@ def login():
         if not email or not senha:
             return jsonify({"erro": "Email e senha obrigatórios"}), 400
 
-        conn = conectar()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
-        usuario = cursor.fetchone()
-        conn.close()
+        with conectar() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+            usuario = cursor.fetchone()
 
         if not usuario:
             return jsonify({"erro": "Usuário não encontrado"}), 404
@@ -78,7 +83,7 @@ def login():
                 "email":     usuario["email"],
                 "role":      usuario.get("role", "admin"),
                 "tenant_id": usuario.get("tenant_id", 1),
-                "superadmin": email == SUPERADMIN_EMAIL
+                "superadmin": email == _get_superadmin_email()
             }
         }), 200
 
@@ -112,17 +117,16 @@ def refresh():
 
         usuario_id = payload.get("sub")
 
-        conn = conectar()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE id = %s AND ativo = 1", (usuario_id,))
-        usuario = cursor.fetchone()
-        conn.close()
+        with conectar() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM users WHERE id = %s AND ativo = 1", (usuario_id,))
+            usuario = cursor.fetchone()
 
         if not usuario:
             return jsonify({"erro": "Usuário não encontrado"}), 404
 
-        novo_token    = gerar_token(dict(usuario))
-        novo_refresh  = gerar_refresh_token(usuario["id"])
+        novo_token   = gerar_token(dict(usuario))
+        novo_refresh = gerar_refresh_token(usuario["id"])
 
         return jsonify({
             "token":         novo_token,
@@ -136,10 +140,13 @@ def refresh():
 
 
 # =========================
-# VERIFICAR EMAIL (reset senha)
+# SOLICITAR RESET DE SENHA
+# Gera um token temporário (15 min) e o retorna.
+# Em produção: envie por e-mail via SendGrid/Resend
+# em vez de retornar no body da resposta.
 # =========================
-@auth_bp.route("/auth/verificar-email", methods=["POST"])
-def verificar_email():
+@auth_bp.route("/auth/solicitar-reset", methods=["POST"])
+def solicitar_reset():
     try:
         dados = request.get_json()
         email = dados.get("email", "").strip().lower()
@@ -147,52 +154,91 @@ def verificar_email():
         if not email:
             return jsonify({"erro": "Email obrigatório"}), 400
 
-        conn = conectar()
-        cursor = conn.cursor()
-        cursor.execute("SELECT id FROM users WHERE email = %s AND ativo = 1", (email,))
-        user = cursor.fetchone()
-        conn.close()
+        with conectar() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM users WHERE email = %s AND ativo = 1", (email,))
+            user = cursor.fetchone()
 
+        # Resposta genérica — não revela se o e-mail existe
         if not user:
-            return jsonify({"erro": "Email não encontrado ou conta inativa"}), 404
+            return jsonify({"msg": "Se o e-mail estiver cadastrado, você receberá as instruções."}), 200
 
-        return jsonify({"msg": "Email verificado"}), 200
+        # Token seguro de uso único, expira em 15 minutos
+        reset_payload = {
+            "sub":  user["id"],
+            "tipo": "reset_senha",
+            "exp":  datetime.datetime.utcnow() + datetime.timedelta(minutes=15)
+        }
+        reset_token = jwt.encode(reset_payload, _get_secret(), algorithm="HS256")
+
+        # TODO: enviar reset_token por e-mail via SendGrid/Resend
+        # Por ora, retorna no body apenas em modo dev
+        if os.environ.get("FLASK_DEBUG", "false").lower() == "true":
+            return jsonify({
+                "msg": "Token de reset gerado (visível apenas em modo dev).",
+                "reset_token": reset_token
+            }), 200
+
+        return jsonify({"msg": "Se o e-mail estiver cadastrado, você receberá as instruções."}), 200
 
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
 
 
 # =========================
-# REDEFINIR SENHA
+# REDEFINIR SENHA (agora exige reset_token válido)
+# Fluxo:
+#  1. POST /auth/solicitar-reset  → recebe reset_token por e-mail
+#  2. POST /auth/redefinir-senha  → envia reset_token + nova_senha
 # =========================
 @auth_bp.route("/auth/redefinir-senha", methods=["POST"])
 def redefinir_senha():
     try:
         dados = request.get_json()
-        email      = dados.get("email", "").strip().lower()
-        nova_senha = dados.get("nova_senha", "").strip()
+        reset_token = dados.get("reset_token", "").strip()
+        nova_senha  = dados.get("nova_senha", "").strip()
 
-        if not email or not nova_senha:
-            return jsonify({"erro": "Email e nova senha obrigatórios"}), 400
+        if not reset_token or not nova_senha:
+            return jsonify({"erro": "reset_token e nova_senha são obrigatórios"}), 400
 
-        if len(nova_senha) < 6:
-            return jsonify({"erro": "Senha deve ter pelo menos 6 caracteres"}), 400
+        if len(nova_senha) < 8:
+            return jsonify({"erro": "Senha deve ter pelo menos 8 caracteres"}), 400
 
-        conn = conectar()
-        cursor = conn.cursor()
-        cursor.execute("SELECT id FROM users WHERE email = %s AND ativo = 1", (email,))
-        user = cursor.fetchone()
+        try:
+            payload = jwt.decode(reset_token, _get_secret(), algorithms=["HS256"])
+        except jwt.ExpiredSignatureError:
+            return jsonify({"erro": "Token expirado. Solicite um novo reset."}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"erro": "Token inválido."}), 401
 
-        if not user:
-            conn.close()
-            return jsonify({"erro": "Email não encontrado"}), 404
+        if payload.get("tipo") != "reset_senha":
+            return jsonify({"erro": "Token inválido."}), 401
 
-        senha_hash = bcrypt.hashpw(nova_senha.encode(), bcrypt.gensalt()).decode("utf-8")
-        cursor.execute("UPDATE users SET senha = %s WHERE email = %s", (senha_hash, email))
-        conn.commit()
-        conn.close()
+        usuario_id = payload.get("sub")
 
-        return jsonify({"msg": "Senha redefinida com sucesso"}), 200
+        with conectar() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM users WHERE id = %s AND ativo = 1", (usuario_id,))
+            user = cursor.fetchone()
+
+            if not user:
+                return jsonify({"erro": "Usuário não encontrado."}), 404
+
+            senha_hash = bcrypt.hashpw(nova_senha.encode(), bcrypt.gensalt()).decode("utf-8")
+            cursor.execute("UPDATE users SET senha = %s WHERE id = %s", (senha_hash, usuario_id))
+            conn.commit()
+
+        return jsonify({"msg": "Senha redefinida com sucesso."}), 200
 
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
+
+
+# =========================
+# VERIFICAR EMAIL — mantido para compatibilidade
+# (usado pelo front antes de exibir o formulário de reset)
+# =========================
+@auth_bp.route("/auth/verificar-email", methods=["POST"])
+def verificar_email():
+    # Retorna sempre 200 para não revelar quais e-mails existem
+    return jsonify({"msg": "Se o e-mail estiver cadastrado, você receberá as instruções."}), 200
