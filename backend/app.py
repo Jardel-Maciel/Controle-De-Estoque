@@ -1,6 +1,12 @@
 from flask import Flask
 from flask_cors import CORS
 
+# =========================
+# CARREGA O .env ANTES DE TUDO
+# =========================
+from dotenv import load_dotenv
+load_dotenv()
+
 from database.database import criar_tabelas
 
 from routes.auth_routes import auth_bp
