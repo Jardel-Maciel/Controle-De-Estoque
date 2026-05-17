@@ -41,6 +41,12 @@
 
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 999; display: none; align-items: center; justify-content: center; }
     .modal-overlay.open { display: flex; }
+
+    .filtros-historico { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .filtros-historico input,
+    .filtros-historico select { padding: 6px 10px; font-size: 13px; }
+    .filtros-historico input { width: 240px; }
+    .filtros-historico select { width: 140px; }
   </style>
 </head>
 <body>
@@ -131,6 +137,7 @@
         </button>
         <button class="tab-btn" data-tab="equipe">👥 Equipe</button>
         <button class="tab-btn" data-tab="atividade">📊 Atividade</button>
+        <button class="tab-btn" data-tab="historico">📋 Histórico</button>
       </div>
 
       <!-- TAB: APROVAÇÕES -->
@@ -196,6 +203,49 @@
         </div>
       </div>
 
+      <!-- TAB: HISTÓRICO DE APROVAÇÕES -->
+      <div class="tab-panel" id="tab-historico">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Histórico de aprovações</span>
+            <div class="filtros-historico">
+              <input type="text" id="filtroHistorico" class="form-input" placeholder="Filtrar por produto ou responsável..."/>
+              <select id="filtroStatusHistorico" class="form-input">
+                <option value="">Todos os status</option>
+                <option value="aprovado">Aprovados</option>
+                <option value="reprovado">Reprovados</option>
+              </select>
+              <select id="filtroTipoHistorico" class="form-input" style="width:120px">
+                <option value="">Todos os tipos</option>
+                <option value="entrada">Entrada</option>
+                <option value="saida">Saída</option>
+              </select>
+              <button class="btn btn-ghost btn-sm" onclick="carregarHistorico()">↻</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Produto</th>
+                  <th>Tipo</th>
+                  <th>Qtd</th>
+                  <th>Responsável</th>
+                  <th>Aprovado por</th>
+                  <th>Data</th>
+                  <th>Comentário</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaHistorico">
+                <tr><td colspan="8"><div class="empty-state"><p>Clique na aba para carregar</p></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="totalHistorico" style="padding:10px 16px;font-size:12px;color:var(--text-muted);border-top:1px solid var(--border);"></div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -255,7 +305,7 @@
 <script src="js/toast.js"></script>
 <script src="js/api.js"></script>
 <script>
-  // Guarda de rota — só gerente acessa
+  // Guarda de rota
   const _user = JSON.parse(localStorage.getItem("user") || "{}");
   if (!localStorage.getItem("token")) window.location.href = "index.html";
   if (_user.role && _user.role !== "gerente" && _user.role !== "admin") window.location.href = "dashboard.html";
@@ -277,10 +327,11 @@
 
       if (btn.dataset.tab === "equipe")    carregarEquipe();
       if (btn.dataset.tab === "atividade") carregarAtividade();
+      if (btn.dataset.tab === "historico") carregarHistorico();
     });
   });
 
-  // ========================= CARREGAR DASHBOARD =========================
+  // ========================= DASHBOARD =========================
   async function carregarDashboard() {
     const res = await apiFetch("/gerente/dashboard");
     if (!res) return;
@@ -294,6 +345,8 @@
     if (d.pendentes > 0) {
       badge.textContent = d.pendentes;
       badge.style.display = "inline";
+    } else {
+      badge.style.display = "none";
     }
 
     renderPendentes(d.pendentes > 0 ? null : []);
@@ -409,7 +462,6 @@
     else showToast(d.erro || "Erro", "error");
   }
 
-  // Modal novo usuário
   document.getElementById("btnNovoUsuario").addEventListener("click", () => {
     document.getElementById("modalNovoUsuario").classList.add("open");
   });
@@ -455,7 +507,6 @@
     if (!res) return;
     const d = await res.json();
 
-    // Ranking
     const ranking = document.getElementById("rankingEquipe");
     if (!d.por_responsavel || !d.por_responsavel.length) {
       ranking.innerHTML = `<p style="color:var(--text-muted);font-size:13px">Nenhuma movimentação registrada ainda.</p>`;
@@ -475,7 +526,6 @@
       `).join("");
     }
 
-    // Recentes
     const tbody = document.getElementById("tabelaRecentes");
     if (!d.recentes || !d.recentes.length) {
       tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><p>Sem movimentações</p></div></td></tr>`;
@@ -490,6 +540,66 @@
       `).join("");
     }
   }
+
+  // ========================= HISTÓRICO DE APROVAÇÕES =========================
+  let _historicoCache = [];
+
+  async function carregarHistorico() {
+    const tbody = document.getElementById("tabelaHistorico");
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><p>Carregando...</p></div></td></tr>`;
+    document.getElementById("totalHistorico").textContent = "";
+
+    const res = await apiFetch("/gerente/historico-aprovacoes");
+    if (!res) return;
+    const dados = await res.json();
+    _historicoCache = Array.isArray(dados) ? dados : [];
+    renderHistorico();
+  }
+
+  function renderHistorico() {
+    const tbody  = document.getElementById("tabelaHistorico");
+    const total  = document.getElementById("totalHistorico");
+    const filtro = document.getElementById("filtroHistorico").value.toLowerCase().trim();
+    const status = document.getElementById("filtroStatusHistorico").value;
+    const tipo   = document.getElementById("filtroTipoHistorico").value;
+
+    const lista = _historicoCache.filter(m => {
+      const matchTexto = !filtro ||
+        (m.produto      || "").toLowerCase().includes(filtro) ||
+        (m.responsavel  || "").toLowerCase().includes(filtro) ||
+        (m.aprovado_por || "").toLowerCase().includes(filtro);
+      const matchStatus = !status || m.status === status;
+      const matchTipo   = !tipo   || m.tipo   === tipo;
+      return matchTexto && matchStatus && matchTipo;
+    });
+
+    if (!lista.length) {
+      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><p>Nenhum registro encontrado</p></div></td></tr>`;
+      total.textContent = "";
+      return;
+    }
+
+    tbody.innerHTML = lista.map(m => `
+      <tr>
+        <td><strong>${m.produto || "—"}</strong></td>
+        <td><span class="badge-${m.tipo}">${m.tipo}</span></td>
+        <td>${m.quantidade}</td>
+        <td style="font-size:12px">${m.responsavel || "—"}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${m.aprovado_por || "—"}</td>
+        <td style="font-size:12px;color:var(--text-muted);white-space:nowrap">${m.data || "—"}</td>
+        <td style="font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${m.comentario || ""}">${m.comentario || "—"}</td>
+        <td><span class="badge-${m.status}">${m.status}</span></td>
+      </tr>
+    `).join("");
+
+    const aprovados  = lista.filter(m => m.status === "aprovado").length;
+    const reprovados = lista.filter(m => m.status === "reprovado").length;
+    total.textContent = `${lista.length} registro(s) — ${aprovados} aprovado(s), ${reprovados} reprovado(s)`;
+  }
+
+  document.getElementById("filtroHistorico").addEventListener("input", renderHistorico);
+  document.getElementById("filtroStatusHistorico").addEventListener("change", renderHistorico);
+  document.getElementById("filtroTipoHistorico").addEventListener("change", renderHistorico);
 
   // ========================= INIT =========================
   carregarDashboard();

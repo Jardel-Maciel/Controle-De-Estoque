@@ -30,21 +30,18 @@ def dashboard_equipe():
         with conectar() as conn:
             cursor = conn.cursor()
 
-            # Total de usuários ativos no prédio
             cursor.execute("""
                 SELECT COUNT(*) AS total FROM users
                 WHERE tenant_id = %s AND ativo = 1 AND role != 'gerente'
             """, (tenant_id,))
             total_usuarios = cursor.fetchone()["total"]
 
-            # Movimentações pendentes de aprovação
             cursor.execute("""
                 SELECT COUNT(*) AS total FROM movimentacoes
                 WHERE tenant_id = %s AND status = 'pendente'
             """, (tenant_id,))
             pendentes = cursor.fetchone()["total"]
 
-            # Movimentações do mês atual
             cursor.execute("""
                 SELECT COUNT(*) AS total FROM movimentacoes
                 WHERE tenant_id = %s
@@ -52,7 +49,6 @@ def dashboard_equipe():
             """, (tenant_id,))
             mov_mes = cursor.fetchone()["total"]
 
-            # Movimentações por responsável (top 5)
             cursor.execute("""
                 SELECT responsavel, COUNT(*) AS total
                 FROM movimentacoes
@@ -63,7 +59,6 @@ def dashboard_equipe():
             """, (tenant_id,))
             por_responsavel = [dict(r) for r in cursor.fetchall()]
 
-            # Últimas 10 movimentações da equipe
             cursor.execute("""
                 SELECT m.*, u.nome as usuario_nome
                 FROM movimentacoes m
@@ -75,11 +70,11 @@ def dashboard_equipe():
             recentes = [dict(r) for r in cursor.fetchall()]
 
         return jsonify({
-            "total_usuarios":   total_usuarios,
-            "pendentes":        pendentes,
-            "mov_mes":          mov_mes,
-            "por_responsavel":  por_responsavel,
-            "recentes":         recentes,
+            "total_usuarios":  total_usuarios,
+            "pendentes":       pendentes,
+            "mov_mes":         mov_mes,
+            "por_responsavel": por_responsavel,
+            "recentes":        recentes,
         })
 
     except Exception as e:
@@ -132,7 +127,6 @@ def criar_usuario():
         if not nome or not email or not senha:
             return jsonify({"erro": "Nome, email e senha são obrigatórios"}), 400
 
-        # Gerente não pode criar outro gerente
         if role == "gerente" and g.usuario.get("role") != "admin":
             return jsonify({"erro": "Apenas o admin pode criar gerentes"}), 403
 
@@ -157,7 +151,7 @@ def criar_usuario():
 
 
 # =========================
-# ATIVAR / DESATIVAR USUÁRIO DO PRÉDIO
+# ATIVAR / DESATIVAR USUÁRIO
 # =========================
 @gerente_bp.route("/usuarios/<int:user_id>/toggle", methods=["PATCH"])
 @auth_required
@@ -169,7 +163,6 @@ def toggle_usuario(user_id):
         with conectar() as conn:
             cursor = conn.cursor()
 
-            # Só pode alterar usuários do próprio tenant
             cursor.execute("""
                 SELECT id, ativo, role FROM users
                 WHERE id = %s AND tenant_id = %s
@@ -179,7 +172,6 @@ def toggle_usuario(user_id):
             if not user:
                 return jsonify({"erro": "Usuário não encontrado"}), 404
 
-            # Gerente não pode desativar outro gerente
             if user["role"] == "gerente" and g.usuario.get("role") != "admin":
                 return jsonify({"erro": "Sem permissão para alterar outro gerente"}), 403
 
@@ -226,8 +218,8 @@ def listar_pendentes():
 @apenas_gerente
 def aprovar_movimentacao(mov_id):
     try:
-        tenant_id   = g.usuario["tenant_id"]
-        aprovador   = g.usuario.get("nome", "Gerente")
+        tenant_id = g.usuario["tenant_id"]
+        aprovador = g.usuario.get("nome", "Gerente")
 
         with conectar() as conn:
             cursor = conn.cursor()
@@ -241,7 +233,6 @@ def aprovar_movimentacao(mov_id):
             if not mov:
                 return jsonify({"erro": "Movimentação não encontrada ou já processada"}), 404
 
-            # Aplica o efeito no estoque agora que foi aprovado
             cursor.execute("""
                 SELECT id, quantidade, valor FROM produtos
                 WHERE produto = %s AND tenant_id = %s
@@ -251,7 +242,6 @@ def aprovar_movimentacao(mov_id):
 
             if produto:
                 estoque_atual = produto["quantidade"]
-                valor_atual   = float(produto["valor"] or 0)
                 qtd           = float(mov["quantidade"])
 
                 if mov["tipo"] == "saida" and qtd > estoque_atual:
@@ -259,16 +249,13 @@ def aprovar_movimentacao(mov_id):
 
                 if mov["tipo"] == "entrada":
                     nova_qtd = estoque_atual + qtd
-                    cursor.execute(
-                        "UPDATE produtos SET quantidade = %s WHERE id = %s AND tenant_id = %s",
-                        (nova_qtd, produto["id"], tenant_id)
-                    )
                 else:
                     nova_qtd = estoque_atual - qtd
-                    cursor.execute(
-                        "UPDATE produtos SET quantidade = %s WHERE id = %s AND tenant_id = %s",
-                        (nova_qtd, produto["id"], tenant_id)
-                    )
+
+                cursor.execute(
+                    "UPDATE produtos SET quantidade = %s WHERE id = %s AND tenant_id = %s",
+                    (nova_qtd, produto["id"], tenant_id)
+                )
 
             cursor.execute("""
                 UPDATE movimentacoes
@@ -301,7 +288,9 @@ def reprovar_movimentacao(mov_id):
             cursor = conn.cursor()
             cursor.execute("""
                 UPDATE movimentacoes
-                SET status = 'reprovado', aprovado_por = %s, comentario = COALESCE(comentario,'') || %s
+                SET status = 'reprovado',
+                    aprovado_por = %s,
+                    comentario = COALESCE(comentario,'') || %s
                 WHERE id = %s AND tenant_id = %s AND status = 'pendente'
             """, (aprovador, f" [Reprovado: {motivo}]" if motivo else " [Reprovado]", mov_id, tenant_id))
             conn.commit()
@@ -309,4 +298,35 @@ def reprovar_movimentacao(mov_id):
         return jsonify({"msg": "Movimentação reprovada"})
 
     except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+
+# =========================
+# HISTÓRICO DE APROVAÇÕES
+# =========================
+@gerente_bp.route("/historico-aprovacoes", methods=["GET"])
+@auth_required
+@apenas_gerente
+def historico_aprovacoes():
+    try:
+        tenant_id = g.usuario["tenant_id"]
+
+        with conectar() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT id, produto, tipo, quantidade, comentario,
+                       responsavel, data, status, aprovado_por
+                FROM movimentacoes
+                WHERE tenant_id = %s
+                  AND status IN ('aprovado', 'reprovado')
+                  AND aprovado_por IS NOT NULL
+                ORDER BY id DESC
+                LIMIT 100
+            """, (tenant_id,))
+            dados = [dict(d) for d in cursor.fetchall()]
+
+        return jsonify(dados)
+
+    except Exception as e:
+        import traceback; traceback.print_exc()
         return jsonify({"erro": str(e)}), 500
