@@ -8,13 +8,15 @@ from utils.auth_middleware import auth_required
 excel_bp = Blueprint("excel", __name__, url_prefix="/excel")
 
 # Colunas aceitas por campo (variações de nome)
+# A ordem dentro de cada lista define a PRIORIDADE: menor índice = maior prioridade.
 MAPA_COLUNAS = {
-    "produto":    ["produto", "produtos", "product", "nome", "name", "descricao", "descrição", "item"],
-    "quantidade": ["quantidade", "qtd", "qty", "quantity", "estoque", "qtde", "saldo",
-                   "entradas", "saidas", "saídas"],
-    "valor":      ["valor", "value", "preco", "preço", "price", "custo", "cost", "vl", "vr",
-                   "media de custo", "média de custo", "custo unitario", "custo unitário",
-                   "preco unitario", "preço unitário"],
+    "produto":    ["produto", "produtos", "product", "item", "nome", "name", "descricao", "descricao"],
+    # "saldo" tem prioridade sobre "entradas"/"saidas"
+    "quantidade": ["saldo", "quantidade", "qtd", "qty", "quantity", "qtde",
+                   "estoque", "entradas", "saidas", "saidas"],
+    "valor":      ["media de custo", "media de custo", "custo unitario", "custo unitario",
+                   "preco unitario", "preco unitario", "valor", "value",
+                   "preco", "preco", "price", "custo", "cost", "vl", "vr"],
     "fornecedor": ["fornecedor", "supplier", "vendor", "fabricante"],
     "contato":    ["contato", "contact", "telefone", "tel", "fone", "phone", "e-mail", "email"],
 }
@@ -27,39 +29,53 @@ def normalizar(texto):
 
 
 def mapear_cabecalho(cabecalho):
-    """Retorna dict {campo_interno: indice_coluna}."""
+    """
+    Retorna dict {campo_interno: indice_coluna}.
+    Respeita a prioridade: variante com menor índice na lista tem preferência.
+    """
     mapa = {}
+    mapa_prioridade = {}
+
     for idx, col in enumerate(cabecalho):
         col_norm = normalizar(col)
         for campo, variantes in MAPA_COLUNAS.items():
-            if col_norm in [normalizar(v) for v in variantes]:
-                if campo not in mapa:
+            variantes_norm = [normalizar(v) for v in variantes]
+            if col_norm in variantes_norm:
+                prioridade = variantes_norm.index(col_norm)
+                if campo not in mapa or prioridade < mapa_prioridade[campo]:
                     mapa[campo] = idx
+                    mapa_prioridade[campo] = prioridade
     return mapa
 
 
-def detectar_cabecalho(linhas, max_busca=10):
+def detectar_cabecalho(linhas, max_busca=15):
     """
-    Percorre as primeiras linhas procurando aquela que parece um cabeçalho
-    (tem mais células não-nulas e pelo menos uma coluna mapeável).
+    Percorre as primeiras linhas procurando aquela que parece um cabeçalho.
+    Escolhe a linha com MAIS campos mapeados (não apenas a primeira que tem 'produto').
     Retorna (indice_linha, mapa_colunas) ou (None, {}).
     """
+    melhor_idx = None
+    melhor_mapa = {}
+    melhor_score = 0
+
     for i, linha in enumerate(linhas[:max_busca]):
         celulas = [str(c).strip() if c is not None else "" for c in linha]
         nao_vazias = [c for c in celulas if c]
         if len(nao_vazias) < 2:
             continue
         mapa = mapear_cabecalho(celulas)
-        if "produto" in mapa or "quantidade" in mapa:
-            return i, mapa
-    return None, {}
+        if "produto" not in mapa:
+            continue
+        score = len(mapa)  # mais campos mapeados = melhor cabeçalho
+        if score > melhor_score:
+            melhor_score = score
+            melhor_idx = i
+            melhor_mapa = mapa
+
+    return melhor_idx, melhor_mapa
 
 
 def linhas_para_preview(linhas, max_linhas=5):
-    """
-    Converte linhas do openpyxl para strings serializáveis,
-    filtrando colunas totalmente vazias.
-    """
     import datetime
 
     def cel_str(v):
@@ -72,7 +88,6 @@ def linhas_para_preview(linhas, max_linhas=5):
     todas = [tuple(cel_str(c) for c in linha) for linha in linhas[:max_linhas + 2]]
     n_cols = max((len(r) for r in todas), default=0)
 
-    # Só mantém colunas que têm algum valor
     colunas_com_dado = [
         j for j in range(n_cols)
         if any(j < len(r) and r[j] for r in todas)
@@ -91,10 +106,6 @@ def linhas_para_preview(linhas, max_linhas=5):
 @excel_bp.route("/preview", methods=["POST"])
 @auth_required
 def preview_excel():
-    """
-    Recebe o arquivo e retorna a lista de abas com preview das primeiras linhas,
-    quais campos foram mapeados e se a aba parece importável.
-    """
     try:
         arquivo = request.files.get("arquivo")
         if not arquivo:
@@ -120,13 +131,12 @@ def preview_excel():
             linhas = []
             for row in ws.iter_rows(values_only=True):
                 linhas.append(row)
-                if len(linhas) >= 15:
+                if len(linhas) >= 20:
                     break
 
             idx_cabecalho, mapa = detectar_cabecalho(linhas)
             tem_produto = "produto" in mapa
 
-            # Preview a partir do cabeçalho detectado
             inicio = idx_cabecalho if idx_cabecalho is not None else 0
             preview = linhas_para_preview(linhas[inicio:], max_linhas=5)
 
@@ -166,7 +176,6 @@ def importar_excel():
         if extensao not in ("xlsx", "xls", "ods"):
             return jsonify({"erro": "Formato inválido. Envie .xlsx, .xls ou .ods"}), 400
 
-        # Aba escolhida pelo usuário via form field
         aba_escolhida = request.form.get("aba", "").strip()
 
         conteudo = arquivo.read()
@@ -189,13 +198,13 @@ def importar_excel():
         if not linhas or len(linhas) < 2:
             return jsonify({"erro": "Planilha vazia ou sem dados além do cabeçalho"}), 400
 
-        # Detecta onde está o cabeçalho automaticamente
         idx_cabecalho, mapa = detectar_cabecalho(linhas)
 
         if idx_cabecalho is None or "produto" not in mapa:
             cabecalho_raw = [str(c) if c is not None else "" for c in (linhas[0] if linhas else [])]
             return jsonify({
-                "erro": "Não foi possível encontrar a coluna 'produto' nessa aba. Verifique o cabeçalho.",
+                "erro": "Não foi possível encontrar a coluna de produto nessa aba. Verifique o cabeçalho.",
+                "dica": "A coluna de produto deve ter um dos nomes: Produto, Item, Nome, Descricao.",
                 "cabecalho_encontrado": cabecalho_raw
             }), 400
 
@@ -231,9 +240,10 @@ def importar_excel():
                 ignorados.append(f"Linha {i}: produto vazio")
                 continue
 
-            # Quantidade
+            # Quantidade (0 é válido — produto cadastrado sem estoque)
             try:
-                quantidade = float(str(cel("quantidade", 0)).replace(",", ".") or 0)
+                qtd_raw = str(cel("quantidade", 0)).replace(",", ".").strip()
+                quantidade = float(qtd_raw) if qtd_raw else 0.0
             except (ValueError, TypeError):
                 quantidade = 0.0
 
@@ -248,7 +258,7 @@ def importar_excel():
             fornecedor = str(cel("fornecedor", "")).strip()
             contato    = str(cel("contato",    "")).strip()
 
-            # Verifica se produto já existe (preço médio ponderado)
+            # Verifica se produto já existe
             cursor.execute(
                 "SELECT id, quantidade, valor FROM produtos WHERE produto = %s AND tenant_id = %s",
                 (nome, tenant_id)
@@ -263,7 +273,7 @@ def importar_excel():
                 if nova_qtd > 0 and quantidade > 0:
                     novo_valor = ((qtd_atual * valor_atual) + (quantidade * valor)) / nova_qtd
                 else:
-                    novo_valor = valor_atual
+                    novo_valor = valor if valor > 0 else valor_atual
 
                 cursor.execute("""
                     UPDATE produtos
