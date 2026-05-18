@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Logs de Auditoria — Admin</title>
+  <link rel="shortcut icon" href="assets/favicon.png" type="image/x-icon">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="css/toast.css" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:      #081526;
+      --surface: #0A1D3D;
+      --card:    #0d2348;
+      --border:  rgba(148,163,184,0.1);
+      --blue:    #1677FF;
+      --green:   #00C48C;
+      --red:     #ef4444;
+      --yellow:  #facc15;
+      --orange:  #f97316;
+      --text:    #F0F6FF;
+      --muted:   #8BA6CC;
+      --dimmed:  #64748b;
+    }
+
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+
+    /* SIDEBAR */
+    .sidebar { width: 240px; min-height: 100vh; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 24px 16px; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; }
+    .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 0 8px 28px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+    .sidebar-logo span { font-size: 14px; }
+    .nav-label { font-size: 0.65rem; font-weight: 600; color: var(--dimmed); text-transform: uppercase; letter-spacing: .08em; padding: 0 8px; margin: 16px 0 6px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; color: var(--muted); font-size: 0.875rem; cursor: pointer; transition: .18s; border: none; background: none; width: 100%; text-align: left; text-decoration: none; }
+    .nav-item:hover { background: var(--card); color: var(--text); }
+    .nav-item.active { background: rgba(56,189,248,.12); color: var(--blue); font-weight: 600; }
+    .nav-item .icon { font-size: 1rem; width: 20px; text-align: center; }
+    .sidebar-bottom { margin-top: auto; border-top: 1px solid var(--border); padding-top: 16px; }
+
+    /* MAIN */
+    .main { margin-left: 240px; flex: 1; padding: 28px 32px; }
+
+    /* TOPBAR */
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+    .topbar-left h1 { font-size: 1.4rem; font-weight: 700; }
+    .topbar-left p { color: var(--muted); font-size: 0.85rem; margin-top: 3px; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+
+    .btn { padding: 8px 16px; border-radius: 8px; border: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: .18s; font-family: inherit; }
+    .btn-ghost { background: var(--card); color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { color: var(--text); border-color: var(--blue); }
+    .btn-primary { background: var(--blue); color: white; }
+    .btn-primary:hover { opacity: .88; }
+    .btn-danger { background: rgba(239,68,68,.15); color: var(--red); border: 1px solid rgba(239,68,68,.25); }
+    .btn-danger:hover { background: rgba(239,68,68,.25); }
+
+    /* KPI GRID */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .kpi-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; position: relative; overflow: hidden; transition: .2s; }
+    .kpi-card:hover { border-color: rgba(56,189,248,.3); transform: translateY(-2px); }
+    .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 14px 14px 0 0; }
+    .kpi-blue::before   { background: var(--blue); }
+    .kpi-green::before  { background: var(--green); }
+    .kpi-orange::before { background: var(--orange); }
+    .kpi-red::before    { background: var(--red); }
+    .kpi-label { font-size: 0.72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+    .kpi-value { font-size: 1.8rem; font-weight: 700; color: var(--text); line-height: 1; }
+    .kpi-sub { font-size: 0.72rem; color: var(--dimmed); margin-top: 6px; }
+
+    /* CHARTS */
+    .charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .chart-box { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+    .chart-box h3 { font-size: 0.875rem; font-weight: 600; margin-bottom: 16px; }
+    .chart-box canvas { max-height: 200px; }
+
+    /* FILTROS */
+    .filtros-bar { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px 20px; margin-bottom: 20px; display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+    .filtro-group { display: flex; flex-direction: column; gap: 5px; }
+    .filtro-group label { font-size: 0.7rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+    .filtro-group input,
+    .filtro-group select { padding: 7px 11px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 0.8rem; font-family: inherit; outline: none; transition: .15s; min-width: 160px; }
+    .filtro-group input:focus,
+    .filtro-group select:focus { border-color: var(--blue); }
+    .filtro-group select option { background: var(--surface); }
+
+    /* TABLE */
+    .table-box { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 24px; }
+    .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .table-header h3 { font-size: 0.875rem; font-weight: 600; }
+    .table-meta { font-size: 0.75rem; color: var(--dimmed); }
+    table { width: 100%; border-collapse: collapse; }
+    th { font-size: 0.7rem; font-weight: 600; color: var(--blue); text-transform: uppercase; letter-spacing: .06em; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    td { padding: 11px 14px; font-size: 0.8rem; color: var(--text); border-bottom: 1px solid rgba(148,163,184,0.06); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(56,189,248,.03); }
+    td.detalhe { color: var(--muted); max-width: 340px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    td.mono { font-family: 'Courier New', monospace; font-size: 0.75rem; color: var(--dimmed); }
+
+    /* BADGES */
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; font-size: 0.68rem; font-weight: 700; white-space: nowrap; }
+    .b-info   { background: rgba(22,119,255,.15); color: var(--blue); }
+    .b-aviso  { background: rgba(249,115,22,.15);  color: var(--orange); }
+    .b-erro   { background: rgba(239,68,68,.15);   color: var(--red); }
+    .b-green  { background: rgba(0,196,140,.15);   color: var(--green); }
+    .b-gray   { background: rgba(100,116,139,.15); color: var(--dimmed); }
+
+    /* AÇÃO CHIP */
+    .acao-chip { font-family: 'Courier New', monospace; font-size: 0.72rem; background: rgba(148,163,184,.08); padding: 3px 8px; border-radius: 5px; color: var(--muted); }
+
+    /* PAGINAÇÃO */
+    .paginacao { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
+    .paginacao-info { font-size: 0.78rem; color: var(--dimmed); }
+    .paginacao-btns { display: flex; gap: 6px; }
+    .pg-btn { padding: 6px 12px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-size: 0.78rem; font-family: inherit; cursor: pointer; transition: .15s; }
+    .pg-btn:hover:not(:disabled) { border-color: var(--blue); color: var(--text); }
+    .pg-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .pg-btn.current { background: var(--blue); color: white; border-color: var(--blue); font-weight: 600; }
+
+    /* EMPTY / LOADING */
+    .empty-state { text-align: center; padding: 48px 20px; color: var(--dimmed); font-size: 0.875rem; }
+    .empty-state .ico { font-size: 2.5rem; display: block; margin-bottom: 10px; opacity: .5; }
+    .pulse { animation: pulse 1.5s ease infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .skeleton { background: rgba(148,163,184,.08); border-radius: 4px; height: 14px; }
+
+    /* MODAL LIMPAR */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 300; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 380px; }
+    .modal-box h3 { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+    .modal-box p { font-size: 0.83rem; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
+    .modal-box select { width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-family: inherit; font-size: 0.875rem; outline: none; margin-bottom: 20px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+    /* RESPONSIVE */
+    @media (max-width: 1200px) { .kpi-grid { grid-template-columns: 1fr 1fr; } .charts-row { grid-template-columns: 1fr; } }
+    @media (max-width: 900px) { .sidebar { width: 60px; } .sidebar-logo span, .nav-label, .nav-item span { display: none; } .main { margin-left: 60px; padding: 20px; } .kpi-grid { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <svg style="width:32px;height:32px;flex-shrink:0" viewBox="0 0 36 36" fill="none">
+      <rect x="2" y="2" width="15" height="8" rx="2" fill="#1677FF"/>
+      <rect x="2" y="14" width="15" height="8" rx="2" fill="#1677FF" opacity="0.7"/>
+      <rect x="10" y="14" width="15" height="8" rx="2" fill="#00C48C"/>
+      <rect x="2" y="26" width="22" height="8" rx="2" fill="#00C48C"/>
+    </svg>
+    <span><span style="color:#fff;font-weight:700">Estoque</span> <span style="color:#00C48C;font-weight:700">Fácil</span></span>
+  </div>
+
+  <div class="nav-label">Visão Geral</div>
+  <a class="nav-item" href="admin.html"><span class="icon">📊</span><span>Dashboard</span></a>
+
+  <div class="nav-label">Gestão</div>
+  <a class="nav-item" href="admin.html#usuarios"><span class="icon">👥</span><span>Usuários</span></a>
+  <a class="nav-item" href="admin.html#empresas"><span class="icon">🏢</span><span>Empresas</span></a>
+
+  <div class="nav-label">Sistema</div>
+  <a class="nav-item active" href="logs.html"><span class="icon">📋</span><span>Logs de Auditoria</span></a>
+  <a class="nav-item" href="produtos.html"><span class="icon">📦</span><span>Ir ao Estoque</span></a>
+
+  <div class="sidebar-bottom">
+    <button class="nav-item" onclick="logout()"><span class="icon">🚪</span><span>Sair</span></button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>Logs de Auditoria</h1>
+      <p id="subTitulo">Rastreabilidade completa de ações no sistema</p>
+    </div>
+    <div class="topbar-right">
+      <span id="adminName" class="btn btn-ghost">—</span>
+      <button class="btn btn-danger" onclick="abrirModalLimpar()" id="btnLimpar" style="display:none">🗑 Limpar antigos</button>
+      <button class="btn btn-ghost" onclick="carregarTudo()">↺ Atualizar</button>
+    </div>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-grid">
+    <div class="kpi-card kpi-blue">
+      <div class="kpi-label">Total de registros</div>
+      <div class="kpi-value" id="kpiTotal"><span class="skeleton pulse" style="width:60px;display:block"></span></div>
+      <div class="kpi-sub" id="kpiSub24h">Carregando...</div>
+    </div>
+    <div class="kpi-card kpi-green">
+      <div class="kpi-label">Informações</div>
+      <div class="kpi-value" id="kpiInfo"><span class="skeleton pulse" style="width:40px;display:block"></span></div>
+      <div class="kpi-sub">Ações normais do sistema</div>
+    </div>
+    <div class="kpi-card kpi-orange">
+      <div class="kpi-label">Avisos</div>
+      <div class="kpi-value" id="kpiAviso"><span class="skeleton pulse" style="width:40px;display:block"></span></div>
+      <div class="kpi-sub">Exclusões, reprovações</div>
+    </div>
+    <div class="kpi-card kpi-red">
+      <div class="kpi-label">Erros</div>
+      <div class="kpi-value" id="kpiErro"><span class="skeleton pulse" style="width:40px;display:block"></span></div>
+      <div class="kpi-sub">Falhas registradas</div>
+    </div>
+  </div>
+
+  <!-- GRÁFICOS -->
+  <div class="charts-row">
+    <div class="chart-box">
+      <h3>Atividade nos últimos 7 dias</h3>
+      <canvas id="chartDias"></canvas>
+    </div>
+    <div class="chart-box">
+      <h3>Top 5 ações</h3>
+      <canvas id="chartAcoes"></canvas>
+    </div>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="filtros-bar">
+    <div class="filtro-group" id="filtroTenantGrupo" style="display:none">
+      <label>Empresa (tenant)</label>
+      <select id="filtroTenant" onchange="aplicarFiltros()">
+        <option value="">Todas as empresas</option>
+      </select>
+    </div>
+    <div class="filtro-group">
+      <label>Nível</label>
+      <select id="filtroNivel" onchange="aplicarFiltros()">
+        <option value="">Todos</option>
+        <option value="info">ℹ️ Info</option>
+        <option value="aviso">⚠️ Aviso</option>
+        <option value="erro">🔴 Erro</option>
+      </select>
+    </div>
+    <div class="filtro-group">
+      <label>Ação</label>
+      <input type="text" id="filtroAcao" placeholder="ex: produto.criado" oninput="debounce(aplicarFiltros, 500)()">
+    </div>
+    <div class="filtro-group">
+      <label>Usuário</label>
+      <input type="text" id="filtroUsuario" placeholder="Nome do usuário" oninput="debounce(aplicarFiltros, 500)()">
+    </div>
+    <button class="btn btn-ghost" onclick="limparFiltros()" style="align-self:flex-end">✕ Limpar filtros</button>
+  </div>
+
+  <!-- TABELA -->
+  <div class="table-box">
+    <div class="table-header">
+      <h3>Registros</h3>
+      <span class="table-meta" id="tabelaMeta">—</span>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Data / Hora</th>
+            <th>Nível</th>
+            <th>Ação</th>
+            <th>Usuário</th>
+            <th id="colEmpresa">Empresa</th>
+            <th>Detalhe</th>
+            <th>IP</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaLogs">
+          <tr><td colspan="8" class="empty-state"><span class="pulse">Carregando...</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PAGINAÇÃO -->
+    <div class="paginacao">
+      <span class="paginacao-info" id="pgInfo">—</span>
+      <div class="paginacao-btns" id="pgBtns"></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- MODAL LIMPAR LOGS -->
+<div class="modal-overlay" id="modalLimpar">
+  <div class="modal-box">
+    <h3>🗑 Limpar logs antigos</h3>
+    <p>Remove permanentemente logs mais antigos que o período selecionado. Essa ação não pode ser desfeita.</p>
+    <select id="diasLimpar">
+      <option value="30">Mais de 30 dias</option>
+      <option value="60">Mais de 60 dias</option>
+      <option value="90" selected>Mais de 90 dias</option>
+      <option value="180">Mais de 180 dias</option>
+      <option value="365">Mais de 1 ano</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="fecharModalLimpar()">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmarLimpar()">Remover</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/toast.js"></script>
+<script src="js/api.js"></script>
+<script>
+// =========================
+// ESTADO
+// =========================
+const BASE = "https://backend-estoque-fnfc.onrender.com";
+let paginaAtual   = 1;
+const POR_PAGINA  = 50;
+let totalRegistros = 0;
+let isSuperAdmin  = false;
+let chartDias     = null;
+let chartAcoes    = null;
+let debounceTimer = null;
+
+function debounce(fn, delay) {
+  return function(...args) {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
+// =========================
+// INIT
+// =========================
+window.addEventListener("DOMContentLoaded", async () => {
+  const token = localStorage.getItem("token");
+  if (!token) { location.href = "index.html"; return; }
+
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  document.getElementById("adminName").textContent = user.nome || "Admin";
+
+  isSuperAdmin = !!user.superadmin;
+  if (isSuperAdmin) {
+    document.getElementById("btnLimpar").style.display = "flex";
+    document.getElementById("filtroTenantGrupo").style.display = "flex";
+    document.getElementById("subTitulo").textContent = "Rastreabilidade de todos os tenants";
+    await carregarTenants();
+  } else {
+    // Para admin/gerente, ocultar coluna Empresa
+    document.getElementById("colEmpresa").style.display = "none";
+  }
+
+  await carregarTudo();
+});
+
+// =========================
+// LOGOUT
+// =========================
+function logout() {
+  localStorage.clear();
+  location.href = "index.html";
+}
+
+// =========================
+// CARREGAR TENANTS (superadmin)
+// =========================
+async function carregarTenants() {
+  try {
+    const resp = await apiFetch(`${BASE}/admin/tenants`);
+    const tenants = await resp.json();
+    const sel = document.getElementById("filtroTenant");
+    tenants.forEach(t => {
+      const opt = document.createElement("option");
+      opt.value = t.id;
+      opt.textContent = `${t.nome} (${t.codigo})`;
+      sel.appendChild(opt);
+    });
+  } catch (_) {}
+}
+
+// =========================
+// CARREGAR TUDO
+// =========================
+async function carregarTudo() {
+  await Promise.all([carregarResumo(), carregarLogs()]);
+}
+
+// =========================
+// RESUMO + GRÁFICOS
+// =========================
+async function carregarResumo() {
+  try {
+    const tenantId = document.getElementById("filtroTenant")?.value || "";
+    const qs = tenantId ? `?tenant_id=${tenantId}` : "";
+    const resp = await apiFetch(`${BASE}/logs/resumo${qs}`);
+    const d = await resp.json();
+
+    document.getElementById("kpiTotal").textContent  = d.total_geral?.toLocaleString("pt-BR") || "0";
+    document.getElementById("kpiInfo").textContent   = d.total_info?.toLocaleString("pt-BR")  || "0";
+    document.getElementById("kpiAviso").textContent  = d.total_aviso?.toLocaleString("pt-BR") || "0";
+    document.getElementById("kpiErro").textContent   = d.total_erro?.toLocaleString("pt-BR")  || "0";
+    document.getElementById("kpiSub24h").textContent = `${d.ultimas_24h || 0} nas últimas 24h`;
+
+    renderChartDias(d.por_dia || []);
+    renderChartAcoes(d.top_acoes || []);
+  } catch (e) {
+    console.error("Erro ao carregar resumo:", e);
+  }
+}
+
+function renderChartDias(dados) {
+  const ctx = document.getElementById("chartDias").getContext("2d");
+  if (chartDias) chartDias.destroy();
+
+  const labels = dados.map(d => {
+    const dt = new Date(d.dia + "T12:00:00");
+    return dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+  });
+  const values = dados.map(d => d.total);
+
+  chartDias = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [{
+        label: "Eventos",
+        data: values,
+        backgroundColor: "rgba(22,119,255,0.6)",
+        borderColor: "#1677FF",
+        borderWidth: 1,
+        borderRadius: 5,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: "rgba(148,163,184,0.08)" }, ticks: { color: "#8BA6CC", font: { size: 11 } } },
+        y: { grid: { color: "rgba(148,163,184,0.08)" }, ticks: { color: "#8BA6CC", font: { size: 11 } }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+function renderChartAcoes(dados) {
+  const ctx = document.getElementById("chartAcoes").getContext("2d");
+  if (chartAcoes) chartAcoes.destroy();
+
+  const cores = ["#1677FF","#00C48C","#f97316","#a855f7","#ef4444"];
+  chartAcoes = new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: dados.map(d => d.acao),
+      datasets: [{
+        data: dados.map(d => d.total),
+        backgroundColor: cores,
+        borderWidth: 0,
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: "65%",
+      plugins: {
+        legend: {
+          position: "bottom",
+          labels: { color: "#8BA6CC", font: { size: 10 }, padding: 10, boxWidth: 12 }
+        }
+      }
+    }
+  });
+}
+
+// =========================
+// CARREGAR LOGS (tabela)
+// =========================
+async function carregarLogs(pagina = 1) {
+  paginaAtual = pagina;
+  const tbody = document.getElementById("tabelaLogs");
+  tbody.innerHTML = `<tr><td colspan="8" class="empty-state"><span class="pulse">Carregando...</span></td></tr>`;
+
+  const params = new URLSearchParams({
+    pagina,
+    por_pagina: POR_PAGINA
+  });
+
+  const tenantId = document.getElementById("filtroTenant")?.value;
+  const nivel    = document.getElementById("filtroNivel").value;
+  const acao     = document.getElementById("filtroAcao").value.trim();
+  const usuario  = document.getElementById("filtroUsuario").value.trim();
+
+  if (tenantId) params.set("tenant_id", tenantId);
+  if (nivel)    params.set("nivel", nivel);
+  if (acao)     params.set("acao", acao);
+  if (usuario)  params.set("usuario", usuario);
+
+  try {
+    const resp = await apiFetch(`${BASE}/logs?${params}`);
+    const data = await resp.json();
+
+    totalRegistros = data.total || 0;
+    const logs = data.logs || [];
+
+    document.getElementById("tabelaMeta").textContent =
+      `${totalRegistros.toLocaleString("pt-BR")} registros encontrados`;
+
+    if (!logs.length) {
+      tbody.innerHTML = `<tr><td colspan="8" class="empty-state"><span class="ico">📋</span>Nenhum log encontrado com os filtros aplicados.</td></tr>`;
+      renderPaginacao();
+      return;
+    }
+
+    tbody.innerHTML = logs.map(log => {
+      const badge = nivelBadge(log.nivel);
+      const data  = formatarData(log.criado_em);
+      const empresa = isSuperAdmin
+        ? `<td>${escHtml(log.tenant_nome || "—")}</td>`
+        : "";
+
+      return `
+        <tr>
+          <td class="mono">${log.id}</td>
+          <td style="white-space:nowrap;color:var(--muted);font-size:0.78rem">${data}</td>
+          <td>${badge}</td>
+          <td><span class="acao-chip">${escHtml(log.acao)}</span></td>
+          <td>${escHtml(log.usuario_nome || "—")}</td>
+          ${empresa}
+          <td class="detalhe" title="${escHtml(log.detalhe || "")}">${escHtml(log.detalhe || "—")}</td>
+          <td class="mono">${escHtml(log.ip || "—")}</td>
+        </tr>`;
+    }).join("");
+
+    renderPaginacao();
+
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="8" class="empty-state">Erro ao carregar logs. Verifique a conexão.</td></tr>`;
+    console.error(e);
+  }
+}
+
+// =========================
+// PAGINAÇÃO
+// =========================
+function renderPaginacao() {
+  const totalPaginas = Math.ceil(totalRegistros / POR_PAGINA);
+  const inicio = (paginaAtual - 1) * POR_PAGINA + 1;
+  const fim    = Math.min(paginaAtual * POR_PAGINA, totalRegistros);
+
+  document.getElementById("pgInfo").textContent =
+    totalRegistros ? `Exibindo ${inicio}–${fim} de ${totalRegistros.toLocaleString("pt-BR")}` : "Sem resultados";
+
+  const container = document.getElementById("pgBtns");
+  container.innerHTML = "";
+
+  if (totalPaginas <= 1) return;
+
+  const criarBtn = (label, pagina, atual = false, disabled = false) => {
+    const btn = document.createElement("button");
+    btn.className = `pg-btn${atual ? " current" : ""}`;
+    btn.textContent = label;
+    btn.disabled = disabled;
+    if (!disabled && !atual) btn.onclick = () => carregarLogs(pagina);
+    container.appendChild(btn);
+  };
+
+  criarBtn("← Anterior", paginaAtual - 1, false, paginaAtual === 1);
+
+  // Páginas ao redor da atual
+  const range = [];
+  for (let p = Math.max(1, paginaAtual - 2); p <= Math.min(totalPaginas, paginaAtual + 2); p++) {
+    range.push(p);
+  }
+  if (range[0] > 1) { criarBtn("1", 1); if (range[0] > 2) criarBtn("...", null, false, true); }
+  range.forEach(p => criarBtn(p, p, p === paginaAtual));
+  if (range[range.length - 1] < totalPaginas) {
+    if (range[range.length - 1] < totalPaginas - 1) criarBtn("...", null, false, true);
+    criarBtn(totalPaginas, totalPaginas);
+  }
+
+  criarBtn("Próximo →", paginaAtual + 1, false, paginaAtual === totalPaginas);
+}
+
+// =========================
+// FILTROS
+// =========================
+function aplicarFiltros() {
+  carregarLogs(1);
+  carregarResumo();
+}
+
+function limparFiltros() {
+  document.getElementById("filtroNivel").value = "";
+  document.getElementById("filtroAcao").value = "";
+  document.getElementById("filtroUsuario").value = "";
+  if (document.getElementById("filtroTenant")) {
+    document.getElementById("filtroTenant").value = "";
+  }
+  aplicarFiltros();
+}
+
+// =========================
+// MODAL LIMPAR LOGS
+// =========================
+function abrirModalLimpar() {
+  document.getElementById("modalLimpar").classList.add("open");
+}
+function fecharModalLimpar() {
+  document.getElementById("modalLimpar").classList.remove("open");
+}
+async function confirmarLimpar() {
+  const dias = document.getElementById("diasLimpar").value;
+  try {
+    const resp = await apiFetch(`${BASE}/logs/limpar?dias=${dias}`, { method: "DELETE" });
+    const d = await resp.json();
+    fecharModalLimpar();
+    showToast(d.msg || "Logs removidos.", "success");
+    carregarTudo();
+  } catch (e) {
+    showToast("Erro ao limpar logs.", "error");
+  }
+}
+
+// =========================
+// HELPERS
+// =========================
+function nivelBadge(nivel) {
+  const map = {
+    info:  `<span class="badge b-info">ℹ️ info</span>`,
+    aviso: `<span class="badge b-aviso">⚠️ aviso</span>`,
+    erro:  `<span class="badge b-erro">🔴 erro</span>`,
+  };
+  return map[nivel] || `<span class="badge b-gray">${escHtml(nivel)}</span>`;
+}
+
+function formatarData(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return d.toLocaleString("pt-BR", {
+    day: "2-digit", month: "2-digit", year: "numeric",
+    hour: "2-digit", minute: "2-digit", second: "2-digit"
+  });
+}
+
+function escHtml(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+// Assume que api.js expõe apiFetch com renovação automática de token.
+// Se não existir, usa fetch direto:
+if (typeof apiFetch === "undefined") {
+  window.apiFetch = function(url, opts = {}) {
+    const token = localStorage.getItem("token");
+    return fetch(url, {
+      ...opts,
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}`, ...(opts.headers || {}) }
+    });
+  };
+}
+</script>
+</body>
+</html>
