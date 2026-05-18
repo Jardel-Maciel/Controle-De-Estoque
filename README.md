@@ -44,7 +44,6 @@ A conta demo tem perfil **gerente** com acesso completo ao sistema — dashboard
 
 ## 📸 Screenshots
 
-> 💡 **Dica:** tire prints das telas abaixo e salve na pasta `docs/assets/` substituindo os placeholders.
 
 ### Dashboard
 ![Dashboard](docs/assets/screenshot-dashboard.png)
