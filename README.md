@@ -1,69 +1,104 @@
-# Controle de Estoque
+<div align="center">
 
-Sistema web SaaS para gerenciamento de estoque, produtos, movimentações e notas fiscais, com suporte a múltiplas empresas (multi-tenant).
+# 📦 Controle de Estoque
 
-**Frontend:** [GitHub Pages](https://jardel-maciel.github.io/Controle-De-Estoque/) &nbsp;·&nbsp; **Backend:** [Render](https://backend-estoque-fnfc.onrender.com/health)
+### Sistema SaaS completo para gestão de estoque empresarial
 
----
+[![Status](https://img.shields.io/badge/status-online-brightgreen?style=flat-square)](https://backend-estoque-fnfc.onrender.com/health)
+[![License](https://img.shields.io/badge/license-BUSL--1.1-blue?style=flat-square)](./LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![Flask](https://img.shields.io/badge/Flask-3.x-000000?style=flat-square&logo=flask&logoColor=white)](https://flask.palletsprojects.com)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://postgresql.org)
+[![Render](https://img.shields.io/badge/Deploy-Render-46E3B7?style=flat-square&logo=render&logoColor=white)](https://render.com)
+[![GitHub Pages](https://img.shields.io/badge/Frontend-GitHub%20Pages-222222?style=flat-square&logo=github&logoColor=white)](https://pages.github.com)
 
-## Visão geral
+**[🚀 Acessar o sistema](https://jardel-maciel.github.io/Controle-De-Estoque/) &nbsp;·&nbsp; [🔍 Ver demonstração](#-demonstração) &nbsp;·&nbsp; [📖 Documentação da API](#-api-rest)**
 
-O sistema permite que cada empresa (tenant) gerencie seu próprio estoque de forma isolada, com controle de acesso por perfil de usuário. A importação de notas fiscais via XML NF-e automatiza o cadastro de produtos e atualiza o estoque em tempo real.
-
----
-
-## Funcionalidades
-
-- Autenticação JWT com refresh token (sessão de 30 dias)
-- Controle de acesso por perfil: `superadmin`, `admin`, `gerente` e `cliente`
-- Multi-tenant: cada empresa acessa apenas seus próprios dados
-- Dashboard com totais de produtos, valor do estoque e alertas de baixo estoque
-- CRUD completo de produtos com busca e filtros
-- Registro de entradas e saídas com aprovação por gerente
-- Histórico detalhado de movimentações
-- Importação automática de XML NF-e (produtos, fornecedor, valores)
-- Importação via planilha Excel
-- Relatórios em PDF com gráficos e logo personalizada
-- Painel administrativo SaaS para gestão de tenants e usuários
+</div>
 
 ---
 
-## Tecnologias
+## ✨ Sobre o projeto
 
-### Backend
-| Tecnologia | Uso |
+O **Controle de Estoque** é uma plataforma SaaS desenvolvida para empresas que precisam gerenciar seu estoque de forma simples, segura e eficiente. Cada empresa opera em um ambiente isolado (multi-tenant), com controle de acesso por perfil de usuário e integração nativa com Notas Fiscais Eletrônicas.
+
+Desenvolvido do zero com foco em segurança, escalabilidade e experiência do usuário — pronto para uso comercial.
+
+---
+
+## 🖥️ Demonstração
+
+> Teste o sistema agora mesmo, sem precisar criar uma conta:
+
+| Campo | Valor |
 |---|---|
-| Python + Flask | API REST |
-| PostgreSQL | Banco de dados |
-| psycopg2 | Driver com pool de conexões |
-| PyJWT + bcrypt | Autenticação e hash de senhas |
-| lxml | Parser de XML NF-e |
-| openpyxl | Importação de planilhas Excel |
-| ReportLab + Matplotlib | Geração de PDFs e gráficos |
-| Gunicorn | Servidor WSGI em produção |
+| 🔗 **URL** | https://jardel-maciel.github.io/Controle-De-Estoque/ |
+| 📧 **Email** | `demo@estoque.com` |
+| 🔑 **Senha** | `demo1234` |
 
-### Frontend
-| Tecnologia | Uso |
-|---|---|
-| HTML5 + CSS3 + JavaScript | Interface sem frameworks |
-| Chart.js | Gráficos no dashboard |
-| jsPDF | Exportação de relatórios |
+A conta demo tem perfil **gerente** com acesso completo ao sistema — dashboard, produtos, movimentações, importação de XML/Excel e geração de relatórios PDF.
 
-### Infraestrutura
-| Serviço | Uso |
-|---|---|
-| Render | Hospedagem do backend (repo privado) |
-| GitHub Pages | Hospedagem do frontend |
-| PostgreSQL (Render) | Banco em produção |
+> ⚠️ O painel administrativo (gestão de tenants e usuários) é exclusivo do superadmin.
 
 ---
 
-## Arquitetura
+## 📸 Screenshots
+
+> 💡 **Dica:** tire prints das telas abaixo e salve na pasta `docs/assets/` substituindo os placeholders.
+
+### Dashboard
+![Dashboard](docs/assets/screenshot-dashboard.png)
+
+### Gestão de Produtos
+![Produtos](docs/assets/screenshot-produtos.png)
+
+### Importação de NF-e
+![Importação XML](docs/assets/screenshot-xml.png)
+
+### Relatório PDF
+![Relatório](docs/assets/screenshot-relatorio.png)
+
+---
+
+## 🚀 Funcionalidades
+
+| Funcionalidade | Descrição |
+|---|---|
+| 🔐 **Autenticação JWT** | Login seguro com refresh token (sessão de 30 dias) |
+| 🏢 **Multi-tenant** | Cada empresa acessa apenas seus próprios dados |
+| 👥 **Controle de acesso** | Perfis: `superadmin`, `admin`, `gerente` e `cliente` |
+| 📊 **Dashboard** | Totais, alertas de baixo estoque e gráficos em tempo real |
+| 📦 **Gestão de produtos** | CRUD completo com busca e filtros |
+| 🔄 **Movimentações** | Entradas e saídas com aprovação por gerente |
+| 📄 **Importação NF-e** | Leitura automática de XML no padrão SEFAZ |
+| 📊 **Importação Excel** | Suporte a múltiplas abas com detecção automática de colunas |
+| 🧾 **Relatórios PDF** | Geração de relatórios com gráficos e logo personalizada |
+| ⚙️ **Painel Admin SaaS** | Gestão completa de tenants e usuários |
+
+---
+
+## 🛠️ Tecnologias
+
+<div align="center">
+
+| Camada | Tecnologias |
+|---|---|
+| **Backend** | Python · Flask · PostgreSQL · psycopg2 · PyJWT · bcrypt · Gunicorn |
+| **Frontend** | HTML5 · CSS3 · JavaScript · Chart.js · jsPDF |
+| **Importação** | lxml (XML NF-e) · openpyxl (Excel) |
+| **Relatórios** | ReportLab · Matplotlib |
+| **Infraestrutura** | Render (backend) · GitHub Pages (frontend) |
+
+</div>
+
+---
+
+## 🏗️ Arquitetura
 
 ```
-Controle-De-Estoque/          ← repositório público (frontend)
+Controle-De-Estoque/              ← repositório público (frontend)
 └── docs/
-    ├── index.html            ← login
+    ├── index.html                ← login
     ├── dashboard.html
     ├── produtos.html
     ├── movimentacoes.html
@@ -74,7 +109,7 @@ Controle-De-Estoque/          ← repositório público (frontend)
     │   ├── design-system.css
     │   └── toast.css
     └── js/
-        ├── api.js            ← camada de fetch com renovação automática de token
+        ├── api.js                ← fetch com renovação automática de token
         ├── login.js
         ├── dashboard.js
         ├── script.js
@@ -82,13 +117,13 @@ Controle-De-Estoque/          ← repositório público (frontend)
         ├── admin-btn.js
         └── toast.js
 
-controle-estoque-backend/     ← repositório privado (backend)
+controle-estoque-backend/         ← repositório privado (backend)
 └── backend/
-    ├── app.py                ← entry point Flask
+    ├── app.py                    ← entry point Flask
     ├── requirements.txt
     ├── env.example
     ├── database/
-    │   └── database.py       ← pool de conexões e criação de tabelas
+    │   └── database.py           ← pool de conexões e criação de tabelas
     ├── models/
     │   ├── produto.py
     │   ├── movimentacao.py
@@ -115,51 +150,59 @@ controle-estoque-backend/     ← repositório privado (backend)
 
 ---
 
-## API REST
+## 🌐 API REST
 
 Todas as rotas (exceto `/login` e `/health`) exigem o header:
 
-```
+```http
 Authorization: Bearer <token>
 ```
 
-### Autenticação
+<details>
+<summary><strong>🔑 Autenticação</strong></summary>
 
 | Método | Rota | Descrição |
 |---|---|---|
-| `POST` | `/login` | Autenticação — retorna `token` e `refresh_token` |
+| `POST` | `/login` | Retorna `token` e `refresh_token` |
 | `POST` | `/auth/refresh` | Renova o token de acesso |
 
-### Produtos
+</details>
+
+<details>
+<summary><strong>📦 Produtos</strong></summary>
 
 | Método | Rota | Descrição |
 |---|---|---|
 | `GET` | `/produtos` | Lista todos os produtos do tenant |
-| `POST` | `/produtos` | Cadastra um novo produto |
-| `PUT` | `/produtos/<id>` | Atualiza um produto |
-| `DELETE` | `/produtos/<id>` | Remove um produto |
+| `POST` | `/produtos` | Cadastra novo produto |
+| `PUT` | `/produtos/<id>` | Atualiza produto |
+| `DELETE` | `/produtos/<id>` | Remove produto |
 
-### Movimentações
+</details>
+
+<details>
+<summary><strong>🔄 Movimentações</strong></summary>
 
 | Método | Rota | Descrição |
 |---|---|---|
-| `GET` | `/movimentacoes` | Lista o histórico de movimentações |
+| `GET` | `/movimentacoes` | Histórico de movimentações |
 | `POST` | `/movimentacoes` | Registra entrada ou saída |
 
-### Dashboard
+</details>
+
+<details>
+<summary><strong>📊 Dashboard & Importação</strong></summary>
 
 | Método | Rota | Descrição |
 |---|---|---|
 | `GET` | `/dashboard` | Totais, alertas e últimas movimentações |
+| `POST` | `/xml/importar` | Importa NF-e em XML (padrão SEFAZ) |
+| `POST` | `/excel/importar` | Importa produtos via planilha Excel |
 
-### Importação
+</details>
 
-| Método | Rota | Descrição |
-|---|---|---|
-| `POST` | `/importar-xml` | Importa NF-e em XML |
-| `POST` | `/importar-excel` | Importa produtos via planilha |
-
-### Administração (`/admin`)
+<details>
+<summary><strong>⚙️ Administração</strong></summary>
 
 | Método | Rota | Descrição | Perfil |
 |---|---|---|---|
@@ -167,22 +210,14 @@ Authorization: Bearer <token>
 | `POST` | `/admin/usuarios` | Cria usuário em qualquer tenant | superadmin |
 | `PUT` | `/admin/usuarios/<id>` | Edita usuário | superadmin |
 | `DELETE` | `/admin/usuarios/<id>` | Remove usuário | superadmin |
-
-### Gerente (`/gerente`)
-
-| Método | Rota | Descrição | Perfil |
-|---|---|---|---|
 | `GET` | `/gerente/dashboard` | Dashboard da equipe | gerente, admin |
+| `GET` | `/health` | Status da API | público |
 
-### Health check
-
-| Método | Rota | Descrição |
-|---|---|---|
-| `GET` | `/health` | Status da API |
+</details>
 
 ---
 
-## Variáveis de ambiente
+## ⚙️ Variáveis de ambiente
 
 Copie `env.example` para `.env` e preencha:
 
@@ -208,7 +243,7 @@ PORT=5000
 
 ---
 
-## Executando localmente
+## 💻 Executando localmente
 
 ### Pré-requisitos
 - Python 3.10+
@@ -235,42 +270,63 @@ A API estará disponível em `http://localhost:5000`.
 
 ```bash
 git clone https://github.com/Jardel-Maciel/Controle-De-Estoque.git
-cd Controle-De-Estoque/docs
 ```
 
-Abra `index.html` com Live Server (VS Code) ou qualquer servidor estático.
-Certifique-se de que `docs/js/api.js` aponta para `http://localhost:5000` no ambiente local.
+Abra `docs/index.html` com o Live Server do VS Code.
 
 ---
 
-## Deploy
+## ☁️ Deploy
 
 ### Backend — Render
-
 1. Conecte o repositório privado `controle-estoque-backend` ao Render
-2. Configure as variáveis de ambiente no painel do Render
+2. Configure as variáveis de ambiente no painel
 3. O Render detecta automaticamente o `gunicorn` via `requirements.txt`
 
 ### Frontend — GitHub Pages
-
-O GitHub Pages publica automaticamente a pasta `docs/` do repositório `Controle-De-Estoque`.
-Nenhuma configuração adicional é necessária após o primeiro setup.
+O GitHub Pages publica automaticamente a pasta `docs/` do repositório público.
 
 ---
 
-## Segurança
+## 🔒 Segurança
 
-- Senhas armazenadas com `bcrypt` (fator de custo padrão)
-- Tokens JWT com expiração curta + refresh token de 30 dias
-- Variáveis sensíveis exclusivamente via variáveis de ambiente (nunca no código)
-- Backend em repositório privado — código-fonte não exposto publicamente
-- CORS configurado para aceitar apenas origens autorizadas
-- Isolamento total de dados por tenant (todas as queries filtram por `tenant_id`)
+- ✅ Senhas armazenadas com `bcrypt`
+- ✅ JWT com expiração curta + refresh token de 30 dias
+- ✅ Variáveis sensíveis exclusivamente via variáveis de ambiente
+- ✅ Backend em repositório **privado** — código não exposto publicamente
+- ✅ CORS configurado para origens autorizadas
+- ✅ Isolamento total de dados por tenant em todas as queries
 
 ---
 
-## Autor
+## 🗺️ Roadmap
+
+- [ ] Notificações automáticas de baixo estoque por e-mail
+- [ ] App mobile (React Native)
+- [ ] Cadastro self-service de novas empresas
+- [ ] Emissão de NF-e diretamente pelo sistema
+- [ ] Integração com sistemas de ERP
+- [ ] Backup automático do banco de dados
+- [ ] API pública com autenticação por API Key
+- [ ] Dashboard financeiro com controle de custos
+
+---
+
+## 📄 Licença
+
+Este projeto está licenciado sob a [Business Source License 1.1](./LICENSE).  
+Uso comercial sem autorização prévia do autor é **proibido**.  
+Para licenciamento comercial: jardel.maciel22@gmail.com
+
+---
+
+<div align="center">
 
 Desenvolvido por **Jardel Maciel**
 
-[![GitHub](https://img.shields.io/badge/GitHub-Jardel--Maciel-181717?style=flat&logo=github)](https://github.com/Jardel-Maciel)
+[![GitHub](https://img.shields.io/badge/GitHub-Jardel--Maciel-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/Jardel-Maciel)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Jardel%20Maciel-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://linkedin.com/in/jardel-maciel)
+
+⭐ Se este projeto te inspirou, deixe uma estrela no repositório!
+
+</div>
