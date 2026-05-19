@@ -813,17 +813,491 @@ tr:last-child td { border-bottom: none; }
 }
 .toggle-senha:hover { color: var(--text-secondary); }
 
+/* Responsivo — ver media queries abaixo */
+
+
 /* ================================================
-   RESPONSIVO
+   BOTÃO HAMBURGUER (mobile/tablet)
 ================================================ */
-@media (max-width: 900px) {
+.menu-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+.menu-toggle:hover { background: var(--surface-3); color: var(--text-primary); }
+.menu-toggle svg { pointer-events: none; }
+
+/* Overlay da sidebar no mobile */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 99;
+  backdrop-filter: blur(2px);
+}
+.sidebar-overlay.active { display: block; }
+
+/* ================================================
+   BOTÃO LEITOR DE CÓDIGO DE BARRAS (mobile/tablet)
+================================================ */
+.barcode-fab {
+  display: none; /* só aparece no mobile/tablet */
+  position: fixed;
+  bottom: 24px;
+  right: 20px;
+  z-index: 200;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #0e5fd8);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 6px 24px rgba(22,119,255,0.45), 0 2px 8px rgba(0,0,0,0.4);
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, box-shadow 0.15s;
+  flex-direction: column;
+  gap: 3px;
+}
+.barcode-fab:active { transform: scale(0.93); }
+.barcode-fab svg { pointer-events: none; }
+.barcode-fab-label {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: rgba(255,255,255,0.85);
+}
+
+/* Modal do leitor de código de barras */
+.barcode-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.80);
+  z-index: 300;
+  align-items: flex-end;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.barcode-modal-overlay.open {
+  display: flex;
+  animation: slide-up 0.25s ease;
+}
+@keyframes slide-up {
+  from { transform: translateY(60px); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+.barcode-modal {
+  width: 100%;
+  max-width: 520px;
+  background: var(--surface);
+  border-top: 1px solid var(--border-hover);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  padding: 0 0 32px;
+  display: flex;
+  flex-direction: column;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+.barcode-modal-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--border-hover);
+  border-radius: 99px;
+  margin: 12px auto 0;
+  flex-shrink: 0;
+}
+
+.barcode-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.barcode-modal-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.barcode-modal-body {
+  padding: 20px;
+  flex: 1;
+}
+
+/* Visor da câmera */
+.barcode-video-wrap {
+  width: 100%;
+  aspect-ratio: 4/3;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: #000;
+  position: relative;
+  border: 2px solid var(--border-hover);
+  margin-bottom: 16px;
+}
+
+.barcode-video-wrap video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Linha de scan animada */
+.scan-line {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: linear-gradient(to right, transparent, var(--accent), var(--green), var(--accent), transparent);
+  border-radius: 99px;
+  box-shadow: 0 0 8px var(--accent-glow);
+  animation: scan-sweep 2s ease-in-out infinite;
+  top: 50%;
+}
+@keyframes scan-sweep {
+  0%   { top: 20%; opacity: 1; }
+  50%  { top: 80%; opacity: 0.8; }
+  100% { top: 20%; opacity: 1; }
+}
+
+/* Canto decorativo do visor */
+.scan-corner {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-color: var(--accent);
+  border-style: solid;
+  opacity: 0.8;
+}
+.scan-corner.tl { top: 10px; left: 10px;  border-width: 3px 0 0 3px; border-radius: 3px 0 0 0; }
+.scan-corner.tr { top: 10px; right: 10px; border-width: 3px 3px 0 0; border-radius: 0 3px 0 0; }
+.scan-corner.bl { bottom: 10px; left: 10px;  border-width: 0 0 3px 3px; border-radius: 0 0 0 3px; }
+.scan-corner.br { bottom: 10px; right: 10px; border-width: 0 3px 3px 0; border-radius: 0 0 3px 0; }
+
+.barcode-status {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+  min-height: 20px;
+}
+.barcode-status.ok { color: var(--green); font-weight: 600; }
+.barcode-status.err { color: var(--danger); }
+
+/* Campo de digitação manual */
+.barcode-manual {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.barcode-manual .form-input { flex: 1; font-size: 15px; letter-spacing: 0.04em; }
+.barcode-manual .btn { flex-shrink: 0; }
+
+.barcode-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 14px 0;
+}
+.barcode-divider::before,
+.barcode-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* Lista de produtos escaneados */
+.barcode-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.barcode-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  transition: border-color 0.15s;
+}
+.barcode-item.novo { border-color: var(--green); animation: pulse-green 0.4s ease; }
+@keyframes pulse-green {
+  0%   { box-shadow: 0 0 0 0 var(--green-glow); }
+  70%  { box-shadow: 0 0 0 8px transparent; }
+  100% { box-shadow: none; }
+}
+.barcode-item-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--green-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--green);
+}
+.barcode-item-info { flex: 1; min-width: 0; }
+.barcode-item-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.barcode-item-code {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+.barcode-item-qty {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.barcode-item-qty button {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-3);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.barcode-item-qty button:hover { background: var(--accent-dim); color: var(--accent); }
+.barcode-item-qty span {
+  font-size: 14px;
+  font-weight: 700;
+  min-width: 24px;
+  text-align: center;
+  color: var(--text-primary);
+}
+.barcode-item-remove {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  transition: background 0.15s, color 0.15s;
+}
+.barcode-item-remove:hover { background: var(--danger-dim); color: var(--danger); }
+
+.barcode-modal-footer {
+  padding: 16px 20px 0;
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.barcode-modal-footer .btn { flex: 1; justify-content: center; }
+
+/* ================================================
+   TABLET — 769px a 1024px
+================================================ */
+@media (min-width: 769px) and (max-width: 1024px) {
+  :root { --sidebar-w: 200px; }
+
+  .content { padding: 20px; }
+  .topbar { padding: 0 20px; }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+
+  .form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  table { min-width: 600px; }
+
+  th, td { padding: 10px 12px; font-size: 13px; }
+
+  .card-header {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .search-wrap { max-width: 100%; }
+
+  .modal-box {
+    max-width: 90vw;
+    padding: 22px;
+  }
+
+  .menu-toggle { display: flex; }
+
+  /* Sidebar deslizante no tablet */
   .sidebar {
     transform: translateX(-100%);
-    transition: transform 0.2s;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 100;
+    width: 220px;
   }
-  .sidebar.open { transform: none; }
+  .sidebar.open {
+    transform: translateX(0);
+    box-shadow: 6px 0 32px rgba(0,0,0,0.5);
+  }
   .main { margin-left: 0; }
-  .content { padding: 16px; }
-  .topbar { padding: 0 16px; }
-  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+
+  /* FAB barcode no tablet */
+  .barcode-fab { display: flex; }
+}
+
+/* ================================================
+   MOBILE — até 768px
+================================================ */
+@media (max-width: 768px) {
+  :root { --sidebar-w: 260px; }
+
+  body { font-size: 14px; }
+
+  /* Sidebar off-canvas */
+  .sidebar {
+    width: var(--sidebar-w);
+    transform: translateX(-100%);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 100;
+  }
+  .sidebar.open {
+    transform: translateX(0);
+    box-shadow: 8px 0 40px rgba(0,0,0,0.6);
+  }
+
+  .main { margin-left: 0; }
+
+  /* Topbar mobile */
+  .topbar {
+    padding: 0 14px;
+    height: 56px;
+  }
+  .menu-toggle { display: flex; }
+  .breadcrumb { display: none; }
+
+  /* Conteúdo */
+  .content {
+    padding: 14px;
+    padding-bottom: 90px; /* espaço pro FAB */
+  }
+
+  /* Stats em coluna única no celular pequeno */
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  /* Formulário empilhado */
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  /* Cards */
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px 16px;
+  }
+  .card-body { padding: 14px 16px; }
+
+  .search-wrap {
+    max-width: 100%;
+    width: 100%;
+  }
+  .search-input { width: 100%; }
+
+  /* Tabela com scroll horizontal */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { min-width: 540px; }
+  th { font-size: 10px; padding: 10px 12px; }
+  td  { font-size: 13px; padding: 12px 12px; }
+
+  /* Botões menores */
+  .btn { padding: 8px 14px; font-size: 13px; }
+  .btn-icon { width: 34px; height: 34px; }
+
+  /* Modal ocupa mais tela */
+  .modal-overlay { padding: 12px; align-items: flex-end; }
+  .modal-box {
+    max-width: 100%;
+    width: 100%;
+    border-radius: var(--radius-xl) var(--radius-xl) var(--radius-md) var(--radius-md);
+    padding: 20px 18px;
+    animation: modal-slide-up 0.22s ease;
+  }
+  @keyframes modal-slide-up {
+    from { transform: translateY(30px); opacity: 0; }
+    to   { transform: none; opacity: 1; }
+  }
+  .modal-footer { flex-direction: column; }
+  .modal-footer .btn { flex: none; width: 100%; }
+
+  /* Stat card compacto */
+  .stat-card { padding: 14px 16px; }
+  .stat-value { font-size: 22px; }
+
+  /* FAB barcode no mobile */
+  .barcode-fab { display: flex; }
+
+  /* Topbar — título menor */
+  .page-title { font-size: 15px; }
+}
+
+/* ================================================
+   MOBILE PEQUENO — até 400px
+================================================ */
+@media (max-width: 400px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .content { padding: 12px; padding-bottom: 90px; }
+  .topbar { padding: 0 12px; }
+  .card-body { padding: 12px 14px; }
+  .barcode-fab { bottom: 18px; right: 14px; width: 52px; height: 52px; }
 }
