@@ -135,9 +135,18 @@ function renderizarProdutos(produtos) {
       <td>${item.data_emissao || "-"}</td>
       <td>${item.contato || "-"}</td>
       <td class="acoes">
-        <button onclick="entrada(${item.id})">➕</button>
-        <button onclick="saida(${item.id})">➖</button>
-        <button class="btn-danger" onclick="remover(${item.id})">Excluir</button>
+        <button class="btn btn-success btn-sm" onclick="entrada(${item.id})" title="Entrada de estoque">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Entrada
+        </button>
+        <button class="btn btn-warning btn-sm" onclick="saida(${item.id})" title="Saída de estoque">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Saída
+        </button>
+        <button class="btn btn-danger btn-sm" onclick="remover(${item.id})" title="Excluir produto">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          Excluir
+        </button>
       </td>`;
     lista.appendChild(tr);
   });
