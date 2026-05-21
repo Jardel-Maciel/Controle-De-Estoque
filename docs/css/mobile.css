@@ -1,0 +1,518 @@
+
+
+/* ================================================
+   BOTTOM NAVIGATION BAR — aparece só no mobile
+================================================ */
+.bottom-nav {
+  display: none; /* escondido no desktop */
+}
+
+@media (max-width: 768px) {
+
+  /* ---- BOTTOM NAV ---- */
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 64px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    z-index: 90;
+    align-items: stretch;
+    padding: 0 4px;
+    /* safe area iOS */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .bottom-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    text-decoration: none;
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-family: var(--font);
+    border-radius: var(--radius-sm);
+    transition: color 0.15s, background 0.15s;
+    padding: 6px 4px;
+    min-width: 0;
+  }
+
+  .bottom-nav-item svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+
+  .bottom-nav-item.active {
+    color: var(--accent);
+  }
+
+  .bottom-nav-item.active svg {
+    filter: drop-shadow(0 0 6px rgba(22,119,255,0.5));
+  }
+
+  .bottom-nav-item:active {
+    background: var(--surface-2);
+  }
+
+  /* Dot indicator */
+  .bottom-nav-item.active::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent-glow);
+  }
+  .bottom-nav-item { position: relative; }
+
+  /* Ajustar padding do conteúdo para a bottom nav */
+  .content {
+    padding-bottom: 80px !important;
+  }
+
+  /* ---- TOPBAR REFINADO ---- */
+  .topbar {
+    height: 52px !important;
+    padding: 0 14px !important;
+    backdrop-filter: blur(12px);
+    background: rgba(10, 29, 61, 0.92) !important;
+  }
+
+  .page-title {
+    font-size: 16px !important;
+    font-weight: 700;
+  }
+
+  /* ---- SIDEBAR — overlay aprimorado ---- */
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(8, 21, 38, 0.75);
+    backdrop-filter: blur(4px);
+    z-index: 99;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  .sidebar-overlay.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  /* ---- STATS GRID — mais compacto ---- */
+  .stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .stat-card {
+    padding: 14px 14px !important;
+    border-radius: var(--radius-md) !important;
+  }
+
+  .stat-icon {
+    width: 30px !important;
+    height: 30px !important;
+    margin-bottom: 10px !important;
+    font-size: 14px !important;
+  }
+
+  .stat-label {
+    font-size: 10px !important;
+    margin-bottom: 2px !important;
+  }
+
+  .stat-value {
+    font-size: 20px !important;
+  }
+
+  /* ---- FORMULÁRIO DE CADASTRO — empilhado ---- */
+  .form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .form-input,
+  .form-select {
+    padding: 12px 14px !important;
+    font-size: 15px !important; /* evita zoom no iOS */
+    border-radius: var(--radius-md) !important;
+  }
+
+  /* Botão de cadastrar — full width */
+  .card-body .btn-primary,
+  .card-body .btn-green {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 16px !important;
+    font-size: 14px !important;
+    border-radius: var(--radius-md) !important;
+  }
+
+  /* ---- TABELA → CARDS MOBILE ---- */
+  /*
+    A tabela de produtos vira uma lista de cards no mobile.
+    Cada linha (<tr>) vira um card compacto.
+    Usa data-label nos <td> para mostrar o label inline.
+  */
+  .table-wrap {
+    overflow-x: unset !important;
+  }
+
+  table {
+    min-width: unset !important;
+    width: 100% !important;
+  }
+
+  /* Esconde o thead no mobile */
+  table thead {
+    display: none !important;
+  }
+
+  /* Cada linha vira um card */
+  table tbody tr {
+    display: flex !important;
+    flex-direction: column !important;
+    background: var(--surface-2) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-md) !important;
+    margin-bottom: 10px !important;
+    padding: 14px !important;
+    gap: 6px !important;
+    transition: border-color 0.15s !important;
+  }
+
+  table tbody tr:hover {
+    border-color: var(--border-hover) !important;
+    background: var(--surface-2) !important;
+  }
+
+  table tbody tr:hover td {
+    background: transparent !important;
+  }
+
+  table tbody tr:last-child td {
+    border-bottom: unset !important;
+  }
+
+  /* Cada célula com label */
+  table tbody td {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+    padding: 3px 0 !important;
+    font-size: 13px !important;
+    border-bottom: none !important;
+    white-space: normal !important;
+    flex-wrap: wrap;
+  }
+
+  /* Label antes de cada td usando data-label */
+  table tbody td[data-label]::before {
+    content: attr(data-label) ": ";
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    color: var(--text-muted) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.08em !important;
+    min-width: 80px !important;
+    flex-shrink: 0;
+    padding-top: 1px;
+  }
+
+  /* Nome do produto — destaque */
+  table tbody td:first-child {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: var(--text-primary) !important;
+    padding-bottom: 8px !important;
+    border-bottom: 1px solid var(--border) !important;
+    margin-bottom: 4px !important;
+  }
+
+  table tbody td:first-child::before {
+    display: none !important;
+  }
+
+  /* Coluna de ações — botões maiores, lado a lado */
+  table tbody td:last-child {
+    margin-top: 6px !important;
+    padding-top: 10px !important;
+    border-top: 1px solid var(--border) !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+  }
+
+  table tbody td:last-child::before {
+    display: none !important;
+  }
+
+  /* Botões de ação dentro da tabela */
+  table tbody td:last-child .btn,
+  table tbody td:last-child button {
+    flex: 1 !important;
+    justify-content: center !important;
+    padding: 10px 12px !important;
+    font-size: 13px !important;
+    border-radius: var(--radius-md) !important;
+    min-height: 40px !important;
+  }
+
+  /* Esconde colunas menos importantes no mobile */
+  table tbody td[data-hide-mobile="true"],
+  table tbody td.hide-mobile {
+    display: none !important;
+  }
+
+  /* ---- CARD HEADER — ações empilhadas ---- */
+  .card-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+    padding: 14px 14px !important;
+  }
+
+  .card-body {
+    padding: 14px !important;
+  }
+
+  .card-title {
+    font-size: 14px !important;
+  }
+
+  /* Search full width */
+  .search-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .search-input {
+    width: 100% !important;
+    font-size: 15px !important; /* evita zoom iOS */
+    padding: 10px 14px 10px 38px !important;
+  }
+
+  /* Filtros da movimentação (tabs Todos/Entradas/Saídas) */
+  .filter-tabs,
+  [class*="filter"] {
+    display: flex;
+    gap: 6px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+
+  /* ---- MOVIMENTAÇÕES — lista nativa ---- */
+  /* As linhas de movimentação no historico.html */
+  .mov-item,
+  .movimento-item {
+    border-radius: var(--radius-md) !important;
+    padding: 14px !important;
+    margin-bottom: 8px !important;
+  }
+
+  /* ---- MODAL — bottom sheet nativo ---- */
+  .modal-overlay {
+    padding: 0 !important;
+    align-items: flex-end !important;
+  }
+
+  .modal-box {
+    max-width: 100% !important;
+    width: 100% !important;
+    border-radius: 24px 24px 0 0 !important;
+    padding: 20px 18px !important;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+  }
+
+  /* Handle visual do bottom sheet */
+  .modal-box::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    background: var(--surface-3);
+    border-radius: 2px;
+    margin: 0 auto 18px;
+  }
+
+  .modal-footer {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  .modal-footer .btn {
+    flex: none !important;
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 13px !important;
+    font-size: 14px !important;
+    border-radius: var(--radius-md) !important;
+    min-height: 46px !important;
+  }
+
+  .modal-title {
+    font-size: 17px !important;
+    font-weight: 700;
+  }
+
+  /* Inputs dentro do modal — maiores para facilitar toque */
+  .modal-box .form-input,
+  .modal-box .form-select,
+  .modal-box input,
+  .modal-box select,
+  .modal-box textarea {
+    font-size: 15px !important;
+    padding: 12px 14px !important;
+    min-height: 46px !important;
+    border-radius: var(--radius-md) !important;
+  }
+
+  /* ---- BOTÕES GERAIS — maior área de toque ---- */
+  .btn {
+    min-height: 38px !important;
+    padding: 9px 16px !important;
+    font-size: 13px !important;
+    border-radius: var(--radius-md) !important;
+  }
+
+  .btn-sm {
+    min-height: 32px !important;
+    padding: 6px 12px !important;
+  }
+
+  /* ---- FAB (botão flutuante do scanner) ---- */
+  .barcode-fab {
+    bottom: 76px !important; /* acima da bottom nav */
+    right: 16px !important;
+    width: 52px !important;
+    height: 52px !important;
+    box-shadow: 0 4px 20px rgba(0,196,140,0.35) !important;
+  }
+
+  /* ---- TOOLBAR ---- */
+  .toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .toolbar .btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* ---- BADGE — tamanho mínimo ---- */
+  .badge {
+    padding: 4px 10px !important;
+    font-size: 11px !important;
+  }
+
+  /* ---- PÁGINA DE MOVIMENTAÇÕES ---- */
+  /* Itens de movimentação que já são flex */
+  .mov-row {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
+  /* ---- DASHBOARD — gráficos ---- */
+  .chart-wrap {
+    height: 200px !important;
+  }
+
+  /* Grid de gráficos lado a lado → coluna única */
+  .charts-grid,
+  [class*="chart-grid"] {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  /* Tabela de movimentações recentes no dashboard */
+  .recent-table td:nth-child(3),
+  .recent-table td:nth-child(5) {
+    display: none !important;
+  }
+
+  /* ---- MENU HAMBURGUER — área de toque maior ---- */
+  .menu-toggle {
+    width: 40px !important;
+    height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: var(--radius-md) !important;
+    background: var(--surface-2) !important;
+    border: 1px solid var(--border) !important;
+    cursor: pointer !important;
+  }
+}
+
+/* ================================================
+   MOBILE PEQUENO — até 400px
+================================================ */
+@media (max-width: 400px) {
+  .stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .stat-value {
+    font-size: 24px !important;
+  }
+
+  .bottom-nav-item {
+    font-size: 9px;
+  }
+
+  table tbody td:last-child .btn,
+  table tbody td:last-child button {
+    font-size: 12px !important;
+  }
+}
+
+/* ================================================
+   SAFE AREA — notch/barra do iOS
+================================================ */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  @media (max-width: 768px) {
+    .bottom-nav {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+  }
+}
+
+/* ================================================
+   ANIMAÇÃO DE ENTRADA PARA CARDS MOBILE
+================================================ */
+@media (max-width: 768px) {
+  table tbody tr {
+    animation: card-in 0.2s ease both;
+  }
+
+  table tbody tr:nth-child(1) { animation-delay: 0.03s; }
+  table tbody tr:nth-child(2) { animation-delay: 0.06s; }
+  table tbody tr:nth-child(3) { animation-delay: 0.09s; }
+  table tbody tr:nth-child(4) { animation-delay: 0.12s; }
+  table tbody tr:nth-child(5) { animation-delay: 0.15s; }
+
+  @keyframes card-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+  }
+}
