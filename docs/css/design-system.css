@@ -1138,6 +1138,197 @@ tr:last-child td { border-bottom: none; }
 }
 .barcode-modal-footer .btn { flex: 1; justify-content: center; }
 
+/* ────────────────────────────────────────────
+   NF IMPORT — Stepper + Painéis + Revisão
+──────────────────────────────────────────── */
+
+/* Stepper */
+.nf-stepper {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px 0;
+  flex-shrink: 0;
+}
+.nf-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  transition: color 0.2s;
+}
+.nf-step-circle {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--border-hover);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.nf-step.active .nf-step-circle {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.nf-step.active { color: var(--accent); }
+.nf-step.done .nf-step-circle {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+.nf-step.done .nf-step-circle::before { content: '✓'; }
+.nf-step.done .nf-step-circle { font-size: 0; }
+.nf-step.done .nf-step-circle::before { font-size: 13px; }
+.nf-step.done { color: var(--green); }
+.nf-step-line {
+  height: 2px;
+  flex: 0 0 28px;
+  background: var(--border);
+  border-radius: 99px;
+  margin-bottom: 20px;
+  transition: background 0.2s;
+}
+
+/* Painéis por etapa */
+.nf-panel { display: none; }
+.nf-panel.active { display: block; }
+
+.nf-panel-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+/* Layout de 2 colunas nos formulários */
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.form-row-2 .form-group { margin-bottom: 0; }
+
+/* Formulário de adição de item */
+.nf-item-form {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.nf-item-code-row {
+  display: flex;
+  gap: 8px;
+}
+.nf-item-code-row .form-input { flex: 1; font-size: 15px; letter-spacing: 0.04em; }
+.nf-item-code-row .btn { flex-shrink: 0; }
+
+.nf-item-extras {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  animation: fade-in 0.18s ease;
+}
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+.nf-item-extras .form-row-2 { margin-bottom: 0; }
+
+.nf-add-btn {
+  width: 100%;
+  justify-content: center;
+}
+.btn-success {
+  background: var(--green);
+  color: #fff;
+  border: none;
+}
+.btn-success:hover { background: #16a34a; }
+
+/* ── Revisão (etapa 3) ── */
+.nf-review {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.nf-rev-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+}
+.nf-rev-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 10px;
+}
+.nf-rev-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+.nf-rev-meta.empty { color: var(--text-muted); font-style: italic; }
+.nf-rev-label {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.nf-rev-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.nf-rev-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+}
+.nf-rev-item:last-child { border-bottom: none; }
+.nf-rev-item-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 12px;
+}
+.nf-rev-item-detail {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.nf-rev-hint {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.55;
+  text-align: center;
+  padding: 0 4px;
+}
+
 /* ================================================
    TABLET — 769px a 1024px
 ================================================ */
