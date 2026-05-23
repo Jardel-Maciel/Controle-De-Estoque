@@ -203,7 +203,14 @@ window.entrada = (id) => abrirModal("entrada", id);
 window.saida   = (id) => abrirModal("saida", id);
 
 window.remover = async (id) => {
-  if (!confirm("Deseja realmente excluir este produto?")) return;
+  const confirmar = await showConfirm({
+    titulo:       "Excluir produto",
+    mensagem:     "Tem certeza que deseja excluir este produto?<br>Essa ação não pode ser desfeita.",
+    confirmTexto: "Sim, excluir",
+    cancelTexto:  "Cancelar",
+    tipo:         "danger",
+  });
+  if (!confirmar) return;
   try {
     await fetch(`${API}/produtos/${id}`, {
       method: "DELETE",
