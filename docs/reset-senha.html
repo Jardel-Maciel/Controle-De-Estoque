@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Redefinir senha — Estoque Fácil</title>
+  <link rel="stylesheet" href="css/mobile.css"/>
+  <link rel="shortcut icon" href="assets/favicon.png" type="image/x-icon">
+  <link rel="stylesheet" href="css/design-system.css"/>
+  <link rel="stylesheet" href="css/toast.css"/>
+</head>
+<body>
+
+<div class="login-bg">
+  <div class="login-glow"></div>
+
+  <div class="login-card">
+
+    <div class="login-logo">
+      <img src="assets/logo_transparent.png" alt="Estoque Fácil" class="login-logo-img"/>
+    </div>
+
+    <h1 class="login-headline">Redefinir senha</h1>
+    <p class="login-sub" id="subtitulo">Escolha uma nova senha para sua conta</p>
+
+    <div id="formRedefinir">
+      <div class="form-group">
+        <label class="form-label">Nova senha</label>
+        <div class="input-wrap">
+          <input class="form-input" type="password" id="novaSenha" placeholder="••••••••" style="padding-right:40px"/>
+          <button class="toggle-senha" type="button" id="toggleNovaSenha" aria-label="Mostrar senha">👁</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Confirmar nova senha</label>
+        <input class="form-input" type="password" id="confirmarSenha" placeholder="••••••••"/>
+      </div>
+
+      <button class="btn btn-primary login-btn" id="btnRedefinir">Redefinir senha</button>
+    </div>
+
+    <div class="msg-erro" id="msgErro"></div>
+    <div class="msg-ok"   id="msgOk"></div>
+
+    <p style="text-align:center; margin-top:28px;">
+      <a href="index.html" style="font-size:12px; color:var(--green); text-decoration:none; font-weight:500;">
+        Voltar para o login
+      </a>
+    </p>
+
+  </div>
+</div>
+
+<script src="js/toast.js"></script>
+<script src="js/reset-senha.js"></script>
+</body>
+</html>
