@@ -55,11 +55,44 @@ const PDF = {
 };
 
 // =========================
+// SETORES — filtro do dashboard (só gerente/admin)
+// =========================
+async function carregarSetoresDashboard() {
+  try {
+    const usuario = JSON.parse(localStorage.getItem("user") || "{}");
+    if (usuario.role !== "gerente" && usuario.role !== "admin") return;
+
+    const res = await fetch(`${API}/setores`, {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    if (!res.ok) return;
+    const setores = await res.json();
+
+    const select = document.getElementById("filtroSetorDashboard");
+    if (!select) return;
+
+    setores.forEach((s) => {
+      const opt = document.createElement("option");
+      opt.value = s.id;
+      opt.textContent = s.nome;
+      select.appendChild(opt);
+    });
+
+    select.style.display = "";
+    select.addEventListener("change", () => carregarDashboard(select.value));
+  } catch (err) {
+    console.error("Erro ao carregar setores:", err);
+  }
+}
+carregarSetoresDashboard();
+
+// =========================
 // CARREGAR DASHBOARD
 // =========================
-async function carregarDashboard() {
+async function carregarDashboard(setorId) {
   try {
-    const res = await fetch(`${API}/dashboard`, {
+    const qs = setorId ? `?setor_id=${encodeURIComponent(setorId)}` : "";
+    const res = await fetch(`${API}/dashboard${qs}`, {
       headers: {
         "Authorization": `Bearer ${token}`,
         "Content-Type": "application/json"
