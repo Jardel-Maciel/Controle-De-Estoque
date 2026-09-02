@@ -172,6 +172,16 @@
 
       <!-- TAB: EQUIPE -->
       <div class="tab-panel" id="tab-equipe">
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header">
+            <span class="card-title">Setores</span>
+            <button class="btn btn-primary btn-sm" id="btnNovoSetor">+ Novo setor</button>
+          </div>
+          <div class="card-body" style="display:flex; flex-wrap:wrap; gap:8px;" id="listaSetores">
+            <p style="color:var(--text-muted);font-size:13px">Carregando...</p>
+          </div>
+        </div>
+
         <div class="card">
           <div class="card-header">
             <span class="card-title">Membros da equipe</span>
@@ -180,10 +190,10 @@
           <div class="table-wrap">
             <table>
               <thead>
-                <tr><th>Nome</th><th>Email</th><th>Perfil</th><th>Status</th><th>Ações</th></tr>
+                <tr><th>Nome</th><th>Email</th><th>Perfil</th><th>Setor</th><th>Status</th><th>Ações</th></tr>
               </thead>
               <tbody id="tabelaEquipe">
-                <tr><td colspan="5"><div class="empty-state"><p>Carregando...</p></div></td></tr>
+                <tr><td colspan="6"><div class="empty-state"><p>Carregando...</p></div></td></tr>
               </tbody>
             </table>
           </div>
@@ -302,6 +312,12 @@
         <option value="cliente">Funcionário</option>
       </select>
     </div>
+    <div class="form-group">
+      <label class="form-label">Setor</label>
+      <select class="form-input" id="novoSetor">
+        <option value="">Geral (acesso a todos os setores)</option>
+      </select>
+    </div>
     <div class="msg-erro" id="erroNovoUsuario"></div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="fecharModalUsuario()">Cancelar</button>
@@ -333,7 +349,7 @@
       btn.classList.add("active");
       document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
 
-      if (btn.dataset.tab === "equipe")    carregarEquipe();
+      if (btn.dataset.tab === "equipe")    { carregarEquipe(); carregarSetores(); }
       if (btn.dataset.tab === "atividade") carregarAtividade();
       if (btn.dataset.tab === "historico") carregarHistorico();
     });
@@ -435,6 +451,64 @@
     else showToast(d.erro || "Erro", "error");
   });
 
+  // ========================= SETORES =========================
+  async function carregarSetores() {
+    const res = await apiFetch("/setores");
+    if (!res) return;
+    const setores = await res.json();
+
+    const lista = document.getElementById("listaSetores");
+    const selectNovoUsuario = document.getElementById("novoSetor");
+
+    if (!setores.length) {
+      lista.innerHTML = `<p style="color:var(--text-muted);font-size:13px">Nenhum setor cadastrado ainda.</p>`;
+    } else {
+      lista.innerHTML = setores.map(s => `
+        <span class="badge-role-cliente" style="display:flex;align-items:center;gap:6px;padding:4px 10px;">
+          ${s.nome}
+          <button class="btn btn-ghost btn-sm" style="padding:0 4px" title="Desativar setor" onclick="toggleSetor(${s.id})">✕</button>
+        </span>
+      `).join("");
+    }
+
+    if (selectNovoUsuario) {
+      selectNovoUsuario.innerHTML = `<option value="">Geral (acesso a todos os setores)</option>` +
+        setores.map(s => `<option value="${s.id}">${s.nome}</option>`).join("");
+    }
+  }
+
+  document.getElementById("btnNovoSetor").addEventListener("click", async () => {
+    const nome = prompt("Nome do novo setor (ex: Cozinha, Manutenção):");
+    if (!nome || !nome.trim()) return;
+
+    const res = await apiFetch("/setores", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome: nome.trim() })
+    });
+    if (!res) return;
+    const d = await res.json();
+    if (res.ok) { showToast("Setor criado!", "success"); carregarSetores(); }
+    else showToast(d.erro || "Erro ao criar setor", "error");
+  });
+
+  async function toggleSetor(id) {
+    const confirmar = await showConfirm({
+      titulo:       "Desativar setor",
+      mensagem:     "O setor sai das listas de seleção, mas produtos e usuários já vinculados a ele não são afetados.",
+      confirmTexto: "Desativar",
+      cancelTexto:  "Cancelar",
+      tipo:         "danger",
+    });
+    if (!confirmar) return;
+
+    const res = await apiFetch(`/setores/${id}/toggle`, { method: "PATCH" });
+    if (!res) return;
+    const d = await res.json();
+    if (res.ok) { showToast("Setor atualizado", "success"); carregarSetores(); }
+    else showToast(d.erro || "Erro", "error");
+  }
+
   // ========================= EQUIPE =========================
   async function carregarEquipe() {
     const res = await apiFetch("/gerente/usuarios");
@@ -443,7 +517,7 @@
     const tbody = document.getElementById("tabelaEquipe");
 
     if (!dados.length) {
-      tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><p>Nenhum usuário encontrado</p></div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><p>Nenhum usuário encontrado</p></div></td></tr>`;
       return;
     }
 
@@ -452,6 +526,7 @@
         <td><strong>${u.nome}</strong></td>
         <td style="color:var(--text-secondary);font-size:12px">${u.email}</td>
         <td><span class="badge-role-${u.role === 'gerente' ? 'gerente' : 'cliente'}">${u.role === 'gerente' ? 'Gerente' : 'Funcionário'}</span></td>
+        <td>${u.setor_nome || 'Geral'}</td>
         <td><span class="${u.ativo ? 'badge-ativo' : 'badge-inativo'}">${u.ativo ? 'Ativo' : 'Inativo'}</span></td>
         <td>
           <button class="btn btn-ghost btn-sm" onclick="toggleUsuario(${u.id}, ${u.ativo})">
@@ -483,6 +558,7 @@
     const email = document.getElementById("novoEmail").value.trim();
     const senha = document.getElementById("novaSenha").value.trim();
     const role  = document.getElementById("novoRole").value;
+    const setor_id = document.getElementById("novoSetor")?.value || null;
     const errEl = document.getElementById("erroNovoUsuario");
 
     if (!nome || !email || !senha) {
@@ -495,7 +571,7 @@
     const res = await apiFetch("/gerente/usuarios", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nome, email, senha, role })
+      body: JSON.stringify({ nome, email, senha, role, setor_id })
     });
     if (!res) return;
     const d = await res.json();
