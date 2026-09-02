@@ -102,6 +102,9 @@
             <input class="form-input" type="number" id="valor"          placeholder="Valor (R$)" step="0.01"/>
             <input class="form-input" type="text"   id="fornecedor"     placeholder="Fornecedor"/>
             <input class="form-input" type="text"   id="contato"        placeholder="Contato"/>
+            <select class="form-input" id="setorProduto" style="display:none">
+              <option value="">Geral (sem setor)</option>
+            </select>
           </div>
           <button class="btn btn-primary" id="cadastrar">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -118,12 +121,16 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input class="search-input" type="text" id="pesquisaEstoque" placeholder="Pesquisar produto..."/>
           </div>
+          <select class="form-input" id="filtroSetor" style="display:none; max-width:200px; margin-left:8px;">
+            <option value="">Todos os setores</option>
+          </select>
         </div>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
                 <th>Produto</th>
+                <th>Setor</th>
                 <th>Quantidade</th>
                 <th>Valor unit.</th>
                 <th>Fornecedor</th>
@@ -135,7 +142,7 @@
               </tr>
             </thead>
             <tbody id="lista">
-              <tr><td colspan="9">
+              <tr><td colspan="10">
                 <div class="empty-state">
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
                   <p>Nenhum produto cadastrado</p>

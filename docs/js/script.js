@@ -10,6 +10,55 @@ if (!token) {
 let tipoMovimentacao = null;
 let produtoIdAtual = null;
 let produtosCache = [];
+let setoresCache = [];
+
+// =========================
+// SETORES — carregar e popular seletores
+// (o seletor de cadastro e o filtro só aparecem para gerente/admin;
+// cliente tem o setor atribuído automaticamente pelo backend)
+// =========================
+async function carregarSetores() {
+  try {
+    const res = await fetch(`${API}/setores`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) return;
+    setoresCache = await res.json();
+
+    const usuario = JSON.parse(localStorage.getItem("user") || "{}");
+    const role = usuario.role || "";
+    if (role !== "gerente" && role !== "admin") return;
+
+    const selectCadastro = document.getElementById("setorProduto");
+    const selectFiltro    = document.getElementById("filtroSetor");
+
+    setoresCache.forEach((s) => {
+      if (selectCadastro) {
+        const opt = document.createElement("option");
+        opt.value = s.id;
+        opt.textContent = s.nome;
+        selectCadastro.appendChild(opt);
+      }
+      if (selectFiltro) {
+        const opt2 = document.createElement("option");
+        opt2.value = s.id;
+        opt2.textContent = s.nome;
+        selectFiltro.appendChild(opt2);
+      }
+    });
+
+    if (selectCadastro) selectCadastro.style.display = "";
+    if (selectFiltro) {
+      selectFiltro.style.display = "";
+      selectFiltro.addEventListener("change", () => carregar(selectFiltro.value));
+    }
+  } catch (err) {
+    console.error("Erro ao carregar setores:", err);
+  }
+}
+if (document.getElementById("setorProduto") || document.getElementById("filtroSetor")) {
+  carregarSetores();
+}
 
 // =========================
 // MODAL MOVIMENTAÇÃO
@@ -75,9 +124,10 @@ if (btnCancelar) btnCancelar.onclick = fecharModal;
 // =========================
 // CARREGAR PRODUTOS
 // =========================
-async function carregar() {
+async function carregar(setorId) {
   try {
-    const res = await fetch(`${API}/produtos`, {
+    const qs = setorId ? `?setor_id=${encodeURIComponent(setorId)}` : "";
+    const res = await fetch(`${API}/produtos${qs}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
 
@@ -112,7 +162,7 @@ function renderizarProdutos(produtos) {
 
   if (!produtos || produtos.length === 0) {
     lista.innerHTML = `
-      <tr><td colspan="9">
+      <tr><td colspan="10">
         <div class="empty-state">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
@@ -125,8 +175,12 @@ function renderizarProdutos(produtos) {
 
   produtos.forEach((item) => {
     const tr = document.createElement("tr");
+    const setorNome = item.setor_id
+      ? (setoresCache.find(s => s.id === item.setor_id)?.nome || "-")
+      : "Geral";
     tr.innerHTML = `
       <td style="text-transform:capitalize">${item.produto}</td>
+      <td>${setorNome}</td>
       <td>${item.quantidade}</td>
       <td>R$ ${Number(item.valor || 0).toFixed(2)}</td>
       <td style="text-transform:capitalize">${item.fornecedor || "-"}</td>
@@ -163,6 +217,7 @@ if (btnCadastrar) {
     const valor      = document.getElementById("valor")?.value;
     const fornecedor = document.getElementById("fornecedor")?.value.trim();
     const contato    = document.getElementById("contato")?.value.trim();
+    const setor_id   = document.getElementById("setorProduto")?.value || null;
 
     if (!produto || !quantidade) {
       showToast("Preencha produto e quantidade", "warning");
@@ -173,7 +228,7 @@ if (btnCadastrar) {
       const res = await fetch(`${API}/produtos`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ produto, quantidade, valor, fornecedor, contato })
+        body: JSON.stringify({ produto, quantidade, valor, fornecedor, contato, setor_id })
       });
 
       const data = await res.json();
