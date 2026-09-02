@@ -197,6 +197,10 @@ function renderizarProdutos(produtos) {
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Saída
         </button>
+        <button class="btn btn-ghost btn-sm" onclick="editarProduto(${item.id})" title="Editar produto">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+          Editar
+        </button>
         <button class="btn btn-danger btn-sm" onclick="remover(${item.id})" title="Excluir produto">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
           Excluir
@@ -250,6 +254,86 @@ if (btnCadastrar) {
     }
   };
 }
+
+// =========================
+// EDITAR PRODUTO
+// =========================
+let produtoEditandoId = null;
+
+window.editarProduto = (id) => {
+  const item = produtosCache.find(p => p.id === id);
+  if (!item) return;
+
+  produtoEditandoId = id;
+
+  document.getElementById("editProduto").value    = item.produto || "";
+  document.getElementById("editQuantidade").value = item.quantidade ?? "";
+  document.getElementById("editValor").value      = item.valor ?? "";
+  document.getElementById("editFornecedor").value = item.fornecedor || "";
+  document.getElementById("editContato").value    = item.contato || "";
+
+  const usuario = JSON.parse(localStorage.getItem("user") || "{}");
+  const grupoSetor  = document.getElementById("grupoEditSetor");
+  const selectSetor = document.getElementById("editSetor");
+
+  if (usuario.role === "gerente" || usuario.role === "admin") {
+    selectSetor.innerHTML = `<option value="">Geral (sem setor)</option>` +
+      setoresCache.map(s => `<option value="${s.id}">${s.nome}</option>`).join("");
+    selectSetor.value = item.setor_id || "";
+    grupoSetor.style.display = "";
+  } else {
+    grupoSetor.style.display = "none";
+  }
+
+  document.getElementById("modalEditar").classList.add("open");
+};
+
+function fecharModalEditar() {
+  document.getElementById("modalEditar")?.classList.remove("open");
+  produtoEditandoId = null;
+}
+document.getElementById("cancelarModalEditar")?.addEventListener("click", fecharModalEditar);
+document.getElementById("cancelarModalEditarBtn")?.addEventListener("click", fecharModalEditar);
+
+document.getElementById("confirmarModalEditar")?.addEventListener("click", async () => {
+  if (!produtoEditandoId) return;
+
+  const produto    = document.getElementById("editProduto").value.trim();
+  const quantidade = document.getElementById("editQuantidade").value;
+  const valor      = document.getElementById("editValor").value;
+  const fornecedor = document.getElementById("editFornecedor").value.trim();
+  const contato    = document.getElementById("editContato").value.trim();
+
+  if (!produto || quantidade === "") {
+    showToast("Preencha produto e quantidade", "warning");
+    return;
+  }
+
+  const corpo = { produto, quantidade, valor, fornecedor, contato };
+
+  const grupoSetor = document.getElementById("grupoEditSetor");
+  if (grupoSetor && grupoSetor.style.display !== "none") {
+    corpo.setor_id = document.getElementById("editSetor").value || null;
+  }
+
+  try {
+    const res = await fetch(`${API}/produtos/${produtoEditandoId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(corpo)
+    });
+    const data = await res.json();
+
+    if (!res.ok) { showToast(data.erro || "Erro ao salvar", "error"); return; }
+
+    showToast("Produto atualizado!", "success");
+    fecharModalEditar();
+    carregar();
+  } catch (err) {
+    console.error(err);
+    showToast("Erro ao conectar com o servidor", "error");
+  }
+});
 
 // =========================
 // AÇÕES DA TABELA
