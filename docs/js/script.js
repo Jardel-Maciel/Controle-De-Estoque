@@ -7,6 +7,7 @@ if (!token) {
   throw new Error("Sem token");
 }
 
+
 let tipoMovimentacao = null;
 let produtoIdAtual = null;
 let produtosCache = [];
