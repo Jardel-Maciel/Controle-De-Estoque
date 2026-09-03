@@ -1,4 +1,4 @@
-const API = "https://backend-estoque-fnfc.onrender.com";
+const API = window.API_URL;
 
 // =========================
 // ELEMENTOS

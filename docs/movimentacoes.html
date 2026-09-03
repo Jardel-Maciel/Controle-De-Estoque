@@ -105,10 +105,11 @@
   </div>
 </div>
 
+<script src="js/config.js"></script>
 <script src="js/toast.js"></script>
 <script src="js/admin-btn.js"></script>
 <script>
-  const API = "https://backend-estoque-fnfc.onrender.com";
+  const API = window.API_URL;
   const token = localStorage.getItem("token");
   const nome = localStorage.getItem('nome') || '?';
   document.getElementById('avatarUser').textContent = nome.charAt(0).toUpperCase();

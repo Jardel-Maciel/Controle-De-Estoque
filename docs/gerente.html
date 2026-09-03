@@ -326,6 +326,7 @@
   </div>
 </div>
 
+<script src="js/config.js"></script>
 <script src="js/toast.js"></script>
 <script src="js/api.js"></script>
 <script>
@@ -481,15 +482,20 @@
     const nome = prompt("Nome do novo setor (ex: Cozinha, Manutenção):");
     if (!nome || !nome.trim()) return;
 
-    const res = await apiFetch("/setores", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nome: nome.trim() })
-    });
-    if (!res) return;
-    const d = await res.json();
-    if (res.ok) { showToast("Setor criado!", "success"); carregarSetores(); }
-    else showToast(d.erro || "Erro ao criar setor", "error");
+    try {
+      const res = await apiFetch("/setores", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome: nome.trim() })
+      });
+      if (!res) return;
+      const d = await res.json();
+      if (res.ok) { showToast("Setor criado!", "success"); carregarSetores(); }
+      else showToast(d.erro || "Erro ao criar setor", "error");
+    } catch (err) {
+      console.error("Erro ao criar setor:", err);
+      showToast("Erro ao conectar com o servidor. Veja o console (F12).", "error");
+    }
   });
 
   async function toggleSetor(id) {

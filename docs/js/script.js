@@ -1,4 +1,4 @@
-const API = "https://backend-estoque-fnfc.onrender.com";
+const API = window.API_URL;
 
 const token = localStorage.getItem("token");
 
@@ -47,7 +47,11 @@ async function carregarSetores() {
       }
     });
 
-    if (selectCadastro) selectCadastro.style.display = "";
+    if (selectCadastro) {
+      selectCadastro.style.display = "";
+      const dica = document.getElementById("dicaSetorImportacao");
+      if (dica) dica.style.display = "";
+    }
     if (selectFiltro) {
       selectFiltro.style.display = "";
       selectFiltro.addEventListener("change", () => carregar(selectFiltro.value));
@@ -489,6 +493,8 @@ if (inputXML) {
 
     const formData = new FormData();
     formData.append("arquivo", arquivo);
+    const setorImportXML = document.getElementById("setorProduto")?.value;
+    if (setorImportXML) formData.append("setor_id", setorImportXML);
 
     showToast("Importando XML...", "info");
 
@@ -741,6 +747,8 @@ async function _executarImportacaoExcel() {
   const formData = new FormData();
   formData.append("arquivo", _excelArquivo);
   if (_excelAbaSelecionada) formData.append("aba", _excelAbaSelecionada);
+  const setorImportExcel = document.getElementById("setorProduto")?.value;
+  if (setorImportExcel) formData.append("setor_id", setorImportExcel);
 
   try {
     const res = await fetch(`${API}/excel/importar`, {

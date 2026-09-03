@@ -385,9 +385,10 @@
   </div>
 </div>
 
+<script src="js/config.js"></script>
 <script src="js/toast.js"></script>
 <script>
-const API   = "https://backend-estoque-fnfc.onrender.com";
+const API   = window.API_URL;
 const token = localStorage.getItem("token");
 const user  = JSON.parse(localStorage.getItem("user") || "{}");
 

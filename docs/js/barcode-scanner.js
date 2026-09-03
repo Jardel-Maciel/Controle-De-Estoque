@@ -51,7 +51,7 @@
       .slice(0, 18);
   }
 
-  const API   = window.API_URL || 'https://backend-estoque-fnfc.onrender.com';
+  const API   = window.API_URL;
   const token = () => localStorage.getItem('token');
 
   /* ═══════════════════════════════════════════

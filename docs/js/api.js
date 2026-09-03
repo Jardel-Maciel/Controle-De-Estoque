@@ -4,7 +4,7 @@
 // <script src="js/api.js"></script>
 // =========================
 
-const API = "https://backend-estoque-fnfc.onrender.com";
+const API = window.API_URL;
 
 // =========================
 // RENOVAR TOKEN AUTOMATICAMENTE
