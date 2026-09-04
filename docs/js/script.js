@@ -194,21 +194,11 @@ function renderizarProdutos(produtos) {
     tr.innerHTML = `
       <td style="text-transform:capitalize">${item.produto}</td>
       <td>${setorNome}</td>
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 9992b944d1003633f01c812df61c7cfb24a0e53a
       <td>${formatarQuantidade(item.quantidade, item.unidade_medida)}${
         Number(item.quantidade) <= Number(item.estoque_minimo ?? 5)
           ? ' <span class="badge badge-warning" title="Estoque no mínimo ou abaixo">baixo</span>'
           : ''
       }</td>
-<<<<<<< HEAD
-=======
-=======
-      <td>${formatarQuantidade(item.quantidade, item.unidade_medida)}</td>
->>>>>>> e904ee116a69ae332ab446646aa21755c0b6b408
->>>>>>> 9992b944d1003633f01c812df61c7cfb24a0e53a
       <td>R$ ${Number(item.valor || 0).toFixed(2)}</td>
       <td style="text-transform:capitalize">${item.fornecedor || "-"}</td>
       <td>${item.cnpj || "-"}</td>
@@ -246,14 +236,7 @@ if (btnCadastrar) {
     const produto    = document.getElementById("inputProduto")?.value.trim();
     const quantidade = document.getElementById("quantidade")?.value;
     const unidade_medida = document.getElementById("unidadeMedida")?.value || "unidade";
-<<<<<<< HEAD
     const estoque_minimo = document.getElementById("estoqueMinimo")?.value || 5;
-=======
-<<<<<<< HEAD
-    const estoque_minimo = document.getElementById("estoqueMinimo")?.value || 5;
-=======
->>>>>>> e904ee116a69ae332ab446646aa21755c0b6b408
->>>>>>> 9992b944d1003633f01c812df61c7cfb24a0e53a
     const valor      = document.getElementById("valor")?.value;
     const fornecedor = document.getElementById("fornecedor")?.value.trim();
     const contato    = document.getElementById("contato")?.value.trim();
@@ -268,15 +251,7 @@ if (btnCadastrar) {
       const res = await fetch(`${API}/produtos`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-<<<<<<< HEAD
         body: JSON.stringify({ produto, quantidade, unidade_medida, estoque_minimo, valor, fornecedor, contato, setor_id })
-=======
-<<<<<<< HEAD
-        body: JSON.stringify({ produto, quantidade, unidade_medida, estoque_minimo, valor, fornecedor, contato, setor_id })
-=======
-        body: JSON.stringify({ produto, quantidade, unidade_medida, valor, fornecedor, contato, setor_id })
->>>>>>> e904ee116a69ae332ab446646aa21755c0b6b408
->>>>>>> 9992b944d1003633f01c812df61c7cfb24a0e53a
       });
 
       const data = await res.json();
@@ -285,14 +260,7 @@ if (btnCadastrar) {
       document.getElementById("inputProduto").value = "";
       document.getElementById("quantidade").value   = "";
       document.getElementById("unidadeMedida").value = "unidade";
-<<<<<<< HEAD
       document.getElementById("estoqueMinimo").value = "5";
-=======
-<<<<<<< HEAD
-      document.getElementById("estoqueMinimo").value = "5";
-=======
->>>>>>> e904ee116a69ae332ab446646aa21755c0b6b408
->>>>>>> 9992b944d1003633f01c812df61c7cfb24a0e53a
       document.getElementById("valor").value        = "";
       document.getElementById("fornecedor").value   = "";
       document.getElementById("contato").value      = "";
@@ -324,14 +292,7 @@ window.editarProduto = (id) => {
   document.getElementById("editValor").value      = item.valor ?? "";
   document.getElementById("editFornecedor").value = item.fornecedor || "";
   document.getElementById("editContato").value    = item.contato || "";
-<<<<<<< HEAD
   document.getElementById("editEstoqueMinimo").value = item.estoque_minimo ?? 5;
-=======
-<<<<<<< HEAD
-  document.getElementById("editEstoqueMinimo").value = item.estoque_minimo ?? 5;
-=======
->>>>>>> e904ee116a69ae332ab446646aa21755c0b6b408
->>>>>>> 9992b944d1003633f01c812df61c7cfb24a0e53a
   popularSelectUnidades(document.getElementById("editUnidadeMedida"), item.unidade_medida);
 
   const usuario = JSON.parse(localStorage.getItem("user") || "{}");
@@ -366,29 +327,14 @@ document.getElementById("confirmarModalEditar")?.addEventListener("click", async
   const fornecedor = document.getElementById("editFornecedor").value.trim();
   const contato    = document.getElementById("editContato").value.trim();
   const unidade_medida = document.getElementById("editUnidadeMedida").value;
-<<<<<<< HEAD
   const estoque_minimo = document.getElementById("editEstoqueMinimo").value;
-=======
-<<<<<<< HEAD
-  const estoque_minimo = document.getElementById("editEstoqueMinimo").value;
-=======
->>>>>>> e904ee116a69ae332ab446646aa21755c0b6b408
->>>>>>> 9992b944d1003633f01c812df61c7cfb24a0e53a
 
   if (!produto || quantidade === "") {
     showToast("Preencha produto e quantidade", "warning");
     return;
   }
 
-<<<<<<< HEAD
   const corpo = { produto, quantidade, valor, fornecedor, contato, unidade_medida, estoque_minimo };
-=======
-<<<<<<< HEAD
-  const corpo = { produto, quantidade, valor, fornecedor, contato, unidade_medida, estoque_minimo };
-=======
-  const corpo = { produto, quantidade, valor, fornecedor, contato, unidade_medida };
->>>>>>> e904ee116a69ae332ab446646aa21755c0b6b408
->>>>>>> 9992b944d1003633f01c812df61c7cfb24a0e53a
 
   const grupoSetor = document.getElementById("grupoEditSetor");
   if (grupoSetor && grupoSetor.style.display !== "none") {
