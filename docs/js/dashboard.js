@@ -115,7 +115,19 @@ async function carregarDashboard(setorId) {
     dadosGlobais = data;
 
     document.getElementById("totalProdutos").textContent = data.total_produtos ?? 0;
-    document.getElementById("totalItens").textContent    = data.total_itens    ?? 0;
+
+    const itensPorUnidade = data.itens_por_unidade || [];
+    const totalItensEl = document.getElementById("totalItens");
+    if (itensPorUnidade.length === 0) {
+      totalItensEl.textContent = "0";
+    } else {
+      // mostra os totais quebrados por unidade (ex: "120 Un · 45 Kg · 8 L")
+      // em vez de somar tudo junto, já que unidades diferentes não se somam
+      totalItensEl.textContent = itensPorUnidade
+        .map(i => `${Number(i.total).toLocaleString("pt-BR")} ${i.label}`)
+        .join(" · ");
+    }
+
     document.getElementById("baixoEstoque").textContent  = data.baixo_estoque  ?? 0;
 
     const valorTotal = parseFloat(data.valor_total || 0);
@@ -370,10 +382,10 @@ document.getElementById("btnDownloadPDF")?.addEventListener("click", () => {
 
       doc.text(String(idx + 1), colX[0], y);
       doc.text(String(p.produto || "-").substring(0, 38), colX[1], y);
-      doc.text(String(qtd), colX[2], y);
+      doc.text(formatarQuantidade(qtd, p.unidade_medida), colX[2], y);
 
       // badge baixo estoque — amarelo claro com texto marrom (legível no fundo branco)
-      if (qtd <= 5) {
+      if (qtd <= Number(p.estoque_minimo ?? 5)) {
         doc.setFillColor(...PDF.badgeBg);
         doc.roundedRect(colX[2] + 8, y - 3.5, 14, 5, 1, 1, "F");
         doc.setFontSize(5.5);
