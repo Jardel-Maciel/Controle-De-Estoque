@@ -296,7 +296,7 @@ function preencherTabela(lista) {
     tr.innerHTML = `
       <td style="text-transform:capitalize">${item.produto}</td>
       <td>${badge}</td>
-      <td>${item.quantidade}</td>
+      <td>${formatarQuantidade(item.quantidade, item.unidade_medida)}</td>
       <td>${item.responsavel || "—"}</td>
       <td>${item.comentario || "—"}</td>
       <td>${item.data ? new Date(item.data).toLocaleString("pt-BR") : "—"}</td>`;
@@ -525,7 +525,7 @@ if (btnPDF) {
       doc.setFontSize(7.5);
       doc.setTextColor(...PDF.textDark);
 
-      doc.text(String(item.quantidade ?? "—"), colX[3], y);
+      doc.text(formatarQuantidade(item.quantidade ?? "—", item.unidade_medida), colX[3], y);
       doc.text(String(item.responsavel || "—").substring(0, 18), colX[4], y);
       doc.text(String(item.comentario  || "—").substring(0, 24), colX[5], y);
       doc.text(item.data ? new Date(item.data).toLocaleString("pt-BR") : "—", colX[6], y);
