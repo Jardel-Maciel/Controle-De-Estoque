@@ -32,7 +32,7 @@ Desenvolvido do zero com foco em segurança, escalabilidade e experiência do us
 
 | Campo | Valor |
 |---|---|
-| 🔗 **URL** | https://jardel-maciel.github.io/Controle-De-Estoque/ |
+| 🔗 **URL** | https://estoquefacilsistem.netlify.app |
 | 📧 **Email** | `demo@estoque.com` |
 | 🔑 **Senha** | `demo1234` |
 
