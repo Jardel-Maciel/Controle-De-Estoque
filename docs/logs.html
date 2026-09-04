@@ -18,7 +18,7 @@
       --card:    #0d2348;
       --border:  rgba(148,163,184,0.1);
       --blue:    #1677FF;
-      --green:   #00C48C;
+      --green:   #38BDF8;
       --red:     #ef4444;
       --yellow:  #facc15;
       --orange:  #f97316;
@@ -104,7 +104,7 @@
     .b-info   { background: rgba(22,119,255,.15); color: var(--blue); }
     .b-aviso  { background: rgba(249,115,22,.15);  color: var(--orange); }
     .b-erro   { background: rgba(239,68,68,.15);   color: var(--red); }
-    .b-green  { background: rgba(0,196,140,.15);   color: var(--green); }
+    .b-green  { background: rgba(0,196,140,.15);   color: #22c55e; }
     .b-gray   { background: rgba(100,116,139,.15); color: var(--dimmed); }
 
     /* AÇÃO CHIP */
@@ -151,7 +151,7 @@
       <rect x="10" y="14" width="15" height="8" rx="2" fill="#00C48C"/>
       <rect x="2" y="26" width="22" height="8" rx="2" fill="#00C48C"/>
     </svg>
-    <span><span style="color:#fff;font-weight:700">Estoque</span> <span style="color:#00C48C;font-weight:700">Fácil</span></span>
+    <span><span style="color:#fff;font-weight:700">Estoque</span> <span style="color:#38BDF8;font-weight:700">Fácil</span></span>
   </div>
 
   <div class="nav-label">Visão Geral</div>
@@ -452,7 +452,7 @@ function renderChartAcoes(dados) {
   const ctx = document.getElementById("chartAcoes").getContext("2d");
   if (chartAcoes) chartAcoes.destroy();
 
-  const cores = ["#1677FF","#00C48C","#f97316","#a855f7","#ef4444"];
+  const cores = ["#1677FF","#38BDF8","#0EA5E9","#60A5FA","#0369A1"];
   chartAcoes = new Chart(ctx, {
     type: "doughnut",
     data: {

@@ -2,7 +2,7 @@
 
 /* ================================================
    ESTOQUE FÁCIL — DESIGN SYSTEM
-   Versão principal: azul escuro + verde
+   Versão principal: Azul Profissional (marca 100% azul)
 ================================================ */
 
 :root {
@@ -14,14 +14,14 @@
   --border:      rgba(22,119,255,0.12);
   --border-hover:rgba(22,119,255,0.25);
 
-  /* Marca */
+  /* Marca — tons de azul (antigo --green agora é o azul secundário da marca) */
   --accent:      #1677FF;
   --accent-dim:  rgba(22,119,255,0.14);
   --accent-glow: rgba(22,119,255,0.30);
-  --green:       #00C48C;
-  --green-light: #7DFF9B;
-  --green-dim:   rgba(0,196,140,0.13);
-  --green-glow:  rgba(0,196,140,0.25);
+  --green:       #38BDF8;
+  --green-light: #7DD3FC;
+  --green-dim:   rgba(56,189,248,0.14);
+  --green-glow:  rgba(56,189,248,0.30);
 
   /* Semânticas */
   --success:     #00C48C;
@@ -342,7 +342,7 @@ body {
 
 .stat-icon.blue  { background: var(--accent-dim);   color: var(--accent); }
 .stat-icon.cyan  { background: var(--green-dim);    color: var(--green-light); }
-.stat-icon.green { background: var(--success-dim);  color: var(--success); }
+.stat-icon.green { background: var(--green-dim);    color: var(--green); }
 .stat-icon.amber { background: var(--warning-dim);  color: var(--warning); }
 .stat-icon.red   { background: var(--danger-dim);   color: var(--danger); }
 
@@ -419,7 +419,7 @@ body {
   font-weight: 700;
   box-shadow: 0 2px 14px var(--green-glow);
 }
-.btn-green:hover { background: #00d99b; box-shadow: 0 4px 20px var(--green-glow); }
+.btn-green:hover { background: #0ea5e9; box-shadow: 0 4px 20px var(--green-glow); }
 
 .btn-secondary {
   background: var(--surface-3);

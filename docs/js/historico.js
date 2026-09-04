@@ -10,11 +10,11 @@ let dadosCache = [];
 let graficoDonut = null;
 let periodoAtivo = "todos"; // "todos" | "30" | "7"
 
-// Paleta de cores para o gráfico
+// Paleta de cores para o gráfico — tons de azul (Azul Profissional)
 const PALETA = [
-  "#ef4444", "#f97316", "#eab308", "#22c55e",
-  "#06b6d4", "#6366f1", "#a855f7", "#ec4899",
-  "#14b8a6", "#84cc16", "#f43f5e", "#3b82f6",
+  "#1677FF", "#2563EB", "#3B82F6", "#38BDF8",
+  "#0EA5E9", "#0284C7", "#0369A1", "#60A5FA",
+  "#7DD3FC", "#1D4ED8", "#93C5FD", "#075985",
 ];
 
 // =========================
@@ -330,11 +330,11 @@ const PDF = {
   headerText:  [226, 232, 240],
   headerSub:   [148, 163, 184],
   accent:      [56,  189, 248],
-  teal:        [20,  184, 166],
+  teal:        [56,  189, 248],
   yellow:      [234, 179,   8],
   cardBg:      [240, 249, 255],
   cardBorder:  [186, 230, 253],
-  rowEven:     [240, 253, 250],
+  rowEven:     [240, 249, 255],
   rowOdd:      [255, 255, 255],
   tableHeader: [15,  23,  42],
   tableHText:  [226, 232, 240],

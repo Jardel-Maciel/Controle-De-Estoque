@@ -27,20 +27,20 @@ const COR = {
 
 // =========================
 // PALETA DO PDF — identidade Estoque Fácil
-// Azul #38bdf8 + Teal #14b8a6 + Escuro #0f172a
+// Azul #1677ff + Azul claro #38bdf8 + Escuro #0f172a
 // =========================
 const PDF = {
   headerBg:    [15,  23,  42],   // #0f172a cabeçalho escuro
   headerText:  [226, 232, 240],  // #e2e8f0 texto do cabeçalho
   headerSub:   [148, 163, 184],  // #94a3b8 subtítulo
   accent:      [56,  189, 248],  // #38bdf8 azul (cor principal)
-  teal:        [20,  184, 166],  // #14b8a6 teal (cor secundária da logo)
+  teal:        [56,  189, 248],  // #38bdf8 azul claro (cor secundária da marca)
   indigo:      [99,  102, 241],  // #6366f1
-  green:       [20,  184, 166],  // teal no lugar de verde — consistência de marca
+  green:       [56,  189, 248],  // azul claro no lugar de verde — consistência de marca
   yellow:      [234, 179,   8],  // #eab308 amarelo mais escuro (legível no branco)
   cardBg:      [240, 249, 255],  // #f0f9ff azul bem claro (tom de marca)
   cardBorder:  [186, 230, 253],  // #bae6fd borda azul claro
-  rowEven:     [240, 253, 250],  // #f0fdfa teal bem claro
+  rowEven:     [240, 249, 255],  // #f0f9ff azul bem claro
   rowOdd:      [255, 255, 255],  // #ffffff linha ímpar (branco)
   tableHeader: [15,  23,  42],   // #0f172a fundo header tabela (escuro marca)
   tableHText:  [226, 232, 240],  // #e2e8f0 texto header tabela
@@ -169,8 +169,8 @@ async function carregarDashboard(setorId) {
         datasets: [{
           label: "Valor unitário (R$)",
           data: valores,
-          backgroundColor: "rgba(34,197,94,0.7)",
-          borderColor: "rgba(34,197,94,1)",
+          backgroundColor: "rgba(56,189,248,0.7)",
+          borderColor: "rgba(56,189,248,1)",
           borderWidth: 1,
           borderRadius: 6
         }]

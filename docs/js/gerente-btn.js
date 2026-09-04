@@ -14,7 +14,7 @@
   secao.style.marginTop = "8px";
   secao.innerHTML = `
     <div class="nav-label">Gerência</div>
-    <a href="gerente.html" class="nav-link" id="navGerente" style="color:#00C48C">
+    <a href="gerente.html" class="nav-link" id="navGerente" style="color:#1677FF">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
         <circle cx="9" cy="7" r="4"/>
