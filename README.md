@@ -33,7 +33,7 @@ Desenvolvido do zero com foco em segurança, escalabilidade e experiência do us
 | Campo | Valor |
 |---|---|
 | 🔗 **URL** | https://estoquefacilsystem.netlify.app |
-| 📧 **Email** | `demo@estoque.com` |
+| 📧 **Email** | `demo@estoquefacil.com` |
 | 🔑 **Senha** | `demo1234` |
 
 A conta demo tem perfil **gerente** com acesso completo ao sistema — dashboard, produtos, movimentações, importação de XML/Excel e geração de relatórios PDF.
