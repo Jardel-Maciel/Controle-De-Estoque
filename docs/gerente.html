@@ -48,6 +48,17 @@
     .filtros-historico select { padding: 6px 10px; font-size: 13px; }
     .filtros-historico input { width: 240px; }
     .filtros-historico select { width: 140px; }
+
+    @media (max-width: 900px) {
+      .grid-2col { grid-template-columns: 1fr !important; }
+    }
+    @media (max-width: 600px) {
+      .filtros-historico { flex-direction: column; align-items: stretch; }
+      .filtros-historico input,
+      .filtros-historico select { width: 100%; }
+      .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
+      .tab-btn { white-space: nowrap; padding: 10px 14px; }
+    }
   </style>
 </head>
 <body>
@@ -202,7 +213,7 @@
 
       <!-- TAB: ATIVIDADE -->
       <div class="tab-panel" id="tab-atividade">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
           <div class="card">
             <div class="card-header"><span class="card-title">Ranking de movimentações</span></div>
             <div class="card-body" id="rankingEquipe"><p style="color:var(--text-muted);font-size:13px">Carregando...</p></div>
@@ -328,6 +339,7 @@
 
 <script src="js/config.js"></script>
 <script src="js/toast.js"></script>
+<script src="js/unidades.js"></script>
 <script src="js/api.js"></script>
 <script>
   // Guarda de rota
@@ -404,7 +416,7 @@
       <tr>
         <td><strong>${m.produto}</strong></td>
         <td><span class="badge-${m.tipo}">${m.tipo}</span></td>
-        <td>${m.quantidade}</td>
+        <td>${formatarQuantidade(m.quantidade, m.unidade_medida)}</td>
         <td>${m.responsavel || "—"}</td>
         <td style="font-size:12px;color:var(--text-muted)">${m.data || "—"}</td>
         <td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis">${m.comentario || "—"}</td>
@@ -673,7 +685,7 @@
       <tr>
         <td><strong>${m.produto || "—"}</strong></td>
         <td><span class="badge-${m.tipo}">${m.tipo}</span></td>
-        <td>${m.quantidade}</td>
+        <td>${formatarQuantidade(m.quantidade, m.unidade_medida)}</td>
         <td style="font-size:12px">${m.responsavel || "—"}</td>
         <td style="font-size:12px;color:var(--text-muted)">${m.aprovado_por || "—"}</td>
         <td style="font-size:12px;color:var(--text-muted);white-space:nowrap">${m.data || "—"}</td>
@@ -696,6 +708,7 @@
   carregarPendentes();
 </script>
 <script src="js/mobile-menu.js"></script>
+<script src="js/mobile-enhancements.js"></script>
 <script src="js/barcode-scanner.js"></script>
 </body>
 </html>

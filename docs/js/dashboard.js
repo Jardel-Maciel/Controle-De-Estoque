@@ -370,7 +370,7 @@ document.getElementById("btnDownloadPDF")?.addEventListener("click", () => {
 
       doc.text(String(idx + 1), colX[0], y);
       doc.text(String(p.produto || "-").substring(0, 38), colX[1], y);
-      doc.text(String(qtd), colX[2], y);
+      doc.text(formatarQuantidade(qtd, p.unidade_medida), colX[2], y);
 
       // badge baixo estoque — amarelo claro com texto marrom (legível no fundo branco)
       if (qtd <= 5) {
