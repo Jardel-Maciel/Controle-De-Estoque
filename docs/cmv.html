@@ -246,9 +246,28 @@
       ⚠️ Um ou mais ingredientes têm unidade incompatível com o produto do estoque — o custo desse item pode estar incorreto.
     </div>
 
+    <div class="modal-footer" style="justify-content:space-between; flex-wrap:wrap; gap:10px;">
+      <button class="btn btn-ghost" id="btnProduzirReceita" type="button" style="display:none">🍽️ Registrar Produção</button>
+      <div style="display:flex; gap:10px; margin-left:auto;">
+        <button class="btn btn-ghost" id="btnCancelarReceita">Cancelar</button>
+        <button class="btn btn-primary" id="btnSalvarReceitaModal">Salvar receita</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: REGISTRAR PRODUÇÃO -->
+<div class="modal-overlay" id="modalProduzir">
+  <div class="modal-box" style="max-width:420px">
+    <h3>Registrar Produção</h3>
+    <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;" id="produzirTexto"></p>
+    <div class="form-group">
+      <label class="form-label">Porções produzidas</label>
+      <input class="form-input" type="number" id="produzirPorcoes" min="0.01" step="0.01"/>
+    </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost" id="btnCancelarReceita">Cancelar</button>
-      <button class="btn btn-primary" id="btnSalvarReceitaModal">Salvar receita</button>
+      <button class="btn btn-ghost" id="btnCancelarProduzir">Cancelar</button>
+      <button class="btn btn-primary" id="btnConfirmarProduzir">Dar baixa no estoque</button>
     </div>
   </div>
 </div>
@@ -409,6 +428,7 @@
   // -------- Modal de criar/editar --------
   const modalReceita = document.getElementById("modalReceita");
   const listaIngredientesEl = document.getElementById("listaIngredientes");
+  let receitaEmEdicaoNome = "";
 
   document.getElementById("btnNovaReceita").addEventListener("click", () => abrirModalReceita(null));
   document.getElementById("btnCancelarReceita").addEventListener("click", () => modalReceita.classList.remove("open"));
@@ -418,6 +438,7 @@
 
     receitaEmEdicaoId = id;
     document.getElementById("modalReceitaTitulo").textContent = id ? "Editar Receita" : "Nova Receita";
+    document.getElementById("btnProduzirReceita").style.display = id ? "inline-flex" : "none";
     listaIngredientesEl.innerHTML = "";
 
     if (id) {
@@ -428,6 +449,7 @@
       document.getElementById("receitaPorcoes").value = r.porcoes;
       document.getElementById("receitaMargem").value = r.margem_lucro;
       document.getElementById("receitaModoPreparo").value = r.modo_preparo || "";
+      receitaEmEdicaoNome = r.nome;
       r.itens.forEach(item => adicionarLinhaIngrediente({
         produto_id: item.produto_id, quantidade: item.quantidade, unidade_medida: item.unidade_medida
       }));
@@ -542,6 +564,37 @@
     modalReceita.classList.remove("open");
     showToast("Receita salva!", "success");
     carregarReceitas();
+  });
+
+  // -------- Registrar produção (dá baixa no estoque dos ingredientes) --------
+  const modalProduzir = document.getElementById("modalProduzir");
+
+  document.getElementById("btnProduzirReceita").addEventListener("click", () => {
+    document.getElementById("produzirTexto").textContent =
+      `Quantas porções de "${receitaEmEdicaoNome}" foram produzidas? O sistema vai dar baixa proporcional em cada ingrediente.`;
+    document.getElementById("produzirPorcoes").value = document.getElementById("receitaPorcoes").value || 1;
+    modalProduzir.classList.add("open");
+  });
+
+  document.getElementById("btnCancelarProduzir").addEventListener("click", () => modalProduzir.classList.remove("open"));
+
+  document.getElementById("btnConfirmarProduzir").addEventListener("click", async () => {
+    const porcoes_produzidas = parseFloat(document.getElementById("produzirPorcoes").value || 0);
+    if (porcoes_produzidas <= 0) { showToast("Informe quantas porções foram produzidas", "warning"); return; }
+
+    const res = await apiFetch(`/receitas/${receitaEmEdicaoId}/produzir`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ porcoes_produzidas })
+    });
+    if (!res) return;
+    const d = await res.json();
+    if (!res.ok) { showToast(d.erro || "Erro ao registrar produção", "error"); return; }
+
+    showToast(d.msg, "success");
+    modalProduzir.classList.remove("open");
+    modalReceita.classList.remove("open");
+    carregarProdutosCache(); // refresca o estoque em cache pra próxima abertura
   });
 
   // ========================= INIT =========================
