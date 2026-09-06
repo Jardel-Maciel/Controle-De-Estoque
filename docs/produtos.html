@@ -134,20 +134,16 @@
           <table>
             <thead>
               <tr>
+                <th style="width:36px"></th>
                 <th>Produto</th>
                 <th>Setor</th>
                 <th>Quantidade</th>
                 <th>Valor unit.</th>
-                <th>Fornecedor</th>
-                <th>CNPJ</th>
-                <th>Nota fiscal</th>
-                <th>Emissão</th>
-                <th>Contato</th>
                 <th>Ações</th>
               </tr>
             </thead>
             <tbody id="lista">
-              <tr><td colspan="10">
+              <tr><td colspan="6">
                 <div class="empty-state">
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
                   <p>Nenhum produto cadastrado</p>
@@ -329,6 +325,25 @@
 <style>
   #modal { display:none; }
   #modal:not(.hidden) { display:flex; }
+
+  .btn-expandir {
+    background: none; border: none; cursor: pointer; padding: 4px;
+    color: var(--text-muted); display: flex; align-items: center; justify-content: center;
+    border-radius: 6px; transition: transform .15s, background .15s;
+  }
+  .btn-expandir:hover { background: var(--surface-3); color: var(--text-primary); }
+  .btn-expandir.aberto svg { transform: rotate(90deg); }
+  .btn-expandir svg { transition: transform .15s; }
+
+  .detalhes-row td { background: var(--surface-2); padding: 14px 20px !important; }
+  .detalhes-grid { display: flex; flex-wrap: wrap; gap: 20px; }
+  .detalhes-grid .item { font-size: 12.5px; }
+  .detalhes-grid .item .label { color: var(--text-muted); display: block; margin-bottom: 2px; }
+  .detalhes-grid .item .valor { color: var(--text-primary); font-weight: 500; }
+
+  @media (max-width: 768px) {
+    .detalhes-grid { flex-direction: column; gap: 8px; }
+  }
 </style>
 <script src="js/gerente-btn.js"></script>
 <script src="js/mobile-menu.js"></script>

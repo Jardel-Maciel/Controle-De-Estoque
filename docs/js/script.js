@@ -175,7 +175,7 @@ function renderizarProdutos(produtos) {
 
   if (!produtos || produtos.length === 0) {
     lista.innerHTML = `
-      <tr><td colspan="10">
+      <tr><td colspan="6">
         <div class="empty-state">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
@@ -192,6 +192,11 @@ function renderizarProdutos(produtos) {
       ? (setoresCache.find(s => s.id === item.setor_id)?.nome || "-")
       : "Geral";
     tr.innerHTML = `
+      <td>
+        <button class="btn-expandir" onclick="alternarDetalhes(${item.id})" id="toggle-${item.id}" title="Ver mais detalhes">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </td>
       <td style="text-transform:capitalize">${item.produto}</td>
       <td>${setorNome}</td>
       <td>${formatarQuantidade(item.quantidade, item.unidade_medida)}${
@@ -200,11 +205,6 @@ function renderizarProdutos(produtos) {
           : ''
       }</td>
       <td>R$ ${Number(item.valor || 0).toFixed(2)}</td>
-      <td style="text-transform:capitalize">${item.fornecedor || "-"}</td>
-      <td>${item.cnpj || "-"}</td>
-      <td>${item.numero_nota || "-"}</td>
-      <td>${item.data_emissao || "-"}</td>
-      <td>${item.contato || "-"}</td>
       <td class="acoes">
         <button class="btn btn-success btn-sm" onclick="entrada(${item.id})" title="Entrada de estoque">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -224,8 +224,35 @@ function renderizarProdutos(produtos) {
         </button>
       </td>`;
     lista.appendChild(tr);
+
+    // Linha de detalhes — escondida por padrão, evita a tabela ficar larga
+    // demais e precisar de rolagem horizontal. Abre só quando o usuário clica.
+    const trDetalhes = document.createElement("tr");
+    trDetalhes.className = "detalhes-row";
+    trDetalhes.id = `detalhes-${item.id}`;
+    trDetalhes.style.display = "none";
+    trDetalhes.innerHTML = `
+      <td colspan="6">
+        <div class="detalhes-grid">
+          <div class="item"><span class="label">Fornecedor</span><span class="valor" style="text-transform:capitalize">${item.fornecedor || "-"}</span></div>
+          <div class="item"><span class="label">CNPJ</span><span class="valor">${item.cnpj || "-"}</span></div>
+          <div class="item"><span class="label">Nota fiscal</span><span class="valor">${item.numero_nota || "-"}</span></div>
+          <div class="item"><span class="label">Emissão</span><span class="valor">${item.data_emissao || "-"}</span></div>
+          <div class="item"><span class="label">Contato</span><span class="valor">${item.contato || "-"}</span></div>
+        </div>
+      </td>`;
+    lista.appendChild(trDetalhes);
   });
 }
+
+window.alternarDetalhes = (id) => {
+  const linha = document.getElementById(`detalhes-${id}`);
+  const botao = document.getElementById(`toggle-${id}`);
+  if (!linha) return;
+  const abrindo = linha.style.display === "none";
+  linha.style.display = abrindo ? "table-row" : "none";
+  botao.classList.toggle("aberto", abrindo);
+};
 
 // =========================
 // CADASTRAR PRODUTO
