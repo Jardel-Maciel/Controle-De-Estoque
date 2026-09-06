@@ -107,6 +107,7 @@
 
 <script src="js/config.js"></script>
 <script src="js/toast.js"></script>
+<script src="js/unidades.js"></script>
 <script src="js/admin-btn.js"></script>
 <script>
   const API = window.API_URL;
@@ -149,7 +150,7 @@
           <span class="badge ${isEntrada ? 'badge-success' : 'badge-danger'}">${isEntrada ? 'Entrada' : 'Saída'}</span>
           <div style="text-align:right; flex-shrink:0;">
             <div style="font-size:16px; font-weight:700; font-family:var(--font-mono); color:${isEntrada ? 'var(--success)' : 'var(--danger)'}">
-              ${isEntrada ? '+' : '-'}${m.quantidade}
+              ${isEntrada ? '+' : '-'}${formatarQuantidade(m.quantidade, m.unidade_medida)}
             </div>
             <div style="font-size:11px; color:var(--text-muted)">${dataF}</div>
           </div>
@@ -193,6 +194,7 @@
 </script>
 <script src="js/gerente-btn.js"></script>
 <script src="js/mobile-menu.js"></script>
+<script src="js/mobile-enhancements.js"></script>
 <script src="js/barcode-scanner.js"></script>
 </body>
 </html>

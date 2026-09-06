@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CMV — Estoque Fácil</title>
+  <link rel="stylesheet" href="css/mobile.css"/>
+  <link rel="shortcut icon" href="assets/favicon.png" type="image/x-icon">
+  <link rel="stylesheet" href="css/design-system.css"/>
+  <link rel="stylesheet" href="css/toast.css"/>
+  <style>
+    .cmv-hero {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px; margin-bottom: 20px;
+    }
+    .periodo-bar {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .periodo-bar input[type="month"] {
+      padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--surface-2); color: var(--text-primary); font-family: var(--font);
+    }
+    .receita-form { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .receita-form input { width: 160px; }
+    .cmv-percentual-grande {
+      font-size: 42px; font-weight: 800; font-family: var(--font-mono);
+      letter-spacing: -0.02em;
+    }
+    .cmv-percentual-grande.ok   { color: var(--success); }
+    .cmv-percentual-grande.alto { color: var(--danger); }
+    .cmv-percentual-grande.neutro { color: var(--text-muted); }
+    .explicacao-cmv {
+      font-size: 12.5px; color: var(--text-muted); line-height: 1.6; margin-top: 6px;
+    }
+
+    .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+    .tab-btn {
+      padding: 10px 20px; background: none; border: none; border-bottom: 2px solid transparent;
+      color: var(--text-muted); cursor: pointer; font-family: var(--font); font-size: 13.5px;
+      font-weight: 500; transition: all 0.15s; margin-bottom: -1px;
+    }
+    .tab-btn:hover { color: var(--text-secondary); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .ficha-card { display: flex; flex-direction: column; gap: 8px; cursor: pointer; }
+    .ficha-card:hover { border-color: var(--accent); }
+    .ficha-card .ficha-nome { font-weight: 700; font-size: 15px; }
+    .ficha-card .ficha-meta { font-size: 12px; color: var(--text-muted); }
+    .ficha-card .ficha-acoes { display: flex; gap: 8px; margin-top: 4px; }
+
+    .ingrediente-row {
+      display: grid; grid-template-columns: 1fr 90px 90px 32px;
+      gap: 8px; align-items: center; margin-bottom: 8px;
+    }
+    .preview-custo {
+      background: var(--surface-2); border-radius: 10px; padding: 14px 16px;
+      margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+    .preview-custo .item { font-size: 12.5px; color: var(--text-muted); }
+    .preview-custo .item strong { display: block; font-size: 16px; color: var(--text-primary); font-family: var(--font-mono); }
+    .aviso-conversao {
+      background: var(--warning-dim); color: var(--warning); border-radius: 8px;
+      padding: 8px 12px; font-size: 12px; margin-top: 10px;
+    }
+
+    @media (max-width: 600px) {
+      .periodo-bar, .receita-form { flex-direction: column; align-items: stretch; }
+      .receita-form input { width: 100%; }
+      .ingrediente-row { grid-template-columns: 1fr 1fr; grid-template-areas: "produto produto" "qtd unidade" "remover remover"; }
+      .preview-custo { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <svg class="logo-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="2" width="15" height="8" rx="2" fill="#1677FF"/>
+        <rect x="2" y="14" width="15" height="8" rx="2" fill="#1677FF" opacity="0.7"/>
+        <rect x="10" y="14" width="15" height="8" rx="2" fill="#00C48C"/>
+        <rect x="2" y="26" width="22" height="8" rx="2" fill="#00C48C"/>
+      </svg>
+      <div class="logo-text">
+        <div class="logo-name"><span class="white">Estoque</span> <span class="green">Fácil</span></div>
+        <div class="logo-tag">CMV</div>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Menu</div>
+      <a href="gerente.html" class="nav-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        Painel Gerente
+      </a>
+      <a href="dashboard.html" class="nav-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        Estoque
+      </a>
+      <a href="movimentacoes.html" class="nav-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        Movimentações
+      </a>
+      <a href="cmv.html" class="nav-link active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        CMV
+      </a>
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="nav-link" id="btnLogout" style="width:100%;border:none;background:none;cursor:pointer;text-align:left;font-family:inherit;font-size:13.5px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sair
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-toggle" id="menuToggle" aria-label="Abrir menu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+        <span class="page-title">CMV</span>
+        <span class="breadcrumb">/ Custo da Mercadoria Vendida</span>
+      </div>
+      <div class="topbar-right">
+        <div class="user-avatar" id="avatarUser" title="Perfil">?</div>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="mensal">CMV Mensal</button>
+        <button class="tab-btn" data-tab="fichas">Fichas Técnicas</button>
+      </div>
+
+      <!-- ===================== TAB: CMV MENSAL ===================== -->
+      <div class="tab-panel active" id="tab-mensal">
+
+        <div class="periodo-bar">
+          <label class="form-label" style="margin:0">Período:</label>
+          <input type="month" id="inputPeriodo"/>
+        </div>
+
+        <div class="cmv-hero">
+          <div class="card">
+            <div class="card-header"><span class="card-title">Compras do período</span></div>
+            <div class="card-body">
+              <div class="stat-value" id="statCompras" style="font-size:24px">—</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">C.M.V. (R$)</span></div>
+            <div class="card-body">
+              <div class="stat-value" id="statCmvReais" style="font-size:24px">—</div>
+              <div class="explicacao-cmv">Custo do que saiu do estoque no período (vendido/consumido, ao custo médio)</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Receita bruta do período</span></div>
+            <div class="card-body">
+              <div class="receita-form">
+                <input class="form-input" type="number" id="inputReceita" placeholder="0,00" step="0.01" min="0"/>
+                <button class="btn btn-primary" id="btnSalvarReceita">Salvar</button>
+              </div>
+              <div class="explicacao-cmv">Informada manualmente — o sistema ainda não registra vendas diretamente.</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">C.M.V. (%)</span></div>
+            <div class="card-body">
+              <div class="cmv-percentual-grande neutro" id="statCmvPercentual">—</div>
+              <div class="explicacao-cmv">C.M.V. ÷ Receita bruta. Sem receita informada, não dá pra calcular o percentual.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">C.M.V. (%) — últimos 6 meses</span></div>
+          <div class="card-body">
+            <div class="chart-wrap"><canvas id="graficoCmv"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== TAB: FICHAS TÉCNICAS ===================== -->
+      <div class="tab-panel" id="tab-fichas">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+          <span style="color:var(--text-muted); font-size:13px">Custo calculado automaticamente a partir do preço dos ingredientes no estoque</span>
+          <button class="btn btn-primary" id="btnNovaReceita">+ Nova Receita</button>
+        </div>
+        <div id="listaReceitas" class="stats-grid"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: NOVA/EDITAR RECEITA -->
+<div class="modal-overlay" id="modalReceita">
+  <div class="modal-box" style="max-width:640px; max-height:88vh; overflow-y:auto;">
+    <h3 id="modalReceitaTitulo">Nova Receita</h3>
+
+    <div class="form-group">
+      <label class="form-label">Nome da receita</label>
+      <input class="form-input" type="text" id="receitaNome" placeholder="Ex: Bolo de Chocolate"/>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Porções que rende</label>
+        <input class="form-input" type="number" id="receitaPorcoes" value="1" min="1"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Margem de lucro (%)</label>
+        <input class="form-input" type="number" id="receitaMargem" value="30" min="0"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Modo de preparo (opcional)</label>
+      <textarea class="form-input" id="receitaModoPreparo" rows="3" placeholder="Passo a passo..."></textarea>
+    </div>
+
+    <label class="form-label">Ingredientes</label>
+    <div id="listaIngredientes"></div>
+    <button class="btn btn-ghost" id="btnAddIngrediente" type="button">+ Adicionar ingrediente</button>
+
+    <div class="preview-custo">
+      <div class="item">Custo total<strong id="previewCustoTotal">R$ 0,00</strong></div>
+      <div class="item">Custo por porção<strong id="previewCustoPorcao">R$ 0,00</strong></div>
+      <div class="item">Preço sugerido (total)<strong id="previewPrecoSugerido">R$ 0,00</strong></div>
+      <div class="item">Preço sugerido (por porção)<strong id="previewPrecoPorcao">R$ 0,00</strong></div>
+    </div>
+    <div class="aviso-conversao" id="avisoConversao" style="display:none">
+      ⚠️ Um ou mais ingredientes têm unidade incompatível com o produto do estoque — o custo desse item pode estar incorreto.
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="btnCancelarReceita">Cancelar</button>
+      <button class="btn btn-primary" id="btnSalvarReceitaModal">Salvar receita</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/toast.js"></script>
+<script src="js/unidades.js"></script>
+<script src="js/api.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Guarda de rota — só gerente/admin acessam CMV
+  const _user = JSON.parse(localStorage.getItem("user") || "{}");
+  if (!localStorage.getItem("token")) window.location.href = "index.html";
+  if (_user.role && _user.role !== "gerente" && _user.role !== "admin") window.location.href = "dashboard.html";
+
+  document.getElementById("avatarUser").textContent =
+    (localStorage.getItem("nome") || "?").charAt(0).toUpperCase();
+
+  document.getElementById("btnLogout").addEventListener("click", () => {
+    localStorage.clear(); location.href = "index.html";
+  });
+
+  function formatarReais(valor) {
+    return Number(valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  }
+
+  // ========================= TABS =========================
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+      if (btn.dataset.tab === "fichas") carregarReceitas();
+    });
+  });
+
+  // ========================= CMV MENSAL =========================
+  const inputPeriodo = document.getElementById("inputPeriodo");
+  const hoje = new Date();
+  inputPeriodo.value = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}`;
+
+  async function carregarCmv() {
+    const [ano, mes] = inputPeriodo.value.split("-").map(Number);
+    const res = await apiFetch(`/cmv?ano=${ano}&mes=${mes}`);
+    if (!res) return;
+    if (!res.ok) { showToast("Não foi possível carregar o CMV", "error"); return; }
+    aplicarNaTela(await res.json());
+  }
+
+  function aplicarNaTela(d) {
+    document.getElementById("statCompras").textContent  = formatarReais(d.compras);
+    document.getElementById("statCmvReais").textContent = formatarReais(d.cmv_reais);
+    document.getElementById("inputReceita").value       = d.receita_bruta || "";
+
+    const elPct = document.getElementById("statCmvPercentual");
+    if (d.cmv_percentual === null || d.cmv_percentual === undefined) {
+      elPct.textContent = "—";
+      elPct.className = "cmv-percentual-grande neutro";
+    } else {
+      elPct.textContent = `${d.cmv_percentual.toFixed(1)}%`;
+      elPct.className = "cmv-percentual-grande " + (d.cmv_percentual > 35 ? "alto" : "ok");
+    }
+  }
+
+  document.getElementById("btnSalvarReceita").addEventListener("click", async () => {
+    const [ano, mes] = inputPeriodo.value.split("-").map(Number);
+    const valor = parseFloat(document.getElementById("inputReceita").value || 0);
+    const res = await apiFetch("/cmv/receita", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ano, mes, valor })
+    });
+    if (!res) return;
+    if (!res.ok) { showToast("Não foi possível salvar a receita", "error"); return; }
+    aplicarNaTela(await res.json());
+    carregarHistoricoGrafico();
+    showToast("Receita bruta salva!", "success");
+  });
+
+  inputPeriodo.addEventListener("change", carregarCmv);
+
+  let chartCmv = null;
+  async function carregarHistoricoGrafico() {
+    const res = await apiFetch("/cmv/historico?meses=6");
+    if (!res) return;
+    const dados = await res.json();
+    const labels  = dados.map(p => `${String(p.mes).padStart(2, "0")}/${p.ano}`);
+    const valores = dados.map(p => p.cmv_percentual);
+
+    const ctx = document.getElementById("graficoCmv").getContext("2d");
+    if (chartCmv) chartCmv.destroy();
+    chartCmv = new Chart(ctx, {
+      type: "line",
+      data: { labels, datasets: [{
+        label: "C.M.V. (%)", data: valores,
+        borderColor: "#1677FF", backgroundColor: "rgba(22,119,255,0.12)",
+        fill: true, tension: 0.3, spanGaps: true
+      }]},
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { callback: v => v + "%" } } }
+      }
+    });
+  }
+
+  // ========================= FICHAS TÉCNICAS =========================
+  let produtosCache = [];
+  let receitaEmEdicaoId = null;
+
+  async function carregarProdutosCache() {
+    const res = await apiFetch("/produtos");
+    if (!res || !res.ok) return;
+    produtosCache = await res.json();
+  }
+
+  async function carregarReceitas() {
+    const res = await apiFetch("/receitas");
+    if (!res) return;
+    if (!res.ok) { showToast("Não foi possível carregar as receitas", "error"); return; }
+    renderizarReceitas(await res.json());
+  }
+
+  function renderizarReceitas(receitas) {
+    const container = document.getElementById("listaReceitas");
+    if (!receitas.length) {
+      container.innerHTML = `<div class="empty-state"><p>Nenhuma ficha técnica cadastrada ainda</p></div>`;
+      return;
+    }
+    container.innerHTML = receitas.map(r => `
+      <div class="card ficha-card" onclick="abrirModalReceita(${r.id})">
+        <div class="ficha-nome">${r.nome}</div>
+        <div class="ficha-meta">${r.porcoes} porção(ões) · ${r.total_ingredientes} ingrediente(s) · margem ${r.margem_lucro}%</div>
+        <div class="ficha-acoes">
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); abrirModalReceita(${r.id})">Editar</button>
+          <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); excluirReceita(${r.id}, '${r.nome.replace(/'/g, "\\'")}')">Excluir</button>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  window.excluirReceita = async (id, nome) => {
+    const confirmar = await showConfirm({
+      titulo: "Excluir receita",
+      mensagem: `Tem certeza que deseja excluir a ficha técnica "${nome}"?<br>Essa ação não pode ser desfeita.`,
+      confirmTexto: "Sim, excluir",
+      cancelTexto: "Cancelar",
+      tipo: "danger",
+    });
+    if (!confirmar) return;
+    const res = await apiFetch(`/receitas/${id}`, { method: "DELETE" });
+    if (!res || !res.ok) { showToast("Erro ao excluir receita", "error"); return; }
+    showToast("Receita excluída", "success");
+    carregarReceitas();
+  };
+
+  // -------- Modal de criar/editar --------
+  const modalReceita = document.getElementById("modalReceita");
+  const listaIngredientesEl = document.getElementById("listaIngredientes");
+
+  document.getElementById("btnNovaReceita").addEventListener("click", () => abrirModalReceita(null));
+  document.getElementById("btnCancelarReceita").addEventListener("click", () => modalReceita.classList.remove("open"));
+
+  window.abrirModalReceita = async (id) => {
+    if (produtosCache.length === 0) await carregarProdutosCache();
+
+    receitaEmEdicaoId = id;
+    document.getElementById("modalReceitaTitulo").textContent = id ? "Editar Receita" : "Nova Receita";
+    listaIngredientesEl.innerHTML = "";
+
+    if (id) {
+      const res = await apiFetch(`/receitas/${id}`);
+      if (!res || !res.ok) { showToast("Erro ao carregar receita", "error"); return; }
+      const r = await res.json();
+      document.getElementById("receitaNome").value = r.nome;
+      document.getElementById("receitaPorcoes").value = r.porcoes;
+      document.getElementById("receitaMargem").value = r.margem_lucro;
+      document.getElementById("receitaModoPreparo").value = r.modo_preparo || "";
+      r.itens.forEach(item => adicionarLinhaIngrediente({
+        produto_id: item.produto_id, quantidade: item.quantidade, unidade_medida: item.unidade_medida
+      }));
+    } else {
+      document.getElementById("receitaNome").value = "";
+      document.getElementById("receitaPorcoes").value = 1;
+      document.getElementById("receitaMargem").value = 30;
+      document.getElementById("receitaModoPreparo").value = "";
+      adicionarLinhaIngrediente();
+    }
+
+    recalcularPreview();
+    modalReceita.classList.add("open");
+  };
+
+  function adicionarLinhaIngrediente(dados = null) {
+    const row = document.createElement("div");
+    row.className = "ingrediente-row";
+
+    const opcoesProduto = produtosCache.map(p =>
+      `<option value="${p.id}" ${dados && dados.produto_id === p.id ? "selected" : ""}>${p.produto}</option>`
+    ).join("");
+
+    row.innerHTML = `
+      <select class="form-input ingrediente-produto">${opcoesProduto}</select>
+      <input class="form-input ingrediente-qtd" type="number" min="0" step="0.01" placeholder="Qtd" value="${dados ? dados.quantidade : ""}"/>
+      <select class="form-input ingrediente-unidade"></select>
+      <button class="btn btn-ghost btn-sm" type="button" title="Remover">×</button>
+    `;
+    listaIngredientesEl.appendChild(row);
+
+    const selectProduto  = row.querySelector(".ingrediente-produto");
+    const selectUnidade  = row.querySelector(".ingrediente-unidade");
+    const inputQtd        = row.querySelector(".ingrediente-qtd");
+    const btnRemover      = row.querySelector("button");
+
+    function atualizarUnidadesDaLinha() {
+      const produto = produtosCache.find(p => p.id == selectProduto.value);
+      const unidadeBase = produto ? produto.unidade_medida : "unidade";
+      const opcoes = unidadesCompativeis(unidadeBase);
+      selectUnidade.innerHTML = opcoes.map(u => `<option value="${u}">${labelUnidade(u)}</option>`).join("");
+      selectUnidade.value = (dados && opcoes.includes(dados.unidade_medida)) ? dados.unidade_medida : unidadeBase;
+    }
+    atualizarUnidadesDaLinha();
+
+    selectProduto.addEventListener("change", () => { atualizarUnidadesDaLinha(); recalcularPreview(); });
+    selectUnidade.addEventListener("change", recalcularPreview);
+    inputQtd.addEventListener("input", recalcularPreview);
+    btnRemover.addEventListener("click", () => { row.remove(); recalcularPreview(); });
+  }
+
+  document.getElementById("btnAddIngrediente").addEventListener("click", () => adicionarLinhaIngrediente());
+
+  function lerIngredientesDoFormulario() {
+    return Array.from(listaIngredientesEl.querySelectorAll(".ingrediente-row")).map(row => ({
+      produto_id: parseInt(row.querySelector(".ingrediente-produto").value),
+      quantidade: parseFloat(row.querySelector(".ingrediente-qtd").value || 0),
+      unidade_medida: row.querySelector(".ingrediente-unidade").value
+    })).filter(i => i.produto_id && i.quantidade > 0);
+  }
+
+  function recalcularPreview() {
+    const itens = lerIngredientesDoFormulario();
+    let custoTotal = 0;
+    let avisoConversao = false;
+
+    itens.forEach(item => {
+      const produto = produtosCache.find(p => p.id === item.produto_id);
+      if (!produto) return;
+      const convertido = converterQuantidade(item.quantidade, item.unidade_medida, produto.unidade_medida);
+      if (convertido === null) { avisoConversao = true; return; }
+      custoTotal += convertido * Number(produto.valor || 0);
+    });
+
+    const porcoes = parseFloat(document.getElementById("receitaPorcoes").value || 1) || 1;
+    const margem  = parseFloat(document.getElementById("receitaMargem").value || 0);
+    const precoSugerido = custoTotal * (1 + margem / 100);
+
+    document.getElementById("previewCustoTotal").textContent    = formatarReais(custoTotal);
+    document.getElementById("previewCustoPorcao").textContent   = formatarReais(custoTotal / porcoes);
+    document.getElementById("previewPrecoSugerido").textContent = formatarReais(precoSugerido);
+    document.getElementById("previewPrecoPorcao").textContent   = formatarReais(precoSugerido / porcoes);
+    document.getElementById("avisoConversao").style.display     = avisoConversao ? "block" : "none";
+  }
+
+  document.getElementById("receitaPorcoes").addEventListener("input", recalcularPreview);
+  document.getElementById("receitaMargem").addEventListener("input", recalcularPreview);
+
+  document.getElementById("btnSalvarReceitaModal").addEventListener("click", async () => {
+    const nome = document.getElementById("receitaNome").value.trim();
+    if (!nome) { showToast("Digite o nome da receita", "warning"); return; }
+
+    const corpo = {
+      nome,
+      porcoes: parseFloat(document.getElementById("receitaPorcoes").value || 1),
+      margem_lucro: parseFloat(document.getElementById("receitaMargem").value || 0),
+      modo_preparo: document.getElementById("receitaModoPreparo").value,
+      itens: lerIngredientesDoFormulario()
+    };
+
+    const url = receitaEmEdicaoId ? `/receitas/${receitaEmEdicaoId}` : "/receitas";
+    const method = receitaEmEdicaoId ? "PATCH" : "POST";
+
+    const res = await apiFetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(corpo)
+    });
+    if (!res) return;
+    if (!res.ok) { showToast("Erro ao salvar receita", "error"); return; }
+
+    modalReceita.classList.remove("open");
+    showToast("Receita salva!", "success");
+    carregarReceitas();
+  });
+
+  // ========================= INIT =========================
+  carregarCmv();
+  carregarHistoricoGrafico();
+</script>
+<script src="js/mobile-menu.js"></script>
+<script src="js/mobile-enhancements.js"></script>
+</body>
+</html>
