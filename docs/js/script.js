@@ -167,6 +167,17 @@ async function carregar(setorId) {
 // =========================
 // RENDERIZAR PRODUTOS
 // =========================
+function badgeStatusEstoque(status) {
+  const mapa = {
+    sem_estoque: { classe: "badge-danger",  texto: "sem estoque", titulo: "Estoque zerado" },
+    baixo:       { classe: "badge-warning", texto: "baixo",       titulo: "No ponto de reposição ou abaixo" },
+    alto:        { classe: "badge-info",    texto: "alto",        titulo: "Bem acima do ponto de reposição (estoque parado)" },
+  };
+  const info = mapa[status];
+  if (!info) return ""; // "normal" não mostra badge nenhum
+  return ` <span class="badge ${info.classe}" title="${info.titulo}">${info.texto}</span>`;
+}
+
 function renderizarProdutos(produtos) {
   const lista = document.getElementById("lista");
   if (!lista) return;
@@ -199,11 +210,7 @@ function renderizarProdutos(produtos) {
       </td>
       <td style="text-transform:capitalize">${item.produto}</td>
       <td>${setorNome}</td>
-      <td>${formatarQuantidade(item.quantidade, item.unidade_medida)}${
-        Number(item.quantidade) <= Number(item.estoque_minimo ?? 5)
-          ? ' <span class="badge badge-warning" title="Estoque no mínimo ou abaixo">baixo</span>'
-          : ''
-      }</td>
+      <td>${formatarQuantidade(item.quantidade, item.unidade_medida)}${badgeStatusEstoque(item.status_estoque)}</td>
       <td>R$ ${Number(item.valor || 0).toFixed(2)}</td>
       <td class="acoes">
         <button class="btn btn-success btn-sm" onclick="entrada(${item.id})" title="Entrada de estoque">

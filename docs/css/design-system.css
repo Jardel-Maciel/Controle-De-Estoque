@@ -554,6 +554,7 @@ tr:last-child td { border-bottom: none; }
 }
 
 .badge-success { background: var(--success-dim); color: var(--success); }
+.badge-info    { background: var(--accent-dim);  color: var(--accent); }
 .badge-danger  { background: var(--danger-dim);  color: var(--danger); }
 .badge-warning { background: var(--warning-dim); color: var(--warning); }
 .badge-accent  { background: var(--accent-dim);  color: var(--accent); }
