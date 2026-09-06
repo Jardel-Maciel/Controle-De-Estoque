@@ -37,12 +37,16 @@
     toast.className = `toast toast-${tipo}`;
     toast.innerHTML = `
       <span class="toast-icon">${icons[tipo] || icons.info}</span>
-      <span class="toast-msg">${mensagem}</span>
+      <span class="toast-msg"></span>
       <button class="toast-close" aria-label="Fechar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button>
       <div class="toast-progress"></div>
     `;
+    // texto sempre via textContent — a mensagem pode vir de qualquer lugar
+    // (erro do backend, nome de produto cadastrado por alguém, etc.) e não
+    // deve nunca ser interpretada como HTML
+    toast.querySelector(".toast-msg").textContent = mensagem;
 
     // Fechar ao clicar no X
     toast.querySelector(".toast-close").onclick = () => removerToast(toast);

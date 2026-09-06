@@ -444,6 +444,7 @@
 </div>
 
 <script src="js/config.js"></script>
+<script src="js/utils.js"></script>
 <script src="js/toast.js"></script>
 <script>
 const API   = window.API_URL;
@@ -638,8 +639,8 @@ function renderDashTable() {
 function renderDashRows(dados) {
   document.getElementById("dashTableBody").innerHTML = dados.map(t => `
     <tr>
-      <td><strong>${t.nome}</strong></td>
-      <td><span class="badge b-gray">${t.codigo}</span></td>
+      <td><strong>${escapeHtml(t.nome)}</strong></td>
+      <td><span class="badge b-gray">${escapeHtml(t.codigo)}</span></td>
       <td>${t.total_usuarios}</td>
       <td>${t.ativos}</td>
       <td><span class="badge ${t.ativo ? 'b-green' : 'b-red'}">${t.ativo ? 'Ativa' : 'Inativa'}</span></td>
@@ -662,10 +663,10 @@ function renderUserTable() {
 function renderUserRows(lista) {
   document.getElementById("userTableBody").innerHTML = lista.map(u => `
     <tr>
-      <td><strong>${u.nome}</strong></td>
-      <td style="color:var(--muted)">${u.email}</td>
-      <td>${u.tenant_nome || "—"}</td>
-      <td><span class="badge ${u.role === 'admin' ? 'b-indigo' : 'b-blue'}">${u.role}</span></td>
+      <td><strong>${escapeHtml(u.nome)}</strong></td>
+      <td style="color:var(--muted)">${escapeHtml(u.email)}</td>
+      <td>${escapeHtml(u.tenant_nome) || "—"}</td>
+      <td><span class="badge ${u.role === 'admin' ? 'b-indigo' : 'b-blue'}">${escapeHtml(u.role)}</span></td>
       <td><span class="badge ${u.ativo ? 'b-green' : 'b-red'}">${u.ativo ? 'Ativo' : 'Inativo'}</span></td>
       <td style="display:flex;gap:6px">
         <button class="action-btn" style="background:rgba(250,204,21,.15);color:#facc15"
@@ -675,7 +676,7 @@ function renderUserRows(lista) {
           ${u.ativo ? 'Desativar' : 'Ativar'}
         </button>
         <button class="action-btn" style="background:rgba(239,68,68,.15);color:#ef4444"
-          onclick="excluirUsuario(${u.id}, '${u.nome}')">🗑 Excluir</button>
+          onclick="excluirUsuario(${u.id}, '${escapeForInlineJs(u.nome)}')">🗑 Excluir</button>
       </td>
     </tr>
   `).join("") || `<tr><td colspan="6" class="empty-state">Nenhum usuário encontrado.</td></tr>`;
@@ -698,8 +699,8 @@ function renderEmpTable() {
 function renderEmpRows(lista) {
   document.getElementById("empTableBody").innerHTML = lista.map(t => `
     <tr>
-      <td><strong>${t.nome}</strong></td>
-      <td><span class="badge b-gray">${t.codigo}</span></td>
+      <td><strong>${escapeHtml(t.nome)}</strong></td>
+      <td><span class="badge b-gray">${escapeHtml(t.codigo)}</span></td>
       <td>${t.total_usuarios}</td>
       <td><span class="badge ${t.ativo ? 'b-green' : 'b-red'}">${t.ativo ? 'Ativa' : 'Inativa'}</span></td>
     </tr>
@@ -726,7 +727,7 @@ async function toggleUser(id) {
 async function excluirUsuario(id, nome) {
   const confirmar = await showConfirm({
     titulo:       "Excluir usuário",
-    mensagem:     `Tem certeza que deseja excluir <strong>${nome}</strong>?<br>Essa ação não pode ser desfeita.`,
+    mensagem:     `Tem certeza que deseja excluir <strong>${escapeHtml(nome)}</strong>?<br>Essa ação não pode ser desfeita.`,
     confirmTexto: "Sim, excluir",
     cancelTexto:  "Cancelar",
     tipo:         "danger",

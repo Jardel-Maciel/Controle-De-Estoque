@@ -208,8 +208,8 @@ function renderizarProdutos(produtos) {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
       </td>
-      <td style="text-transform:capitalize">${item.produto}</td>
-      <td>${setorNome}</td>
+      <td style="text-transform:capitalize">${escapeHtml(item.produto)}</td>
+      <td>${escapeHtml(setorNome)}</td>
       <td>${formatarQuantidade(item.quantidade, item.unidade_medida)}${badgeStatusEstoque(item.status_estoque)}</td>
       <td>R$ ${Number(item.valor || 0).toFixed(2)}</td>
       <td class="acoes">
@@ -241,11 +241,11 @@ function renderizarProdutos(produtos) {
     trDetalhes.innerHTML = `
       <td colspan="6">
         <div class="detalhes-grid">
-          <div class="item"><span class="label">Fornecedor</span><span class="valor" style="text-transform:capitalize">${item.fornecedor || "-"}</span></div>
-          <div class="item"><span class="label">CNPJ</span><span class="valor">${item.cnpj || "-"}</span></div>
-          <div class="item"><span class="label">Nota fiscal</span><span class="valor">${item.numero_nota || "-"}</span></div>
-          <div class="item"><span class="label">Emissão</span><span class="valor">${item.data_emissao || "-"}</span></div>
-          <div class="item"><span class="label">Contato</span><span class="valor">${item.contato || "-"}</span></div>
+          <div class="item"><span class="label">Fornecedor</span><span class="valor" style="text-transform:capitalize">${escapeHtml(item.fornecedor) || "-"}</span></div>
+          <div class="item"><span class="label">CNPJ</span><span class="valor">${escapeHtml(item.cnpj) || "-"}</span></div>
+          <div class="item"><span class="label">Nota fiscal</span><span class="valor">${escapeHtml(item.numero_nota) || "-"}</span></div>
+          <div class="item"><span class="label">Emissão</span><span class="valor">${escapeHtml(item.data_emissao) || "-"}</span></div>
+          <div class="item"><span class="label">Contato</span><span class="valor">${escapeHtml(item.contato) || "-"}</span></div>
         </div>
       </td>`;
     lista.appendChild(trDetalhes);
@@ -335,7 +335,7 @@ window.editarProduto = (id) => {
 
   if (usuario.role === "gerente" || usuario.role === "admin") {
     selectSetor.innerHTML = `<option value="">Geral (sem setor)</option>` +
-      setoresCache.map(s => `<option value="${s.id}">${s.nome}</option>`).join("");
+      setoresCache.map(s => `<option value="${s.id}">${escapeHtml(s.nome)}</option>`).join("");
     selectSetor.value = item.setor_id || "";
     grupoSetor.style.display = "";
   } else {
@@ -443,12 +443,12 @@ async function carregarHistorico() {
     dados.forEach((item) => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td style="text-transform:capitalize">${item.produto}</td>
-        <td style="text-transform:capitalize">${item.tipo}</td>
+        <td style="text-transform:capitalize">${escapeHtml(item.produto)}</td>
+        <td style="text-transform:capitalize">${escapeHtml(item.tipo)}</td>
         <td>${item.quantidade}</td>
         <td>${new Date(item.data).toLocaleString()}</td>
-        <td style="text-transform:capitalize">${item.comentario || "-"}</td>
-        <td style="text-transform:capitalize">${item.responsavel || "-"}</td>`;
+        <td style="text-transform:capitalize">${escapeHtml(item.comentario) || "-"}</td>
+        <td style="text-transform:capitalize">${escapeHtml(item.responsavel) || "-"}</td>`;
       lista.appendChild(tr);
     });
   } catch (err) {
@@ -669,7 +669,7 @@ function _abrirModalExcel(abas) {
       ? '<span style="color:var(--green);margin-left:5px;font-size:11px;">✓</span>'
       : '<span style="color:var(--text-muted);margin-left:5px;font-size:11px;">—</span>';
 
-    btn.innerHTML = aba.nome + badge;
+    btn.innerHTML = escapeHtml(aba.nome) + badge;
 
     btn.addEventListener("click", function() {
       // Marca tab ativa
@@ -694,7 +694,7 @@ function _abrirModalExcel(abas) {
       if (info) {
         if (aba.tem_produto) {
           info.innerHTML = 'Campos detectados: <strong style="color:var(--green)">'
-            + aba.colunas_mapeadas.join(", ") + '</strong>';
+            + escapeHtml(aba.colunas_mapeadas.join(", ")) + '</strong>';
         } else {
           info.innerHTML = '<span style="color:var(--warning)">⚠ Coluna de produto não detectada nessa aba</span>';
         }

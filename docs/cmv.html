@@ -273,6 +273,7 @@
 </div>
 
 <script src="js/config.js"></script>
+<script src="js/utils.js"></script>
 <script src="js/toast.js"></script>
 <script src="js/unidades.js"></script>
 <script src="js/api.js"></script>
@@ -400,11 +401,11 @@
     }
     container.innerHTML = receitas.map(r => `
       <div class="card ficha-card" onclick="abrirModalReceita(${r.id})">
-        <div class="ficha-nome">${r.nome}</div>
+        <div class="ficha-nome">${escapeHtml(r.nome)}</div>
         <div class="ficha-meta">${r.porcoes} porção(ões) · ${r.total_ingredientes} ingrediente(s) · margem ${r.margem_lucro}%</div>
         <div class="ficha-acoes">
           <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); abrirModalReceita(${r.id})">Editar</button>
-          <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); excluirReceita(${r.id}, '${r.nome.replace(/'/g, "\\'")}')">Excluir</button>
+          <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); excluirReceita(${r.id}, '${escapeForInlineJs(r.nome)}')">Excluir</button>
         </div>
       </div>
     `).join("");
@@ -413,7 +414,7 @@
   window.excluirReceita = async (id, nome) => {
     const confirmar = await showConfirm({
       titulo: "Excluir receita",
-      mensagem: `Tem certeza que deseja excluir a ficha técnica "${nome}"?<br>Essa ação não pode ser desfeita.`,
+      mensagem: `Tem certeza que deseja excluir a ficha técnica "${escapeHtml(nome)}"?<br>Essa ação não pode ser desfeita.`,
       confirmTexto: "Sim, excluir",
       cancelTexto: "Cancelar",
       tipo: "danger",
@@ -470,7 +471,7 @@
     row.className = "ingrediente-row";
 
     const opcoesProduto = produtosCache.map(p =>
-      `<option value="${p.id}" ${dados && dados.produto_id === p.id ? "selected" : ""}>${p.produto}</option>`
+      `<option value="${p.id}" ${dados && dados.produto_id === p.id ? "selected" : ""}>${escapeHtml(p.produto)}</option>`
     ).join("");
 
     row.innerHTML = `

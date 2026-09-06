@@ -342,6 +342,7 @@
 </div>
 
 <script src="js/config.js"></script>
+<script src="js/utils.js"></script>
 <script src="js/toast.js"></script>
 <script src="js/unidades.js"></script>
 <script src="js/api.js"></script>
@@ -418,12 +419,12 @@
 
     tbody.innerHTML = dados.map(m => `
       <tr>
-        <td><strong>${m.produto}</strong></td>
+        <td><strong>${escapeHtml(m.produto)}</strong></td>
         <td><span class="badge-${m.tipo}">${m.tipo}</span></td>
         <td>${formatarQuantidade(m.quantidade, m.unidade_medida)}</td>
-        <td>${m.responsavel || "—"}</td>
-        <td style="font-size:12px;color:var(--text-muted)">${m.data || "—"}</td>
-        <td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis">${m.comentario || "—"}</td>
+        <td>${escapeHtml(m.responsavel) || "—"}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${escapeHtml(m.data) || "—"}</td>
+        <td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis">${escapeHtml(m.comentario) || "—"}</td>
         <td>
           <div style="display:flex;gap:6px">
             <button class="btn btn-sm" style="background:var(--success-dim);color:var(--success);border:1px solid rgba(0,196,140,0.3)"
@@ -482,7 +483,7 @@
     } else {
       lista.innerHTML = setores.map(s => `
         <span class="badge-role-cliente" style="display:flex;align-items:center;gap:6px;padding:4px 10px;">
-          ${s.nome}
+          ${escapeHtml(s.nome)}
           <button class="btn btn-ghost btn-sm" style="padding:0 4px" title="Desativar setor" onclick="toggleSetor(${s.id})">✕</button>
         </span>
       `).join("");
@@ -490,7 +491,7 @@
 
     if (selectNovoUsuario) {
       selectNovoUsuario.innerHTML = `<option value="">Geral (acesso a todos os setores)</option>` +
-        setores.map(s => `<option value="${s.id}">${s.nome}</option>`).join("");
+        setores.map(s => `<option value="${s.id}">${escapeHtml(s.nome)}</option>`).join("");
     }
   }
 
@@ -545,10 +546,10 @@
 
     tbody.innerHTML = dados.map(u => `
       <tr>
-        <td><strong>${u.nome}</strong></td>
-        <td style="color:var(--text-secondary);font-size:12px">${u.email}</td>
+        <td><strong>${escapeHtml(u.nome)}</strong></td>
+        <td style="color:var(--text-secondary);font-size:12px">${escapeHtml(u.email)}</td>
         <td><span class="badge-role-${u.role === 'gerente' ? 'gerente' : 'cliente'}">${u.role === 'gerente' ? 'Gerente' : 'Funcionário'}</span></td>
-        <td>${u.setor_nome || 'Geral'}</td>
+        <td>${escapeHtml(u.setor_nome) || 'Geral'}</td>
         <td><span class="${u.ativo ? 'badge-ativo' : 'badge-inativo'}">${u.ativo ? 'Ativo' : 'Inativo'}</span></td>
         <td>
           <button class="btn btn-ghost btn-sm" onclick="toggleUsuario(${u.id}, ${u.ativo})">
@@ -622,7 +623,7 @@
         <div class="ranking-item">
           <div class="ranking-pos">${i + 1}</div>
           <div style="flex:1;min-width:0">
-            <div style="font-size:13px;font-weight:500;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.responsavel}</div>
+            <div style="font-size:13px;font-weight:500;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(r.responsavel)}</div>
             <div class="ranking-bar-wrap">
               <div class="ranking-bar" style="width:${Math.round((r.total / max) * 100)}%"></div>
             </div>
@@ -638,9 +639,9 @@
     } else {
       tbody.innerHTML = d.recentes.map(m => `
         <tr>
-          <td><strong>${m.produto}</strong></td>
+          <td><strong>${escapeHtml(m.produto)}</strong></td>
           <td><span class="badge-${m.tipo}">${m.tipo}</span></td>
-          <td style="font-size:12px">${m.responsavel || "—"}</td>
+          <td style="font-size:12px">${escapeHtml(m.responsavel) || "—"}</td>
           <td><span class="badge-${m.status || 'aprovado'}">${m.status || 'aprovado'}</span></td>
         </tr>
       `).join("");
@@ -687,13 +688,13 @@
 
     tbody.innerHTML = lista.map(m => `
       <tr>
-        <td><strong>${m.produto || "—"}</strong></td>
+        <td><strong>${escapeHtml(m.produto) || "—"}</strong></td>
         <td><span class="badge-${m.tipo}">${m.tipo}</span></td>
         <td>${formatarQuantidade(m.quantidade, m.unidade_medida)}</td>
-        <td style="font-size:12px">${m.responsavel || "—"}</td>
-        <td style="font-size:12px;color:var(--text-muted)">${m.aprovado_por || "—"}</td>
-        <td style="font-size:12px;color:var(--text-muted);white-space:nowrap">${m.data || "—"}</td>
-        <td style="font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${m.comentario || ""}">${m.comentario || "—"}</td>
+        <td style="font-size:12px">${escapeHtml(m.responsavel) || "—"}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${escapeHtml(m.aprovado_por) || "—"}</td>
+        <td style="font-size:12px;color:var(--text-muted);white-space:nowrap">${escapeHtml(m.data) || "—"}</td>
+        <td style="font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(m.comentario)}">${escapeHtml(m.comentario) || "—"}</td>
         <td><span class="badge-${m.status}">${m.status}</span></td>
       </tr>
     `).join("");

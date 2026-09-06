@@ -236,7 +236,7 @@ function renderizarRanking(ranking) {
     else if (i === 1) posClass = "silver";
     else if (i === 2) posClass = "bronze";
 
-    const nome = item.produto.charAt(0).toUpperCase() + item.produto.slice(1);
+    const nome = escapeHtml(item.produto.charAt(0).toUpperCase() + item.produto.slice(1));
 
     return `
       <div class="ranking-item">
@@ -294,11 +294,11 @@ function preencherTabela(lista) {
       : `<span class="badge badge-danger">Saída</span>`;
 
     tr.innerHTML = `
-      <td style="text-transform:capitalize">${item.produto}</td>
+      <td style="text-transform:capitalize">${escapeHtml(item.produto)}</td>
       <td>${badge}</td>
       <td>${formatarQuantidade(item.quantidade, item.unidade_medida)}</td>
-      <td>${item.responsavel || "—"}</td>
-      <td>${item.comentario || "—"}</td>
+      <td>${escapeHtml(item.responsavel) || "—"}</td>
+      <td>${escapeHtml(item.comentario) || "—"}</td>
       <td>${item.data ? new Date(item.data).toLocaleString("pt-BR") : "—"}</td>`;
     tbody.appendChild(tr);
   });
