@@ -32,7 +32,7 @@ Desenvolvido do zero com foco em segurança, escalabilidade e experiência do us
 
 | Campo | Valor |
 |---|---|
-| 🔗 **URL** | https://estoquefacilsystem.netlify.app |
+| 🔗 **URL** | https://estoquefacilsystem.vercel.app |
 | 📧 **Email** | `demo@estoquefacil.com` |
 | 🔑 **Senha** | `demo1234` |
 
