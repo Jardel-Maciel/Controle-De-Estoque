@@ -926,14 +926,37 @@ document.getElementById("btnBaixarPdfCompras")?.addEventListener("click", () => 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   const hoje = new Date().toLocaleDateString("pt-BR");
+  const LARGURA = doc.internal.pageSize.getWidth();
 
-  doc.setFontSize(16);
-  doc.text("Lista de Compras — Estoque Fácil", 14, 18);
-  doc.setFontSize(10);
-  doc.setTextColor(120);
-  doc.text(`Gerada em ${hoje}`, 14, 24);
+  // Cabeçalho com a identidade visual do Estoque Fácil (mesmo fundo escuro
+  // e as cores azul/verde do logo do sistema) — desenhado em toda página nova.
+  function desenharCabecalho() {
+    doc.setFillColor(8, 21, 38);
+    doc.rect(0, 0, LARGURA, 26, "F");
 
-  let y = 36;
+    doc.setFillColor(22, 119, 255);
+    doc.roundedRect(14, 9, 7, 4, 1, 1, "F");
+    doc.setFillColor(0, 196, 140);
+    doc.roundedRect(23, 9, 7, 4, 1, 1, "F");
+
+    doc.setFontSize(14);
+    doc.setFont(undefined, "bold");
+    doc.setTextColor(255, 255, 255);
+    doc.text("Estoque", 36, 16);
+    const larguraEstoque = doc.getTextWidth("Estoque ");
+    doc.setTextColor(22, 119, 255);
+    doc.text("Fácil", 36 + larguraEstoque, 16);
+
+    doc.setFont(undefined, "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(180, 195, 215);
+    doc.text("Lista de Compras", 14, 22.5);
+    doc.text(`Gerada em ${hoje}`, LARGURA - 14, 22.5, { align: "right" });
+  }
+
+  desenharCabecalho();
+
+  let y = 40;
   const grupos = {};
   _ultimaListaCompras.forEach(p => {
     const forn = p.fornecedor?.trim() || "Sem fornecedor definido";
@@ -942,17 +965,20 @@ document.getElementById("btnBaixarPdfCompras")?.addEventListener("click", () => 
   });
 
   Object.entries(grupos).forEach(([fornecedor, itens]) => {
-    if (y > 270) { doc.addPage(); y = 20; }
+    if (y > 265) { doc.addPage(); desenharCabecalho(); y = 40; }
     doc.setFontSize(12);
+    doc.setFont(undefined, "bold");
     doc.setTextColor(22, 119, 255);
     doc.text(fornecedor, 14, y);
+    doc.setFont(undefined, "normal");
     y += 7;
 
     itens.forEach(p => {
-      if (y > 280) { doc.addPage(); y = 20; }
+      if (y > 280) { doc.addPage(); desenharCabecalho(); y = 40; }
       doc.setFontSize(10);
       doc.setTextColor(30, 30, 30);
       doc.text(String(p.produto).substring(0, 45), 16, y);
+      doc.setTextColor(0, 150, 110);
       doc.text(`comprar ${formatarQuantidade(p.quantidade_sugerida, p.unidade_medida)}`, 150, y);
       y += 6;
     });
