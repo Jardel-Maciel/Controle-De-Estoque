@@ -27,6 +27,12 @@
     .switch input:checked + .switch-track { background: var(--accent); }
     .switch input:checked + .switch-track::before { transform: translateX(18px); }
     .explicacao { font-size: 12.5px; color: var(--text-muted); margin-top: 4px; line-height: 1.5; }
+    .dia-toggle {
+      width: 42px; height: 36px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--surface-2); color: var(--text-muted); font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .dia-toggle.ativo { background: var(--accent); border-color: var(--accent); color: white; }
   </style>
 </head>
 <body>
@@ -122,7 +128,14 @@
             <div class="explicacao">Um lote entra no e-mail quando faltar esse tanto de dias (ou menos) pra vencer.</div>
           </div>
 
+          <div class="form-group">
+            <label class="form-label">Em quais dias enviar</label>
+            <div id="diasSemana" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;"></div>
+            <div class="explicacao">Marque quantos dias quiser — a quantidade de e-mails por semana é só a soma dos dias marcados. Só manda no dia se tiver algo pra reportar.</div>
+          </div>
+
           <button class="btn btn-primary" id="btnSalvarConfig" style="margin-top:10px">Salvar configurações</button>
+          <button class="btn btn-ghost" id="btnTestarAlerta" style="margin-top:10px; margin-left:8px;">📧 Enviar e-mail de teste agora</button>
         </div>
       </div>
     </div>
@@ -145,6 +158,26 @@
     localStorage.clear(); location.href = "index.html";
   });
 
+  // 0=segunda ... 6=domingo, igual ao date.weekday() do Python
+  const NOMES_DIAS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+  const diasSemanaEl = document.getElementById("diasSemana");
+  let diasSelecionados = new Set([0, 1, 2, 3, 4, 5, 6]);
+
+  function renderizarDiasSemana() {
+    diasSemanaEl.innerHTML = NOMES_DIAS.map((nome, i) => `
+      <button type="button" class="dia-toggle ${diasSelecionados.has(i) ? 'ativo' : ''}" data-dia="${i}">${nome}</button>
+    `).join("");
+    diasSemanaEl.querySelectorAll(".dia-toggle").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const dia = parseInt(btn.dataset.dia);
+        if (diasSelecionados.has(dia)) diasSelecionados.delete(dia);
+        else diasSelecionados.add(dia);
+        renderizarDiasSemana();
+      });
+    });
+  }
+  renderizarDiasSemana();
+
   async function carregarConfiguracoes() {
     const res = await apiFetch("/configuracoes");
     if (!res || !res.ok) return;
@@ -152,28 +185,61 @@
     document.getElementById("alertasAtivos").checked = !!d.alertas_ativos;
     document.getElementById("emailAlertas").value = d.email_alertas || "";
     document.getElementById("diasValidade").value = d.dias_alerta_validade || 7;
+
+    const salvos = (d.dias_semana_alerta || "0,1,2,3,4,5,6").split(",").map(n => parseInt(n));
+    diasSelecionados = new Set(salvos);
+    renderizarDiasSemana();
   }
 
   document.getElementById("btnSalvarConfig").addEventListener("click", async () => {
     const alertas_ativos = document.getElementById("alertasAtivos").checked;
     const email_alertas = document.getElementById("emailAlertas").value.trim();
     const dias_alerta_validade = parseInt(document.getElementById("diasValidade").value || 7);
+    const dias_semana_alerta = Array.from(diasSelecionados);
 
     if (alertas_ativos && !email_alertas) {
       showToast("Informe um e-mail pra ativar os alertas", "warning");
+      return;
+    }
+    if (alertas_ativos && dias_semana_alerta.length === 0) {
+      showToast("Marque pelo menos um dia da semana", "warning");
       return;
     }
 
     const res = await apiFetch("/configuracoes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ alertas_ativos, email_alertas, dias_alerta_validade })
+      body: JSON.stringify({ alertas_ativos, email_alertas, dias_alerta_validade, dias_semana_alerta })
     });
     if (!res) return;
     const d = await res.json();
     if (!res.ok) { showToast(d.erro || "Erro ao salvar", "error"); return; }
 
     showToast("Configurações salvas!", "success");
+  });
+
+  document.getElementById("btnTestarAlerta").addEventListener("click", async () => {
+    const email = document.getElementById("emailAlertas").value.trim();
+    if (!email) { showToast("Preencha o e-mail antes de testar", "warning"); return; }
+
+    const btn = document.getElementById("btnTestarAlerta");
+    btn.disabled = true;
+    btn.textContent = "Enviando...";
+
+    try {
+      const res = await apiFetch("/configuracoes/testar-alerta", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+      if (!res) return;
+      const d = await res.json();
+      if (!res.ok) { showToast(d.erro || "Erro ao enviar teste", "error"); return; }
+      showToast(d.msg, "success");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "📧 Enviar e-mail de teste agora";
+    }
   });
 
   carregarConfiguracoes();
