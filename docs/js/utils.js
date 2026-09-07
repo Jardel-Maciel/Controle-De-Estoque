@@ -39,3 +39,26 @@ function escapeForInlineJs(valor) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 }
+
+/**
+ * Motivos de uma saída de estoque — precisa bater com backend/utils/motivos.py
+ */
+const MOTIVOS_SAIDA = {
+  consumo:           "Consumo / Venda",
+  perda_vencimento:  "Perda — vencimento",
+  perda_dano:        "Perda — dano/quebra",
+  erro_registro:     "Erro de registro / ajuste",
+};
+
+function popularSelectMotivos(select, selecionado) {
+  if (!select) return;
+  select.innerHTML = Object.entries(MOTIVOS_SAIDA)
+    .map(([valor, label]) => `<option value="${valor}">${label}</option>`)
+    .join("");
+  select.value = selecionado && MOTIVOS_SAIDA[selecionado] ? selecionado : "consumo";
+}
+
+/** true se o motivo for algum tipo de perda (não consumo/venda normal). */
+function ehMotivoPerda(motivo) {
+  return motivo && motivo !== "consumo" && MOTIVOS_SAIDA[motivo] !== undefined;
+}

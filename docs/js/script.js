@@ -89,6 +89,12 @@ function abrirModal(tipo, id) {
   if (labelQtdModal) {
     labelQtdModal.textContent = produto ? `Quantidade (${labelUnidade(produto.unidade_medida)})` : "Quantidade";
   }
+  // O motivo só faz sentido numa saída (consumo normal ou algum tipo de perda)
+  const grupoMotivo = document.getElementById("grupoMotivoSaida");
+  if (grupoMotivo) {
+    grupoMotivo.style.display = tipo === "saida" ? "block" : "none";
+    if (tipo === "saida") popularSelectMotivos(document.getElementById("modalMotivo"), "consumo");
+  }
   if (modal) { modal.classList.remove("hidden"); inputQtd?.focus(); }
 }
 
@@ -102,6 +108,9 @@ if (btnConfirmar) {
     const quantidade = inputQtd?.value;
     const responsavel = inputResponsavel?.value || "";
     const comentario = inputComentario?.value || "";
+    const motivo = tipoMovimentacao === "saida"
+      ? (document.getElementById("modalMotivo")?.value || "consumo")
+      : undefined;
 
     if (!quantidade || quantidade <= 0) {
       showToast("Quantidade inválida", "warning");
@@ -115,7 +124,7 @@ if (btnConfirmar) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ produto_id: produtoIdAtual, tipo: tipoMovimentacao, quantidade, comentario, responsavel })
+        body: JSON.stringify({ produto_id: produtoIdAtual, tipo: tipoMovimentacao, quantidade, comentario, responsavel, motivo })
       });
 
       const data = await res.json();
@@ -836,6 +845,110 @@ async function _executarImportacaoExcel() {
     _excelAbaSelecionada = null;
   }
 }
+
+// =========================
+// LISTA DE COMPRAS
+// =========================
+document.getElementById("btnListaCompras")?.addEventListener("click", abrirListaCompras);
+document.getElementById("fecharListaCompras")?.addEventListener("click", fecharListaCompras);
+document.getElementById("fecharListaComprasBtn")?.addEventListener("click", fecharListaCompras);
+
+let _ultimaListaCompras = [];
+
+function fecharListaCompras() {
+  document.getElementById("modalListaCompras").style.display = "none";
+}
+
+async function abrirListaCompras() {
+  const container = document.getElementById("conteudoListaCompras");
+  container.innerHTML = `<p style="color:var(--text-muted);font-size:13px">Carregando...</p>`;
+  document.getElementById("modalListaCompras").style.display = "flex";
+
+  try {
+    const res = await fetch(`${API}/produtos/lista-compras`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const dados = await res.json();
+    if (!res.ok) { showToast(dados.erro || "Erro ao gerar lista", "error"); return; }
+
+    _ultimaListaCompras = dados;
+
+    if (dados.length === 0) {
+      container.innerHTML = `<div class="empty-state"><p>✅ Nenhum produto precisa ser comprado agora</p></div>`;
+      return;
+    }
+
+    // Agrupa por fornecedor pra facilitar quem vai fazer o pedido
+    const grupos = {};
+    dados.forEach(p => {
+      const forn = p.fornecedor?.trim() || "Sem fornecedor definido";
+      if (!grupos[forn]) grupos[forn] = [];
+      grupos[forn].push(p);
+    });
+
+    container.innerHTML = Object.entries(grupos).map(([fornecedor, itens]) => `
+      <div class="compras-fornecedor">
+        <h4>${escapeHtml(fornecedor)}</h4>
+        ${itens.map(p => `
+          <div class="compras-item">
+            <div>
+              ${escapeHtml(p.produto)}
+              <div class="qtd-atual">tem ${formatarQuantidade(p.quantidade, p.unidade_medida)}</div>
+            </div>
+            <div class="qtd-atual" style="text-align:right">ponto: ${formatarQuantidade(p.ponto_reposicao, p.unidade_medida)}</div>
+            <div class="qtd-sugerida">comprar ${formatarQuantidade(p.quantidade_sugerida, p.unidade_medida)}</div>
+          </div>
+        `).join("")}
+      </div>
+    `).join("");
+
+  } catch (err) {
+    console.error(err);
+    showToast("Erro ao gerar lista de compras", "error");
+  }
+}
+
+document.getElementById("btnBaixarPdfCompras")?.addEventListener("click", () => {
+  if (!_ultimaListaCompras.length) { showToast("Nada pra exportar", "warning"); return; }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const hoje = new Date().toLocaleDateString("pt-BR");
+
+  doc.setFontSize(16);
+  doc.text("Lista de Compras — Estoque Fácil", 14, 18);
+  doc.setFontSize(10);
+  doc.setTextColor(120);
+  doc.text(`Gerada em ${hoje}`, 14, 24);
+
+  let y = 36;
+  const grupos = {};
+  _ultimaListaCompras.forEach(p => {
+    const forn = p.fornecedor?.trim() || "Sem fornecedor definido";
+    if (!grupos[forn]) grupos[forn] = [];
+    grupos[forn].push(p);
+  });
+
+  Object.entries(grupos).forEach(([fornecedor, itens]) => {
+    if (y > 270) { doc.addPage(); y = 20; }
+    doc.setFontSize(12);
+    doc.setTextColor(22, 119, 255);
+    doc.text(fornecedor, 14, y);
+    y += 7;
+
+    itens.forEach(p => {
+      if (y > 280) { doc.addPage(); y = 20; }
+      doc.setFontSize(10);
+      doc.setTextColor(30, 30, 30);
+      doc.text(String(p.produto).substring(0, 45), 16, y);
+      doc.text(`comprar ${formatarQuantidade(p.quantidade_sugerida, p.unidade_medida)}`, 150, y);
+      y += 6;
+    });
+    y += 4;
+  });
+
+  doc.save(`lista-compras-${hoje.replace(/\//g, "-")}.pdf`);
+});
 
 // =========================
 // INIT

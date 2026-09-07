@@ -165,7 +165,10 @@
             <div class="card-header"><span class="card-title">C.M.V. (R$)</span></div>
             <div class="card-body">
               <div class="stat-value" id="statCmvReais" style="font-size:24px">—</div>
-              <div class="explicacao-cmv">Custo do que saiu do estoque no período (vendido/consumido, ao custo médio)</div>
+              <div class="explicacao-cmv">
+                Consumo normal: <strong id="statConsumoNormal">—</strong> ·
+                Perdas: <strong id="statPerdas" style="color:var(--danger)">—</strong>
+              </div>
             </div>
           </div>
           <div class="card">
@@ -322,6 +325,8 @@
   function aplicarNaTela(d) {
     document.getElementById("statCompras").textContent  = formatarReais(d.compras);
     document.getElementById("statCmvReais").textContent = formatarReais(d.cmv_reais);
+    document.getElementById("statConsumoNormal").textContent = formatarReais(d.consumo_normal);
+    document.getElementById("statPerdas").textContent   = formatarReais(d.perdas);
     document.getElementById("inputReceita").value       = d.receita_bruta || "";
 
     const elPct = document.getElementById("statCmvPercentual");

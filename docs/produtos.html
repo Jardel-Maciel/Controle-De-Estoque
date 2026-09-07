@@ -129,6 +129,9 @@
           <select class="form-input" id="filtroSetor" style="display:none; max-width:200px; margin-left:8px;">
             <option value="">Todos os setores</option>
           </select>
+          <button class="btn btn-ghost btn-sm" id="btnListaCompras" style="margin-left:8px; white-space:nowrap;" title="Produtos que precisam ser comprados agora">
+            📋 Lista de Compras
+          </button>
         </div>
         <div class="table-wrap">
           <table>
@@ -173,8 +176,12 @@
       <label class="form-label">Responsável</label>
       <input class="form-input" type="text" id="modalResponsavel" placeholder="Nome do responsável"/>
     </div>
+    <div class="form-group" id="grupoMotivoSaida" style="display:none">
+      <label class="form-label">Motivo da saída</label>
+      <select class="form-input" id="modalMotivo"></select>
+    </div>
     <div class="form-group">
-      <label class="form-label">Motivo / Observação</label>
+      <label class="form-label">Observação</label>
       <input class="form-input" type="text" id="modalComentario" placeholder="Ex: Venda, ajuste de inventário..."/>
     </div>
     <div class="modal-footer">
@@ -231,6 +238,24 @@
     <div class="modal-footer">
       <button class="btn btn-secondary" id="cancelarModalEditarBtn">Cancelar</button>
       <button class="btn btn-primary" id="confirmarModalEditar">Salvar alterações</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LISTA DE COMPRAS -->
+<div id="modalListaCompras" class="modal-overlay" style="display:none; align-items:flex-start; padding-top:40px;">
+  <div class="modal-box" style="max-width:720px; max-height:85vh; overflow-y:auto;">
+    <div class="modal-header">
+      <span class="modal-title">📋 Lista de Compras</span>
+      <button class="btn btn-ghost btn-icon" id="fecharListaCompras">✕</button>
+    </div>
+    <p style="font-size:12.5px; color:var(--text-muted); margin-bottom:14px;">
+      Produtos que estão no ponto de reposição ou abaixo, com a quantidade sugerida pra voltar a ter uma folga saudável de estoque.
+    </p>
+    <div id="conteudoListaCompras"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="fecharListaComprasBtn">Fechar</button>
+      <button class="btn btn-primary" id="btnBaixarPdfCompras">⬇ Baixar PDF</button>
     </div>
   </div>
 </div>
@@ -294,6 +319,7 @@
 
 <script src="js/config.js"></script>
 <script src="js/utils.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="js/toast.js"></script>
 <script src="js/unidades.js"></script>
 <script src="js/script.js"></script>
@@ -345,6 +371,15 @@
   @media (max-width: 768px) {
     .detalhes-grid { flex-direction: column; gap: 8px; }
   }
+
+  .compras-fornecedor { margin-bottom: 18px; }
+  .compras-fornecedor h4 { font-size: 13px; color: var(--accent); margin-bottom: 8px; }
+  .compras-item {
+    display: grid; grid-template-columns: 1fr 90px 90px; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; align-items: center;
+  }
+  .compras-item .qtd-atual { color: var(--text-muted); font-size: 12px; }
+  .compras-item .qtd-sugerida { color: var(--accent); font-weight: 700; text-align: right; }
 </style>
 <script src="js/gerente-btn.js"></script>
 <script src="js/mobile-menu.js"></script>

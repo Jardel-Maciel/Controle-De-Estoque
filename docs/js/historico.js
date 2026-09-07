@@ -292,10 +292,13 @@ function preencherTabela(lista) {
     const badge = item.tipo === "entrada"
       ? `<span class="badge badge-success">Entrada</span>`
       : `<span class="badge badge-danger">Saída</span>`;
+    const badgeMotivo = ehMotivoPerda(item.motivo)
+      ? ` <span class="badge badge-warning" title="${escapeHtml(MOTIVOS_SAIDA[item.motivo])}">perda</span>`
+      : "";
 
     tr.innerHTML = `
       <td style="text-transform:capitalize">${escapeHtml(item.produto)}</td>
-      <td>${badge}</td>
+      <td>${badge}${badgeMotivo}</td>
       <td>${formatarQuantidade(item.quantidade, item.unidade_medida)}</td>
       <td>${escapeHtml(item.responsavel) || "—"}</td>
       <td>${escapeHtml(item.comentario) || "—"}</td>
