@@ -47,6 +47,10 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         Histórico
       </a>
+      <a href="validades.html" class="nav-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Validades
+      </a>
     </div>
 
     <div class="nav-section" style="margin-top:8px">
@@ -101,6 +105,7 @@
             <input class="form-input" type="number" id="quantidade"     placeholder="Quantidade"/>
             <select class="form-input" id="unidadeMedida"></select>
             <input class="form-input" type="number" id="estoqueMinimo"  placeholder="Estoque mínimo" title="Abaixo desta quantidade o produto entra no alerta de baixo estoque" value="5"/>
+            <input class="form-input" type="date"   id="validadeInicial" title="Data de validade do estoque inicial (opcional)"/>
             <input class="form-input" type="number" id="valor"          placeholder="Valor (R$)" step="0.01"/>
             <input class="form-input" type="text"   id="fornecedor"     placeholder="Fornecedor"/>
             <input class="form-input" type="text"   id="contato"        placeholder="Contato"/>
@@ -179,6 +184,10 @@
     <div class="form-group" id="grupoMotivoSaida" style="display:none">
       <label class="form-label">Motivo da saída</label>
       <select class="form-input" id="modalMotivo"></select>
+    </div>
+    <div class="form-group" id="grupoValidadeEntrada" style="display:none">
+      <label class="form-label">Data de validade (opcional)</label>
+      <input class="form-input" type="date" id="modalValidade"/>
     </div>
     <div class="form-group">
       <label class="form-label">Observação</label>

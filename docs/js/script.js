@@ -95,6 +95,13 @@ function abrirModal(tipo, id) {
     grupoMotivo.style.display = tipo === "saida" ? "block" : "none";
     if (tipo === "saida") popularSelectMotivos(document.getElementById("modalMotivo"), "consumo");
   }
+  // A validade só faz sentido numa entrada (é quando um lote novo é criado)
+  const grupoValidade = document.getElementById("grupoValidadeEntrada");
+  if (grupoValidade) {
+    grupoValidade.style.display = tipo === "entrada" ? "block" : "none";
+    const inputValidade = document.getElementById("modalValidade");
+    if (inputValidade) inputValidade.value = "";
+  }
   if (modal) { modal.classList.remove("hidden"); inputQtd?.focus(); }
 }
 
@@ -111,6 +118,9 @@ if (btnConfirmar) {
     const motivo = tipoMovimentacao === "saida"
       ? (document.getElementById("modalMotivo")?.value || "consumo")
       : undefined;
+    const data_validade = tipoMovimentacao === "entrada"
+      ? (document.getElementById("modalValidade")?.value || null)
+      : undefined;
 
     if (!quantidade || quantidade <= 0) {
       showToast("Quantidade inválida", "warning");
@@ -124,7 +134,7 @@ if (btnConfirmar) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ produto_id: produtoIdAtual, tipo: tipoMovimentacao, quantidade, comentario, responsavel, motivo })
+        body: JSON.stringify({ produto_id: produtoIdAtual, tipo: tipoMovimentacao, quantidade, comentario, responsavel, motivo, data_validade })
       });
 
       const data = await res.json();
@@ -280,6 +290,7 @@ if (btnCadastrar) {
     const quantidade = document.getElementById("quantidade")?.value;
     const unidade_medida = document.getElementById("unidadeMedida")?.value || "unidade";
     const estoque_minimo = document.getElementById("estoqueMinimo")?.value || 5;
+    const data_validade = document.getElementById("validadeInicial")?.value || null;
     const valor      = document.getElementById("valor")?.value;
     const fornecedor = document.getElementById("fornecedor")?.value.trim();
     const contato    = document.getElementById("contato")?.value.trim();
@@ -294,7 +305,7 @@ if (btnCadastrar) {
       const res = await fetch(`${API}/produtos`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ produto, quantidade, unidade_medida, estoque_minimo, valor, fornecedor, contato, setor_id })
+        body: JSON.stringify({ produto, quantidade, unidade_medida, estoque_minimo, data_validade, valor, fornecedor, contato, setor_id })
       });
 
       const data = await res.json();
@@ -304,6 +315,7 @@ if (btnCadastrar) {
       document.getElementById("quantidade").value   = "";
       document.getElementById("unidadeMedida").value = "unidade";
       document.getElementById("estoqueMinimo").value = "5";
+      document.getElementById("validadeInicial").value = "";
       document.getElementById("valor").value        = "";
       document.getElementById("fornecedor").value   = "";
       document.getElementById("contato").value      = "";
