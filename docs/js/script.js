@@ -926,37 +926,86 @@ document.getElementById("btnBaixarPdfCompras")?.addEventListener("click", () => 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   const hoje = new Date().toLocaleDateString("pt-BR");
-  const LARGURA = doc.internal.pageSize.getWidth();
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
 
-  // Cabeçalho com a identidade visual do Estoque Fácil (mesmo fundo escuro
-  // e as cores azul/verde do logo do sistema) — desenhado em toda página nova.
+  // Mesma paleta do PDF do Dashboard (js/dashboard.js) — pra manter os
+  // relatórios do sistema todos com a mesma identidade visual.
+  const PDF = {
+    headerBg:    [15, 23, 42],
+    headerSub:   [148, 163, 184],
+    accent:      [56, 189, 248],
+    teal:        [56, 189, 248],
+    green:       [56, 189, 248],
+    cardBg:      [240, 249, 255],
+    rowEven:     [240, 249, 255],
+    rowOdd:      [255, 255, 255],
+    tableHeader: [15, 23, 42],
+    tableHText:  [226, 232, 240],
+    textDark:    [15, 23, 42],
+    textMid:     [71, 85, 105],
+    textLight:   [148, 163, 184],
+    border:      [186, 230, 253],
+  };
+
+  const colX = [16, 100, 138, 168];
+  const colW = W - 28;
+
   function desenharCabecalho() {
-    doc.setFillColor(8, 21, 38);
-    doc.rect(0, 0, LARGURA, 26, "F");
+    doc.setFillColor(...PDF.headerBg);
+    doc.rect(0, 0, W, 52, "F");
 
-    doc.setFillColor(22, 119, 255);
-    doc.roundedRect(14, 9, 7, 4, 1, 1, "F");
-    doc.setFillColor(0, 196, 140);
-    doc.roundedRect(23, 9, 7, 4, 1, 1, "F");
+    doc.setFillColor(...PDF.accent);
+    doc.rect(0, 0, W, 3, "F");
+    doc.setFillColor(...PDF.teal);
+    doc.rect(0, 49, W, 3, "F");
 
-    doc.setFontSize(14);
-    doc.setFont(undefined, "bold");
-    doc.setTextColor(255, 255, 255);
-    doc.text("Estoque", 36, 16);
-    const larguraEstoque = doc.getTextWidth("Estoque ");
-    doc.setTextColor(22, 119, 255);
-    doc.text("Fácil", 36 + larguraEstoque, 16);
+    try {
+      doc.addImage("assets/logo_transparent.png", "PNG", 10, 8, 75, 22);
+    } catch (e) {
+      doc.setFontSize(16);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...PDF.accent);
+      doc.text("Estoque", 14, 22);
+      doc.setTextColor(...PDF.teal);
+      doc.text(" Fácil", 47, 22);
+    }
 
-    doc.setFont(undefined, "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(180, 195, 215);
-    doc.text("Lista de Compras", 14, 22.5);
-    doc.text(`Gerada em ${hoje}`, LARGURA - 14, 22.5, { align: "right" });
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...PDF.headerSub);
+    doc.text("Lista de Compras", W - 14, 20, { align: "right" });
+    doc.text(`Gerada em: ${hoje}`, W - 14, 28, { align: "right" });
+  }
+
+  function desenharCabecalhoContinuacao() {
+    doc.setFillColor(...PDF.headerBg);
+    doc.rect(0, 0, W, 14, "F");
+    doc.setFillColor(...PDF.accent);
+    doc.rect(0, 0, W, 2, "F");
+    doc.setFillColor(...PDF.teal);
+    doc.rect(0, 12, W, 2, "F");
+    doc.setFontSize(8);
+    doc.setTextColor(...PDF.headerSub);
+    doc.text("Estoque Fácil — continuação", 14, 10);
+  }
+
+  function desenharCabecalhoTabela(y) {
+    doc.setFillColor(...PDF.tableHeader);
+    doc.rect(14, y - 5, colW, 9, "F");
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...PDF.tableHText);
+    doc.text("Produto", colX[0], y);
+    doc.text("Estoque atual", colX[1], y);
+    doc.text("Ponto repos.", colX[2], y);
+    doc.text("Comprar", colX[3], y);
+    doc.setFont("helvetica", "normal");
+    return y + 8;
   }
 
   desenharCabecalho();
 
-  let y = 40;
   const grupos = {};
   _ultimaListaCompras.forEach(p => {
     const forn = p.fornecedor?.trim() || "Sem fornecedor definido";
@@ -964,25 +1013,47 @@ document.getElementById("btnBaixarPdfCompras")?.addEventListener("click", () => 
     grupos[forn].push(p);
   });
 
-  Object.entries(grupos).forEach(([fornecedor, itens]) => {
-    if (y > 265) { doc.addPage(); desenharCabecalho(); y = 40; }
-    doc.setFontSize(12);
-    doc.setFont(undefined, "bold");
-    doc.setTextColor(22, 119, 255);
-    doc.text(fornecedor, 14, y);
-    doc.setFont(undefined, "normal");
-    y += 7;
+  let y = 64;
 
-    itens.forEach(p => {
-      if (y > 280) { doc.addPage(); desenharCabecalho(); y = 40; }
-      doc.setFontSize(10);
-      doc.setTextColor(30, 30, 30);
-      doc.text(String(p.produto).substring(0, 45), 16, y);
-      doc.setTextColor(0, 150, 110);
-      doc.text(`comprar ${formatarQuantidade(p.quantidade_sugerida, p.unidade_medida)}`, 150, y);
-      y += 6;
+  Object.entries(grupos).forEach(([fornecedor, itens]) => {
+    if (y > H - 40) { doc.addPage(); desenharCabecalhoContinuacao(); y = 24; }
+
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...PDF.accent);
+    doc.text(fornecedor, 14, y);
+    doc.setFont("helvetica", "normal");
+    y += 6;
+
+    y = desenharCabecalhoTabela(y);
+
+    itens.forEach((p, idx) => {
+      if (y > H - 20) {
+        doc.addPage(); desenharCabecalhoContinuacao(); y = 24;
+        y = desenharCabecalhoTabela(y);
+      }
+
+      doc.setFillColor(...(idx % 2 === 0 ? PDF.rowEven : PDF.rowOdd));
+      doc.rect(14, y - 5, colW, 8, "F");
+      doc.setDrawColor(...PDF.border);
+      doc.setLineWidth(0.1);
+      doc.line(14, y + 3, W - 14, y + 3);
+
+      doc.setFontSize(8);
+      doc.setTextColor(...PDF.textDark);
+      doc.text(String(p.produto).substring(0, 40), colX[0], y);
+      doc.setTextColor(...PDF.textMid);
+      doc.text(formatarQuantidade(p.quantidade, p.unidade_medida), colX[1], y);
+      doc.text(formatarQuantidade(p.ponto_reposicao, p.unidade_medida), colX[2], y);
+      doc.setTextColor(...PDF.accent);
+      doc.setFont("helvetica", "bold");
+      doc.text(formatarQuantidade(p.quantidade_sugerida, p.unidade_medida), colX[3], y);
+      doc.setFont("helvetica", "normal");
+
+      y += 8;
     });
-    y += 4;
+
+    y += 8;
   });
 
   doc.save(`lista-compras-${hoje.replace(/\//g, "-")}.pdf`);
