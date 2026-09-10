@@ -89,19 +89,6 @@ function abrirModal(tipo, id) {
   if (labelQtdModal) {
     labelQtdModal.textContent = produto ? `Quantidade (${labelUnidade(produto.unidade_medida)})` : "Quantidade";
   }
-  // O motivo só faz sentido numa saída (consumo normal ou algum tipo de perda)
-  const grupoMotivo = document.getElementById("grupoMotivoSaida");
-  if (grupoMotivo) {
-    grupoMotivo.style.display = tipo === "saida" ? "block" : "none";
-    if (tipo === "saida") popularSelectMotivos(document.getElementById("modalMotivo"), "consumo");
-  }
-  // A validade só faz sentido numa entrada (é quando um lote novo é criado)
-  const grupoValidade = document.getElementById("grupoValidadeEntrada");
-  if (grupoValidade) {
-    grupoValidade.style.display = tipo === "entrada" ? "block" : "none";
-    const inputValidade = document.getElementById("modalValidade");
-    if (inputValidade) inputValidade.value = "";
-  }
   if (modal) { modal.classList.remove("hidden"); inputQtd?.focus(); }
 }
 
@@ -115,12 +102,6 @@ if (btnConfirmar) {
     const quantidade = inputQtd?.value;
     const responsavel = inputResponsavel?.value || "";
     const comentario = inputComentario?.value || "";
-    const motivo = tipoMovimentacao === "saida"
-      ? (document.getElementById("modalMotivo")?.value || "consumo")
-      : undefined;
-    const data_validade = tipoMovimentacao === "entrada"
-      ? (document.getElementById("modalValidade")?.value || null)
-      : undefined;
 
     if (!quantidade || quantidade <= 0) {
       showToast("Quantidade inválida", "warning");
@@ -134,7 +115,7 @@ if (btnConfirmar) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ produto_id: produtoIdAtual, tipo: tipoMovimentacao, quantidade, comentario, responsavel, motivo, data_validade })
+        body: JSON.stringify({ produto_id: produtoIdAtual, tipo: tipoMovimentacao, quantidade, comentario, responsavel })
       });
 
       const data = await res.json();
@@ -290,8 +271,8 @@ if (btnCadastrar) {
     const quantidade = document.getElementById("quantidade")?.value;
     const unidade_medida = document.getElementById("unidadeMedida")?.value || "unidade";
     const estoque_minimo = document.getElementById("estoqueMinimo")?.value || 5;
-    const data_validade = document.getElementById("validadeInicial")?.value || null;
-    const valor      = document.getElementById("valor")?.value;
+    const valorInformado = document.getElementById("valor")?.value;
+    const valorEhTotal   = document.getElementById("valorEhTotal")?.checked;
     const fornecedor = document.getElementById("fornecedor")?.value.trim();
     const contato    = document.getElementById("contato")?.value.trim();
     const setor_id   = document.getElementById("setorProduto")?.value || null;
@@ -301,11 +282,20 @@ if (btnCadastrar) {
       return;
     }
 
+    // Se o valor digitado for o total pago no lote (não o valor por unidade),
+    // calcula o valor unitário aqui antes de enviar pro backend — que sempre
+    // espera e grava "valor" como valor unitário (é o que a Ficha Técnica e o
+    // cálculo de estoque usam).
+    let valor = valorInformado;
+    if (valorEhTotal && valorInformado !== "" && parseFloat(quantidade) > 0) {
+      valor = (parseFloat(valorInformado) / parseFloat(quantidade)).toFixed(4);
+    }
+
     try {
       const res = await fetch(`${API}/produtos`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ produto, quantidade, unidade_medida, estoque_minimo, data_validade, valor, fornecedor, contato, setor_id })
+        body: JSON.stringify({ produto, quantidade, unidade_medida, estoque_minimo, valor, fornecedor, contato, setor_id })
       });
 
       const data = await res.json();
@@ -315,8 +305,8 @@ if (btnCadastrar) {
       document.getElementById("quantidade").value   = "";
       document.getElementById("unidadeMedida").value = "unidade";
       document.getElementById("estoqueMinimo").value = "5";
-      document.getElementById("validadeInicial").value = "";
       document.getElementById("valor").value        = "";
+      document.getElementById("valorEhTotal").checked = false;
       document.getElementById("fornecedor").value   = "";
       document.getElementById("contato").value      = "";
       document.getElementById("inputProduto").focus();
@@ -345,6 +335,7 @@ window.editarProduto = (id) => {
   document.getElementById("editProduto").value    = item.produto || "";
   document.getElementById("editQuantidade").value = item.quantidade ?? "";
   document.getElementById("editValor").value      = item.valor ?? "";
+  document.getElementById("editValorEhTotal").checked = false;
   document.getElementById("editFornecedor").value = item.fornecedor || "";
   document.getElementById("editContato").value    = item.contato || "";
   document.getElementById("editEstoqueMinimo").value = item.estoque_minimo ?? 5;
@@ -378,7 +369,8 @@ document.getElementById("confirmarModalEditar")?.addEventListener("click", async
 
   const produto    = document.getElementById("editProduto").value.trim();
   const quantidade = document.getElementById("editQuantidade").value;
-  const valor      = document.getElementById("editValor").value;
+  const valorInformado = document.getElementById("editValor").value;
+  const valorEhTotal   = document.getElementById("editValorEhTotal")?.checked;
   const fornecedor = document.getElementById("editFornecedor").value.trim();
   const contato    = document.getElementById("editContato").value.trim();
   const unidade_medida = document.getElementById("editUnidadeMedida").value;
@@ -387,6 +379,13 @@ document.getElementById("confirmarModalEditar")?.addEventListener("click", async
   if (!produto || quantidade === "") {
     showToast("Preencha produto e quantidade", "warning");
     return;
+  }
+
+  // Mesmo cálculo do cadastro: se o valor digitado for o total pago pela
+  // quantidade cadastrada, converte pra valor unitário antes de salvar.
+  let valor = valorInformado;
+  if (valorEhTotal && valorInformado !== "" && parseFloat(quantidade) > 0) {
+    valor = (parseFloat(valorInformado) / parseFloat(quantidade)).toFixed(4);
   }
 
   const corpo = { produto, quantidade, valor, fornecedor, contato, unidade_medida, estoque_minimo };
@@ -857,207 +856,6 @@ async function _executarImportacaoExcel() {
     _excelAbaSelecionada = null;
   }
 }
-
-// =========================
-// LISTA DE COMPRAS
-// =========================
-document.getElementById("btnListaCompras")?.addEventListener("click", abrirListaCompras);
-document.getElementById("fecharListaCompras")?.addEventListener("click", fecharListaCompras);
-document.getElementById("fecharListaComprasBtn")?.addEventListener("click", fecharListaCompras);
-
-let _ultimaListaCompras = [];
-
-function fecharListaCompras() {
-  document.getElementById("modalListaCompras").style.display = "none";
-}
-
-async function abrirListaCompras() {
-  const container = document.getElementById("conteudoListaCompras");
-  container.innerHTML = `<p style="color:var(--text-muted);font-size:13px">Carregando...</p>`;
-  document.getElementById("modalListaCompras").style.display = "flex";
-
-  try {
-    const res = await fetch(`${API}/produtos/lista-compras`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const dados = await res.json();
-    if (!res.ok) { showToast(dados.erro || "Erro ao gerar lista", "error"); return; }
-
-    _ultimaListaCompras = dados;
-
-    if (dados.length === 0) {
-      container.innerHTML = `<div class="empty-state"><p>✅ Nenhum produto precisa ser comprado agora</p></div>`;
-      return;
-    }
-
-    // Agrupa por fornecedor pra facilitar quem vai fazer o pedido
-    const grupos = {};
-    dados.forEach(p => {
-      const forn = p.fornecedor?.trim() || "Sem fornecedor definido";
-      if (!grupos[forn]) grupos[forn] = [];
-      grupos[forn].push(p);
-    });
-
-    container.innerHTML = Object.entries(grupos).map(([fornecedor, itens]) => `
-      <div class="compras-fornecedor">
-        <h4>${escapeHtml(fornecedor)}</h4>
-        ${itens.map(p => `
-          <div class="compras-item">
-            <div>
-              ${escapeHtml(p.produto)}
-              <div class="qtd-atual">tem ${formatarQuantidade(p.quantidade, p.unidade_medida)}</div>
-            </div>
-            <div class="qtd-atual" style="text-align:right">ponto: ${formatarQuantidade(p.ponto_reposicao, p.unidade_medida)}</div>
-            <div class="qtd-sugerida">comprar ${formatarQuantidade(p.quantidade_sugerida, p.unidade_medida)}</div>
-          </div>
-        `).join("")}
-      </div>
-    `).join("");
-
-  } catch (err) {
-    console.error(err);
-    showToast("Erro ao gerar lista de compras", "error");
-  }
-}
-
-document.getElementById("btnBaixarPdfCompras")?.addEventListener("click", () => {
-  if (!_ultimaListaCompras.length) { showToast("Nada pra exportar", "warning"); return; }
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  const hoje = new Date().toLocaleDateString("pt-BR");
-  const W = doc.internal.pageSize.getWidth();
-  const H = doc.internal.pageSize.getHeight();
-
-  // Mesma paleta do PDF do Dashboard (js/dashboard.js) — pra manter os
-  // relatórios do sistema todos com a mesma identidade visual.
-  const PDF = {
-    headerBg:    [15, 23, 42],
-    headerSub:   [148, 163, 184],
-    accent:      [56, 189, 248],
-    teal:        [56, 189, 248],
-    green:       [56, 189, 248],
-    cardBg:      [240, 249, 255],
-    rowEven:     [240, 249, 255],
-    rowOdd:      [255, 255, 255],
-    tableHeader: [15, 23, 42],
-    tableHText:  [226, 232, 240],
-    textDark:    [15, 23, 42],
-    textMid:     [71, 85, 105],
-    textLight:   [148, 163, 184],
-    border:      [186, 230, 253],
-  };
-
-  const colX = [16, 100, 138, 168];
-  const colW = W - 28;
-
-  function desenharCabecalho() {
-    doc.setFillColor(...PDF.headerBg);
-    doc.rect(0, 0, W, 52, "F");
-
-    doc.setFillColor(...PDF.accent);
-    doc.rect(0, 0, W, 3, "F");
-    doc.setFillColor(...PDF.teal);
-    doc.rect(0, 49, W, 3, "F");
-
-    try {
-      doc.addImage("assets/logo_transparent.png", "PNG", 10, 8, 75, 22);
-    } catch (e) {
-      doc.setFontSize(16);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(...PDF.accent);
-      doc.text("Estoque", 14, 22);
-      doc.setTextColor(...PDF.teal);
-      doc.text(" Fácil", 47, 22);
-    }
-
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...PDF.headerSub);
-    doc.text("Lista de Compras", W - 14, 20, { align: "right" });
-    doc.text(`Gerada em: ${hoje}`, W - 14, 28, { align: "right" });
-  }
-
-  function desenharCabecalhoContinuacao() {
-    doc.setFillColor(...PDF.headerBg);
-    doc.rect(0, 0, W, 14, "F");
-    doc.setFillColor(...PDF.accent);
-    doc.rect(0, 0, W, 2, "F");
-    doc.setFillColor(...PDF.teal);
-    doc.rect(0, 12, W, 2, "F");
-    doc.setFontSize(8);
-    doc.setTextColor(...PDF.headerSub);
-    doc.text("Estoque Fácil — continuação", 14, 10);
-  }
-
-  function desenharCabecalhoTabela(y) {
-    doc.setFillColor(...PDF.tableHeader);
-    doc.rect(14, y - 5, colW, 9, "F");
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...PDF.tableHText);
-    doc.text("Produto", colX[0], y);
-    doc.text("Estoque atual", colX[1], y);
-    doc.text("Ponto repos.", colX[2], y);
-    doc.text("Comprar", colX[3], y);
-    doc.setFont("helvetica", "normal");
-    return y + 8;
-  }
-
-  desenharCabecalho();
-
-  const grupos = {};
-  _ultimaListaCompras.forEach(p => {
-    const forn = p.fornecedor?.trim() || "Sem fornecedor definido";
-    if (!grupos[forn]) grupos[forn] = [];
-    grupos[forn].push(p);
-  });
-
-  let y = 64;
-
-  Object.entries(grupos).forEach(([fornecedor, itens]) => {
-    if (y > H - 40) { doc.addPage(); desenharCabecalhoContinuacao(); y = 24; }
-
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...PDF.accent);
-    doc.text(fornecedor, 14, y);
-    doc.setFont("helvetica", "normal");
-    y += 6;
-
-    y = desenharCabecalhoTabela(y);
-
-    itens.forEach((p, idx) => {
-      if (y > H - 20) {
-        doc.addPage(); desenharCabecalhoContinuacao(); y = 24;
-        y = desenharCabecalhoTabela(y);
-      }
-
-      doc.setFillColor(...(idx % 2 === 0 ? PDF.rowEven : PDF.rowOdd));
-      doc.rect(14, y - 5, colW, 8, "F");
-      doc.setDrawColor(...PDF.border);
-      doc.setLineWidth(0.1);
-      doc.line(14, y + 3, W - 14, y + 3);
-
-      doc.setFontSize(8);
-      doc.setTextColor(...PDF.textDark);
-      doc.text(String(p.produto).substring(0, 40), colX[0], y);
-      doc.setTextColor(...PDF.textMid);
-      doc.text(formatarQuantidade(p.quantidade, p.unidade_medida), colX[1], y);
-      doc.text(formatarQuantidade(p.ponto_reposicao, p.unidade_medida), colX[2], y);
-      doc.setTextColor(...PDF.accent);
-      doc.setFont("helvetica", "bold");
-      doc.text(formatarQuantidade(p.quantidade_sugerida, p.unidade_medida), colX[3], y);
-      doc.setFont("helvetica", "normal");
-
-      y += 8;
-    });
-
-    y += 8;
-  });
-
-  doc.save(`lista-compras-${hoje.replace(/\//g, "-")}.pdf`);
-});
 
 // =========================
 // INIT
